@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from scraperweb.scraping.parsers import (
+from scraperweb.scraper.parsers import (
     SrealityDetailPageParser,
     SrealityListingPageParser,
     clean_string,

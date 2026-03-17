@@ -331,9 +331,6 @@ These modules remain transitional and should still be simplified during future c
 
 - `scraperweb.estate_scraper`: currently a mixed procedural runtime; replace with thin
   CLI adapter plus `RawAcquisitionService` orchestration.
-- `scraperweb.persistence.models`: currently hosts the raw stage contract; move
-  `RawListingRecord` ownership under `scraperweb.scraper` when the stage packages are
-  introduced.
 
 ## Constraints
 

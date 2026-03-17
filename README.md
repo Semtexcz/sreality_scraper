@@ -44,13 +44,6 @@ The `scraperweb/` package now exposes explicit stage boundaries:
 - `scraperweb.enrichment`: enrichment-stage contracts
 - `scraperweb.modeling`: modeling-stage contracts
 
-Compatibility note:
-
-- `scraperweb.scraping.*` remains as a transitional alias for scraper-owned clients
-  and parsers
-- `scraperweb.persistence.models` remains as a transitional alias for scraper-owned
-  raw contracts until downstream cleanup tasks remove the legacy import surface
-
 ## Quick Start
 
 ```bash

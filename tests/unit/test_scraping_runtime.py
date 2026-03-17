@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from scraperweb.scraping.clients import (
+from scraperweb.scraper.clients import (
     DetailPageClient,
     ListingPageClient,
     SrealityHttpClient,
 )
-from scraperweb.scraping.parsers import SrealityDetailPageParser, SrealityListingPageParser
+from scraperweb.scraper.parsers import SrealityDetailPageParser, SrealityListingPageParser
 
 
 class FakeHttpModule:

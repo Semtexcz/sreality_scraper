@@ -43,13 +43,6 @@ typed runtime models and hands control to orchestration services.
 High-level orchestration for current raw acquisition and the future linear pipeline.
 This layer wires stage components together but does not own stage contracts.
 
-### `scraperweb.scraping`
-
-Current implementation package for HTTP adapters and HTML parsers. This package is a
-transitional compatibility layer that re-exports scraper-owned clients and parsers.
-
-Status: transitional module pending cleanup after import sites are migrated.
-
 ### `scraperweb.scraper`
 
 Canonical scraper-stage package for raw contracts, HTTP clients, and HTML parsers.
@@ -77,9 +70,9 @@ Status: package boundary in place; modeling builders follow in later tasks.
 
 ### `scraperweb.persistence`
 
-Repository interfaces and storage adapters. Current raw contracts live here
-through compatibility re-exports, but canonical raw-contract ownership now belongs to
-the producing scraper stage.
+Repository interfaces and storage adapters. Raw-contract ownership belongs to the
+producing scraper stage, so persistence depends on scraper-owned models instead of
+defining them locally.
 
 ### `scraperweb.estate_scraper`
 

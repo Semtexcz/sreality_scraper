@@ -12,8 +12,8 @@ import pytest
 from scraperweb.application.acquisition_service import RawAcquisitionService
 from scraperweb.cli_runtime_options import RuntimeCliOptions, StorageBackend
 from scraperweb.estate_scraper import build_raw_record_repository
-from scraperweb.persistence.models import RawListingRecord, RawSourceMetadata
 from scraperweb.persistence.repositories import FilesystemRawRecordRepository, MongoRawRecordRepository
+from scraperweb.scraper.models import RawListingRecord, RawSourceMetadata
 
 
 class FakeListingPageClient:

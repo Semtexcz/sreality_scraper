@@ -11,8 +11,8 @@ import requests
 
 from scraperweb.application.acquisition_service import RawAcquisitionService
 from scraperweb.persistence.repositories import FilesystemRawRecordRepository
-from scraperweb.scraping.clients import DetailPageClient, ListingPageClient, SrealityHttpClient
-from scraperweb.scraping.parsers import SrealityDetailPageParser, SrealityListingPageParser
+from scraperweb.scraper.clients import DetailPageClient, ListingPageClient, SrealityHttpClient
+from scraperweb.scraper.parsers import SrealityDetailPageParser, SrealityListingPageParser
 
 LIVE_PRAGUE_LISTING_URL = "https://www.sreality.cz/hledani/prodej/byty/praha?strana="
 LIVE_TEST_ENV_VAR = "RUN_LIVE_INTEGRATION_TESTS"

@@ -8,10 +8,7 @@ from pathlib import Path
 from scraperweb.enrichment.models import EnrichedListingRecord
 from scraperweb.modeling.models import ModelingInputRecord
 from scraperweb.normalization.models import NormalizedListingRecord
-from scraperweb.persistence.models import RawListingRecord as PersistenceRawListingRecord
-from scraperweb.scraper.models import RawListingRecord as ScraperRawListingRecord
-from scraperweb.scraping.clients import SrealityHttpClient as TransitionalSrealityHttpClient
-from scraperweb.scraper.clients import SrealityHttpClient
+from scraperweb.scraper.models import RawListingRecord
 
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[2] / "scraperweb"
@@ -23,17 +20,17 @@ DISALLOWED_IMPORT_PREFIXES = {
 }
 
 
-def test_transitional_import_surfaces_alias_canonical_stage_objects() -> None:
-    """Keep compatibility wrappers mapped to the canonical stage-owned objects."""
+def test_legacy_transitional_modules_are_removed() -> None:
+    """Keep the package layout free of redundant transitional module trees."""
 
-    assert PersistenceRawListingRecord is ScraperRawListingRecord
-    assert TransitionalSrealityHttpClient is SrealityHttpClient
+    assert not (PACKAGE_ROOT / "scraping").exists()
+    assert not (PACKAGE_ROOT / "persistence" / "models.py").exists()
 
 
 def test_stage_contract_modules_are_importable() -> None:
     """Expose all planned stage contracts from importable package boundaries."""
 
-    assert ScraperRawListingRecord.__name__ == "RawListingRecord"
+    assert RawListingRecord.__name__ == "RawListingRecord"
     assert NormalizedListingRecord.__name__ == "NormalizedListingRecord"
     assert EnrichedListingRecord.__name__ == "EnrichedListingRecord"
     assert ModelingInputRecord.__name__ == "ModelingInputRecord"

@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.0.8] - 2026-03-17
+
+### Changed
+
+- removed the temporary `scraperweb.scraping` compatibility package and updated the
+  codebase to import scraper clients and parsers directly from `scraperweb.scraper`
+- removed `scraperweb.persistence.models` so raw-contract ownership now exists only
+  under `scraperweb.scraper.models`, reducing duplicate module surfaces inside
+  `scraperweb`
+
 ## [1.0.7] - 2026-03-17
 
 ### Added

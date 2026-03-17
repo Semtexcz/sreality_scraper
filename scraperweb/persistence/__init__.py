@@ -5,12 +5,9 @@ from scraperweb.persistence.repositories import (
     MongoRawRecordRepository,
     RawRecordRepository,
 )
-from scraperweb.scraper.models import RawListingRecord, RawSourceMetadata
 
 __all__ = [
     "FilesystemRawRecordRepository",
     "MongoRawRecordRepository",
-    "RawListingRecord",
     "RawRecordRepository",
-    "RawSourceMetadata",
 ]
