@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.0.3] - 2026-03-17
+
+### Changed
+
+- moved the test suite under a single `tests/` tree split into `tests/unit/` and `tests/integration/`, keeping shared fixtures under `tests/`
+
 ## [1.0.2] - 2026-03-17
 
 ### Added
