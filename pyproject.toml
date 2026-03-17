@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "scraperweb"
-version = "1.0.1"
+version = "1.0.2"
 description = "Raw Sreality listing scraper with filesystem and MongoDB persistence."
 authors = ["scraperweb contributors"]
 readme = "README.md"
@@ -23,7 +23,10 @@ pytest = "^8.4.2"
 scraperweb = "scraperweb.cli:main"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "integration_tests"]
+markers = [
+    "integration: tests that call external services or exercise live runtime integration",
+]
 
 
 [build-system]

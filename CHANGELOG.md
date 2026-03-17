@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.0.2] - 2026-03-17
+
+### Added
+
+- added an opt-in `integration_tests/` suite with a live Sreality runtime test that downloads and processes one real listing through the production clients, parsers, acquisition service, and filesystem repository
+
+### Changed
+
+- separated pytest discovery for deterministic unit tests and live integration tests, and documented how to enable the live suite explicitly
+
 ## [1.0.1] - 2026-03-17
 
 ### Added

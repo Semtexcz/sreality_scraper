@@ -33,6 +33,25 @@ poetry run scraperweb --help
 poetry run scraperweb scrape --help
 ```
 
+## Testing
+
+Unit tests and live integration tests are separated:
+
+- `tests/`: deterministic unit and fixture-based tests
+- `integration_tests/`: opt-in live tests that call the real `sreality.cz` service
+
+Default test execution keeps the suite stable:
+
+```bash
+poetry run pytest
+```
+
+Run the live integration suite explicitly when network access is available:
+
+```bash
+RUN_LIVE_INTEGRATION_TESTS=1 poetry run pytest integration_tests
+```
+
 ## Configuration
 
 Runtime configuration only exposes values required for raw persistence:
