@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "scraperweb"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12.7"
+requests = "^2.32.3"
+pymongo = "^4.10.1"
+uvicorn = "^0.32.0"
+typing-extensions = "4.12.2"
+fastapi = {extras = ["standard"], version = "^0.115.5"}
+bs4 = "^0.0.2"
+loguru = "^0.7.2"
+pandas = "^2.2.3"
+geopy = "^2.4.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
