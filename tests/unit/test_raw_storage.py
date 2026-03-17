@@ -14,6 +14,7 @@ from scraperweb.cli_runtime_options import RuntimeCliOptions, StorageBackend
 from scraperweb.estate_scraper import build_raw_record_repository
 from scraperweb.persistence.repositories import FilesystemRawRecordRepository, MongoRawRecordRepository
 from scraperweb.scraper.models import RawListingRecord, RawSourceMetadata
+from scraperweb.scraper.runtime import RawListingCollector
 
 
 class FakeListingPageClient:
@@ -80,6 +81,23 @@ class RecordingRepository:
         """Record each stored raw listing snapshot."""
 
         self.records.append(record)
+
+
+class RecordingDetailPageParser:
+    """Produce nested JSON-safe payloads from fake detail HTML."""
+
+    def parse_raw_payload(self, detail_html: str) -> dict[str, Any]:
+        """Convert fake detail HTML into a nested raw payload dictionary."""
+
+        return {
+            "payload": detail_html,
+            "sections": [
+                {"label": "Disposition", "value": "2+kk"},
+                {"label": "Area", "value": "58 m2"},
+            ],
+            "has_elevator": True,
+            "note": None,
+        }
 
 
 class FakeCollection:
@@ -244,8 +262,57 @@ def test_mongo_repository_creates_expected_indexes_and_inserts_document(
     assert fake_collection.inserted_documents[0]["captured_at_utc"] == "2026-03-17T11:22:33+00:00"
 
 
-def test_acquisition_service_builds_raw_records_with_history_metadata() -> None:
-    """Create canonical raw listing records before persistence callbacks are invoked."""
+def test_raw_listing_collector_emits_source_faithful_raw_records() -> None:
+    """Emit scraper-owned raw records before any persistence-specific adaptation."""
+
+    collector = RawListingCollector(
+        listing_page_client=FakeListingPageClient(
+            {
+                "https://example.test/praha?strana=1": "pages:1\nhttps://detail/1",
+            },
+        ),
+        detail_page_client=FakeDetailPageClient(
+            {
+                "https://detail/1": "<html>detail payload</html>",
+            },
+        ),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=RecordingDetailPageParser(),
+        region_slug="praha",
+        scrape_run_id="run-123",
+        capture_raw_page_snapshots=True,
+    )
+
+    collected_records = list(
+        collector.collect_region_records(
+            district_link="https://example.test/praha?strana=",
+            max_pages=1,
+        ),
+    )
+
+    assert len(collected_records) == 1
+    collected_record = collected_records[0]
+    assert collected_record.listing_id == "1"
+    assert collected_record.source_metadata.region == "praha"
+    assert collected_record.source_metadata.listing_page_number == 1
+    assert collected_record.source_metadata.scrape_run_id == "run-123"
+    assert collected_record.source_metadata.parser_version == "sreality-detail-v1"
+    assert collected_record.raw_page_snapshot == "<html>detail payload</html>"
+    assert collected_record.source_payload == {
+        "payload": "<html>detail payload</html>",
+        "sections": [
+            {"label": "Disposition", "value": "2+kk"},
+            {"label": "Area", "value": "58 m2"},
+        ],
+        "has_elevator": True,
+        "note": None,
+    }
+    assert "price_per_square_meter" not in collected_record.to_serializable_dict()
+    json.dumps(collected_record.to_serializable_dict())
+
+
+def test_acquisition_service_persists_emitted_raw_records() -> None:
+    """Persist scraper-emitted raw records without altering their raw payload."""
 
     repository = RecordingRepository()
     service = RawAcquisitionService(
@@ -279,9 +346,6 @@ def test_acquisition_service_builds_raw_records_with_history_metadata() -> None:
     stored_record = repository.records[0]
     assert stored_record.listing_id == "1"
     assert stored_record.source_metadata.region == "praha"
-    assert stored_record.source_metadata.listing_page_number == 1
-    assert stored_record.source_metadata.scrape_run_id == "run-123"
-    assert stored_record.raw_page_snapshot == "<html>detail payload</html>"
     assert stored_record.source_payload == {"payload": "<html>detail payload</html>"}
 
 

@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
-from typing import Any
+from typing import TypeAlias
+
+
+JsonPrimitive: TypeAlias = str | int | float | bool | None
+JsonValue: TypeAlias = JsonPrimitive | list["JsonValue"] | dict[str, "JsonValue"]
 
 
 @dataclass(frozen=True)
@@ -17,7 +21,6 @@ class RawSourceMetadata:
     http_status: int
     parser_version: str
     captured_from: str
-    backend: str | None = None
 
 
 @dataclass(frozen=True)
@@ -27,11 +30,11 @@ class RawListingRecord:
     listing_id: str
     source_url: str
     captured_at_utc: datetime
-    source_payload: dict[str, Any]
+    source_payload: dict[str, JsonValue]
     source_metadata: RawSourceMetadata
     raw_page_snapshot: str | None = None
 
-    def to_serializable_dict(self) -> dict[str, Any]:
+    def to_serializable_dict(self) -> dict[str, JsonValue]:
         """Return a JSON-serializable representation of the record."""
 
         serialized = asdict(self)

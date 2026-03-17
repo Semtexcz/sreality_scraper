@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import re
-from typing import Any
 
 from bs4 import BeautifulSoup as bSoup
+
+from scraperweb.scraper.models import JsonValue
 
 
 def remove_spaces(value: str) -> str:
@@ -52,11 +53,11 @@ class SrealityListingPageParser:
 class SrealityDetailPageParser:
     """Parser for estate detail pages."""
 
-    def parse_raw_payload(self, detail_html: str) -> dict[str, Any]:
+    def parse_raw_payload(self, detail_html: str) -> dict[str, JsonValue]:
         """Extract title and ``dt/dd`` values from a detail page."""
 
         received_data = bSoup(detail_html, "html.parser")
-        dictionary_data: dict[str, Any] = {}
+        dictionary_data: dict[str, JsonValue] = {}
         title = received_data.find("h1")
         dictionary_data["Název"] = clean_string(title.text) if title else ""
 

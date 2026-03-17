@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.0.9] - 2026-03-17
+
+### Added
+
+- added a scraper-owned `RawListingCollector` service that emits `RawListingRecord`
+  contracts before persistence, keeping raw contract construction inside the scraper
+  stage boundary
+
+### Changed
+
+- tightened the raw scraper payload contract to explicit JSON-compatible value types
+  and removed the storage-oriented `backend` field from raw source metadata
+- refactored `RawAcquisitionService` to orchestrate scraper-emitted raw records
+  instead of constructing persistence-shaped records itself
+- expanded unit coverage to prove emitted scraper outputs remain source-faithful,
+  JSON-serializable, and free of downstream normalized or derived fields
+
 ## [1.0.8] - 2026-03-17
 
 ### Changed

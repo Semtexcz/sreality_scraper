@@ -8,10 +8,12 @@ from scraperweb.scraper.parsers import (
     clean_string,
     remove_spaces,
 )
+from scraperweb.scraper.runtime import RawListingCollector
 
 __all__ = [
     "DetailPageClient",
     "ListingPageClient",
+    "RawListingCollector",
     "RawListingRecord",
     "RawSourceMetadata",
     "SrealityDetailPageParser",

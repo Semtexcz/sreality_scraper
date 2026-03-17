@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "scraperweb"
-version = "1.0.8"
+version = "1.0.9"
 description = "Raw Sreality listing scraper with filesystem and MongoDB persistence."
 authors = ["scraperweb contributors"]
 readme = "README.md"
