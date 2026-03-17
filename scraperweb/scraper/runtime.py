@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from itertools import count
 
+from loguru import logger
+
 from scraperweb.scraper.clients import DetailPageClient, ListingPageClient
 from scraperweb.scraper.exceptions import (
     ScraperHttpError,
@@ -48,6 +50,7 @@ class RawListingCollector:
         region_slug: str,
         scrape_run_id: str,
         capture_raw_page_snapshots: bool = False,
+        fail_on_detail_http_error: bool = False,
     ) -> None:
         """Store collaborators used to build scraper-owned raw contracts."""
 
@@ -58,6 +61,7 @@ class RawListingCollector:
         self._region_slug = region_slug
         self._scrape_run_id = scrape_run_id
         self._capture_raw_page_snapshots = capture_raw_page_snapshots
+        self._fail_on_detail_http_error = fail_on_detail_http_error
 
     def collect_region_records(
         self,
@@ -93,10 +97,23 @@ class RawListingCollector:
                 return
 
             for estate_url in new_estate_urls:
-                detail_html = self._fetch_detail_page(
-                    detail_url=estate_url,
-                    page_number=page_number,
-                )
+                try:
+                    detail_html = self._fetch_detail_page(
+                        detail_url=estate_url,
+                        page_number=page_number,
+                    )
+                except ScraperHttpError as error:
+                    if self._fail_on_detail_http_error:
+                        raise
+                    logger.error(
+                        "Skipping listing after scraper HTTP failure for region={} page={} listing_url={} request_url={}: {}",
+                        error.region_slug,
+                        error.listing_page_number,
+                        error.listing_url,
+                        error.request_url,
+                        error.message,
+                    )
+                    continue
                 try:
                     raw_payload = self._detail_page_parser.parse_raw_payload(detail_html)
                 except ScraperMarkupError as error:

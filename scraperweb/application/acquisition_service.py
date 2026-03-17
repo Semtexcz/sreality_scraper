@@ -26,9 +26,11 @@ class RawAcquisitionService:
         region_slug: str,
         scrape_run_id: str | None = None,
         capture_raw_page_snapshots: bool = False,
+        fail_on_http_error: bool = False,
     ) -> None:
         """Store injected collaborators used by the acquisition workflow."""
 
+        self._fail_on_http_error = fail_on_http_error
         self._raw_record_repository = raw_record_repository
         self._raw_listing_collector = RawListingCollector(
             listing_page_client=listing_page_client,
@@ -38,6 +40,7 @@ class RawAcquisitionService:
             region_slug=region_slug,
             scrape_run_id=scrape_run_id or str(uuid4()),
             capture_raw_page_snapshots=capture_raw_page_snapshots,
+            fail_on_detail_http_error=fail_on_http_error,
         )
 
     def collect_for_region(
@@ -68,6 +71,7 @@ class RawAcquisitionService:
                 error.request_url,
                 error.message,
             )
-            raise
+            if self._fail_on_http_error:
+                raise
 
         return tracked_estates

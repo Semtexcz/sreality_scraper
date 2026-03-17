@@ -59,6 +59,7 @@ def test_scrape_command_runs_with_explicit_runtime_options(monkeypatch) -> None:
     assert captured_options["value"].regions == ("praha", "jihomoravsky-kraj")
     assert captured_options["value"].max_pages == 3
     assert captured_options["value"].max_estates == 12
+    assert captured_options["value"].fail_on_http_error is False
     assert captured_options["value"].storage_backend == StorageBackend.FILESYSTEM
     assert captured_options["value"].output_dir == Path("tmp/raw")
 
@@ -82,6 +83,26 @@ def test_scrape_command_defaults_to_global_all_czechia_target(monkeypatch) -> No
     assert "Processed 1 estates." in result.stdout
     assert captured_options["value"].regions == ("all-czechia",)
     assert captured_options["value"].max_pages is None
+    assert captured_options["value"].fail_on_http_error is False
+
+
+def test_scrape_command_supports_fail_fast_http_mode(monkeypatch) -> None:
+    """Pass the debug fail-fast HTTP option through to runtime composition."""
+
+    captured_options = {}
+
+    def fake_run_scraper(options) -> int:
+        """Capture runtime options passed from the CLI."""
+
+        captured_options["value"] = options
+        return 0
+
+    monkeypatch.setattr("scraperweb.cli.run_scraper", fake_run_scraper)
+
+    result = runner.invoke(app, ["scrape", "--fail-on-http-error"])
+
+    assert result.exit_code == 0
+    assert captured_options["value"].fail_on_http_error is True
 
 
 def test_scrape_command_rejects_mongodb_options_for_filesystem_backend() -> None:

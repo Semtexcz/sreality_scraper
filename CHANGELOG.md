@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.7.2] - 2026-03-17
+
+### Added
+
+- added a `--fail-on-http-error` CLI option for debug runs that should stop on
+  the first scraper HTTP failure
+
+### Changed
+
+- changed the default scrape behavior so detail-page HTTP failures are logged and
+  skipped instead of terminating the whole run
+- changed the acquisition flow so scraper HTTP failures are logged by default
+  without crashing the CLI unless fail-fast mode is explicitly enabled
+
 ## [1.7.1] - 2026-03-17
 
 ### Fixed

@@ -100,6 +100,16 @@ class RecordingLogger:
 
         self.calls.append((message, args))
 
+    def debug(self, message: str, *args: Any) -> None:
+        """Ignore debug logs emitted by the production logger surface."""
+
+        del message, args
+
+    def info(self, message: str, *args: Any) -> None:
+        """Ignore info logs emitted by the production logger surface."""
+
+        del message, args
+
 
 class FailingListingPageClient:
     """Raise a configured scraper HTTP error for every listing-page fetch."""
@@ -652,6 +662,7 @@ def test_raw_listing_collector_preserves_detail_page_context_on_response_failure
         detail_page_parser=FakeDetailPageParser(),
         region_slug="praha",
         scrape_run_id="run-response",
+        fail_on_detail_http_error=True,
     )
 
     with pytest.raises(ScraperResponseError) as exc_info:
@@ -665,6 +676,65 @@ def test_raw_listing_collector_preserves_detail_page_context_on_response_failure
     assert exc_info.value.region_slug == "praha"
     assert exc_info.value.listing_page_number == 1
     assert exc_info.value.listing_url == "https://detail/1"
+
+
+def test_raw_listing_collector_skips_failed_detail_pages_by_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Log and skip failed detail pages so later listings still get collected."""
+
+    recording_logger = RecordingLogger()
+    monkeypatch.setattr("scraperweb.scraper.runtime.logger", recording_logger)
+
+    class SelectiveFailingDetailPageClient:
+        """Fail for one configured detail page and succeed for the rest."""
+
+        def fetch(self, url: str) -> str:
+            """Raise for one detail URL and return fake HTML for the next one."""
+
+            if url == "https://detail/1":
+                raise ScraperResponseError(
+                    message="Received non-success HTTP status for 'https://detail/1': 404",
+                    request_url="https://detail/1",
+                    status_code=404,
+                )
+            return "<html>detail 2</html>"
+
+    collector = RawListingCollector(
+        listing_page_client=FakeListingPageClient(
+            {
+                "https://example.test/praha?strana=1": (
+                    "pages:1\nhttps://detail/1\nhttps://detail/2"
+                ),
+            },
+        ),
+        detail_page_client=SelectiveFailingDetailPageClient(),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=FakeDetailPageParser(),
+        region_slug="praha",
+        scrape_run_id="run-skip-detail-error",
+    )
+
+    collected_records = list(
+        collector.collect_region_records(
+            district_link="https://example.test/praha?strana=",
+            max_pages=1,
+        ),
+    )
+
+    assert [record.listing_id for record in collected_records] == ["2"]
+    assert recording_logger.calls == [
+        (
+            "Skipping listing after scraper HTTP failure for region={} page={} listing_url={} request_url={}: {}",
+            (
+                "praha",
+                1,
+                "https://detail/1",
+                "https://detail/1",
+                "Received non-success HTTP status for 'https://detail/1': 404",
+            ),
+        ),
+    ]
 
 
 def test_raw_listing_collector_surfaces_listing_markup_validation_failures() -> None:
@@ -759,6 +829,7 @@ def test_acquisition_service_logs_context_before_propagating_scraper_http_failur
         raw_record_repository=RecordingRepository(),
         region_slug="praha",
         scrape_run_id="run-logging",
+        fail_on_http_error=True,
     )
 
     with pytest.raises(ScraperTransportError):
@@ -783,6 +854,53 @@ def test_acquisition_service_logs_context_before_propagating_scraper_http_failur
     ]
 
 
+def test_acquisition_service_logs_and_returns_when_fail_fast_is_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Log scraper HTTP failures without raising when fail-fast mode is disabled."""
+
+    recording_logger = RecordingLogger()
+    monkeypatch.setattr("scraperweb.application.acquisition_service.logger", recording_logger)
+    service = RawAcquisitionService(
+        listing_page_client=FailingListingPageClient(
+            ScraperTransportError(
+                message="timed out",
+                request_url="https://example.test/praha?strana=1",
+                timeout_seconds=30,
+                attempts=3,
+            ),
+        ),
+        detail_page_client=FakeDetailPageClient({}),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=FakeDetailPageParser(),
+        raw_record_repository=RecordingRepository(),
+        region_slug="praha",
+        scrape_run_id="run-nonfatal-http",
+        fail_on_http_error=False,
+    )
+
+    tracked_estates = service.collect_for_region(
+        district_link="https://example.test/praha?strana=",
+        max_pages=1,
+        max_estates=10,
+        tracked_estates=4,
+    )
+
+    assert tracked_estates == 4
+    assert recording_logger.calls == [
+        (
+            "Scraper HTTP failure for region={} page={} listing_url={} request_url={}: {}",
+            (
+                "praha",
+                1,
+                None,
+                "https://example.test/praha?strana=1",
+                "timed out",
+            ),
+        ),
+    ]
+
+
 def test_build_raw_record_repository_uses_filesystem_backend(tmp_path: Path) -> None:
     """Build the filesystem repository when runtime options select it."""
 
@@ -791,6 +909,7 @@ def test_build_raw_record_repository_uses_filesystem_backend(tmp_path: Path) -> 
             regions=("praha",),
             max_pages=1,
             max_estates=1,
+            fail_on_http_error=False,
             storage_backend=StorageBackend.FILESYSTEM,
             mongodb_uri=None,
             mongodb_database=None,
@@ -819,6 +938,7 @@ def test_build_raw_record_repository_uses_mongodb_backend(monkeypatch: pytest.Mo
             regions=("praha",),
             max_pages=1,
             max_estates=1,
+            fail_on_http_error=False,
             storage_backend=StorageBackend.MONGODB,
             mongodb_uri="mongodb://example.test:27017",
             mongodb_database="RawListings",

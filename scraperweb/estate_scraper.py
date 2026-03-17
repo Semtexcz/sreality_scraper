@@ -69,6 +69,7 @@ def run_scraper(options: RuntimeCliOptions) -> int:
             raw_record_repository=raw_record_repository,
             region_slug=region_slug,
             capture_raw_page_snapshots=False,
+            fail_on_http_error=options.fail_on_http_error,
         )
         district_link = LISTING_URL_BY_REGION[region_slug]
         tracked_estates = acquisition_service.collect_for_region(

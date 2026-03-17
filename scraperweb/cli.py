@@ -40,6 +40,7 @@ def _build_scrape_options(
     regions: list[str] | None,
     max_pages: int | None,
     max_estates: int,
+    fail_on_http_error: bool,
     storage_backend: StorageBackend,
     mongodb_uri: str | None,
     mongodb_database: str | None,
@@ -52,6 +53,7 @@ def _build_scrape_options(
             regions=regions,
             max_pages=max_pages,
             max_estates=max_estates,
+            fail_on_http_error=fail_on_http_error,
             storage_backend=storage_backend,
             mongodb_uri=mongodb_uri,
             mongodb_database=mongodb_database,
@@ -90,6 +92,16 @@ def scrape_command(
             help="Maximum number of raw estate records processed in one run.",
         ),
     ] = DEFAULT_MAX_ESTATES,
+    fail_on_http_error: Annotated[
+        bool,
+        typer.Option(
+            "--fail-on-http-error/--skip-http-errors",
+            help=(
+                "Fail fast on scraper HTTP errors instead of logging the failure "
+                "and continuing when possible."
+            ),
+        ),
+    ] = False,
     storage_backend: Annotated[
         StorageBackend,
         typer.Option(
@@ -126,16 +138,18 @@ def scrape_command(
         regions=region,
         max_pages=max_pages,
         max_estates=max_estates,
+        fail_on_http_error=fail_on_http_error,
         storage_backend=storage_backend,
         mongodb_uri=mongodb_uri,
         mongodb_database=mongodb_database,
         output_dir=output_dir,
     )
     logger.info(
-        "Selected runtime options: regions={}, max_pages={}, max_estates={}, storage_backend={}",
+        "Selected runtime options: regions={}, max_pages={}, max_estates={}, fail_on_http_error={}, storage_backend={}",
         options.regions,
         options.max_pages,
         options.max_estates,
+        options.fail_on_http_error,
         options.storage_backend.value,
     )
     processed_estates = run_scraper(options)

@@ -25,6 +25,7 @@ def test_build_runtime_cli_options_uses_safe_defaults() -> None:
     assert options.regions == (ALL_CZECHIA_REGION,)
     assert options.max_pages is None
     assert options.max_estates == DEFAULT_MAX_ESTATES
+    assert options.fail_on_http_error is False
     assert options.storage_backend == StorageBackend.FILESYSTEM
     assert options.mongodb_uri is None
     assert options.mongodb_database is None
@@ -43,6 +44,14 @@ def test_build_runtime_cli_options_supports_region_and_limits() -> None:
     assert options.regions == ("all-czechia", "jihomoravsky-kraj")
     assert options.max_pages == 3
     assert options.max_estates == 120
+
+
+def test_build_runtime_cli_options_supports_fail_fast_http_mode() -> None:
+    """Allow callers to opt into fail-fast HTTP behavior for debugging runs."""
+
+    options = build_runtime_cli_options(fail_on_http_error=True)
+
+    assert options.fail_on_http_error is True
 
 
 def test_build_runtime_cli_options_supports_explicit_region_only_runs() -> None:

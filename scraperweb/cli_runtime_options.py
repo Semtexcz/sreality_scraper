@@ -49,6 +49,7 @@ class RuntimeCliOptions:
     regions: tuple[str, ...]
     max_pages: int | None
     max_estates: int
+    fail_on_http_error: bool
     storage_backend: StorageBackend
     mongodb_uri: str | None
     mongodb_database: str | None
@@ -60,6 +61,7 @@ def build_runtime_cli_options(
     regions: Sequence[str] | None = None,
     max_pages: int | None = None,
     max_estates: int = DEFAULT_MAX_ESTATES,
+    fail_on_http_error: bool = False,
     storage_backend: StorageBackend = StorageBackend.FILESYSTEM,
     mongodb_uri: str | None = None,
     mongodb_database: str | None = None,
@@ -80,6 +82,7 @@ def build_runtime_cli_options(
         regions=validated_regions,
         max_pages=max_pages,
         max_estates=max_estates,
+        fail_on_http_error=fail_on_http_error,
         storage_backend=storage_backend,
         mongodb_uri=mongodb_uri,
         mongodb_database=mongodb_database,
