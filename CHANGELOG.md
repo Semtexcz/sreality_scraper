@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.3.3] - 2026-03-17
+
+### Added
+
+- added backlog tasks `TASK-016` through `TASK-018` to break the remaining
+  scraper-stage roadmap work into explicit deliverables for HTTP hardening,
+  response and markup validation, and traversal stop-condition redesign
+
 ## [1.3.2] - 2026-03-17
 
 ### Changed
