@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [0.1.3] - 2026-03-17
+
+### Added
+
+- added backlog tasks for the raw-data refactor, storage abstraction, Typer CLI, and refactored test coverage
+
+### Changed
+
+- updated the roadmap to reflect the new implementation sequence for the raw-data-only project goal
+
 ## [0.1.2] - 2026-03-17
 
 ### Changed

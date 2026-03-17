@@ -2,16 +2,17 @@
 
 ## Near Term
 
-- Align the runtime flow with the raw-data-only project scope.
-- Remove or isolate enrichment and normalization steps from the scraper path.
+- Design the target raw-data architecture and refactor boundaries.
+- Refactor the scraper into explicit services and classes with clear responsibilities.
 - Decide whether raw outputs should be stored in MongoDB or on the filesystem.
-- Define the raw artifact format for downloaded listing records.
+- Build a `typer` CLI that exposes the refactored runtime safely.
 
 ## Medium Term
 
 - Add CLI options for limiting regions, pages, or estate counts.
 - Add deterministic fixture-based tests for raw page capture and parsing.
 - Define idempotent storage behavior for repeated downloads of the same listing.
+- Remove legacy enrichment and output flows that do not match the project goal.
 - Replace ad hoc sleep-based throttling with explicit rate-limit handling.
 
 ## Longer Term
