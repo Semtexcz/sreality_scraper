@@ -1,3 +1,5 @@
+"""Legacy scraper runtime with transitional CLI runtime option support."""
+
 from __future__ import annotations
 
 import re
@@ -11,6 +13,7 @@ from bs4 import BeautifulSoup as bSoup
 from geopy.geocoders import Nominatim
 from loguru import logger
 
+from scraperweb.cli_runtime_options import REGION_CHOICES, RuntimeCliOptions, parse_runtime_cli_options
 from scraperweb.config import get_settings
 
 
@@ -50,6 +53,8 @@ DISTRICTS = [
 
 
 def build_runtime() -> tuple[pymongo.database.Database, Nominatim, str]:
+    """Build runtime dependencies used by the current scraper implementation."""
+
     settings = get_settings()
     client = pymongo.MongoClient(settings.mongodb_uri)
     db = client[settings.mongodb_database]
@@ -58,6 +63,8 @@ def build_runtime() -> tuple[pymongo.database.Database, Nominatim, str]:
 
 
 def get_range_of_estates(links_of_estates: str) -> int:
+    """Return available page count inferred from listing pagination links."""
+
     response = req.get(links_of_estates, timeout=30)
     received_data = bSoup(response.text, "html.parser")
     page_numbers: list[int] = []
@@ -72,6 +79,8 @@ def get_range_of_estates(links_of_estates: str) -> int:
 
 
 def get_list_of_estates(links_of_estates: str) -> list[str]:
+    """Return estate detail URLs extracted from a listing page."""
+
     response = req.get(links_of_estates, timeout=30)
     received_data = bSoup(response.text, "html.parser")
     estates: list[str] = []
@@ -83,14 +92,20 @@ def get_list_of_estates(links_of_estates: str) -> list[str]:
 
 
 def remove_spaces(value: str) -> str:
+    """Remove all whitespace from the provided string."""
+
     return re.sub(r"\s+", "", value)
 
 
 def clean_string(value: str) -> str:
+    """Remove zero-width and non-breaking spaces from the provided string."""
+
     return re.sub(r"[\u200b\xa0]", "", value)
 
 
 def get_coordinates(geolocator: Nominatim, address: str) -> tuple[float, float] | None:
+    """Resolve coordinates for an address using Geopy."""
+
     location = geolocator.geocode(address)
     if not location:
         return None
@@ -98,6 +113,8 @@ def get_coordinates(geolocator: Nominatim, address: str) -> tuple[float, float] 
 
 
 def get_final_data_for_estate_to_database(link_of_estate: str) -> dict[str, Any]:
+    """Fetch and parse one estate detail page into a dictionary payload."""
+
     response = req.get(link_of_estate, timeout=30)
     received_data = bSoup(response.text, "html.parser")
     dictionary_data: dict[str, Any] = {}
@@ -119,6 +136,8 @@ def get_final_data_for_estate_to_database(link_of_estate: str) -> dict[str, Any]
 
 
 def get_district_by_postcode(db: pymongo.database.Database, psc: str) -> str:
+    """Resolve district name by postal code from the MongoDB lookup collection."""
+
     collection = db["Okresy"]
     result = collection.find_one({"psc": psc})
     if result:
@@ -132,6 +151,8 @@ def enrich_property_location(
     property_data: dict[str, Any],
     district_name: str,
 ) -> None:
+    """Add derived address and location fields to the scraped property payload."""
+
     address_of_property = property_data.get("Název", "")
     parts = address_of_property.split("²")
 
@@ -182,6 +203,8 @@ def process_estate(
     district_index: int,
     estate_url: str,
 ) -> dict[str, Any]:
+    """Process one estate URL and submit its transformed payload to the API."""
+
     property_data = get_final_data_for_estate_to_database(estate_url)
 
     if "Celková cena:" not in property_data:
@@ -213,23 +236,53 @@ def process_estate(
     return property_data
 
 
-def run_scraper() -> int:
+def _resolve_region_indices(regions: tuple[str, ...]) -> list[int]:
+    """Resolve selected region slugs to district indices used by current runtime."""
+
+    region_index_by_slug = {slug: index for index, slug in enumerate(REGION_CHOICES)}
+    return [region_index_by_slug[slug] for slug in regions]
+
+
+def run_scraper(options: RuntimeCliOptions) -> int:
+    """Run the scraper with runtime limits and region selection from CLI options."""
+
     db, geolocator, api_url = build_runtime()
     tracked_estates = 0
 
-    for district_index, district_link in enumerate(LINKS_CZ):
+    for district_index in _resolve_region_indices(options.regions):
+        district_link = LINKS_CZ[district_index]
         listing_range = get_range_of_estates(f"{district_link}1")
-        for page_number in range(1, listing_range + 1):
+        max_pages = min(listing_range, options.max_pages)
+        for page_number in range(1, max_pages + 1):
             current_link = f"{district_link}{page_number}"
             estates = get_list_of_estates(current_link)
             for estate_url in estates:
                 process_estate(db, geolocator, api_url, district_index, estate_url)
                 tracked_estates += 1
                 logger.debug(tracked_estates)
+                if tracked_estates >= options.max_estates:
+                    logger.info(f"Reached max estate limit: {options.max_estates}.")
+                    logger.info(f"Processed {tracked_estates} estates.")
+                    return tracked_estates
 
     logger.info(f"Processed {tracked_estates} estates.")
     return tracked_estates
 
 
 def main() -> None:
-    run_scraper()
+    """Run the scraper entrypoint using parsed command-line runtime options."""
+
+    options = parse_runtime_cli_options()
+    logger.info(
+        "Selected runtime options: regions={}, max_pages={}, max_estates={}, storage_backend={}",
+        options.regions,
+        options.max_pages,
+        options.max_estates,
+        options.storage_backend.value,
+    )
+    if options.storage_backend.value != "filesystem":
+        logger.warning(
+            "Storage backend selection is currently a CLI contract only. "
+            "Backend-specific persistence arrives in TASK-006.",
+        )
+    run_scraper(options)

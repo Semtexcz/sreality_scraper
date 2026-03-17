@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [0.1.6] - 2026-03-17
+
+### Added
+
+- added a dedicated `scraperweb.cli_runtime_options` module that defines runtime CLI options for region selection, page limits, estate limits, and storage backend selection
+- added parser validation for backend-specific option constraints to keep the future Typer CLI contract explicit and testable
+- added deterministic tests for runtime option defaults, limit parsing, and backend option compatibility checks
+
+### Changed
+
+- updated `scraperweb.estate_scraper` entrypoint to parse and apply region/page/estate runtime limits
+- documented required, optional, and mutually constrained runtime options in `README.md`
+
 ## [0.1.5] - 2026-03-17
 
 ### Added

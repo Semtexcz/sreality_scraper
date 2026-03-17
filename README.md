@@ -48,3 +48,34 @@ implementation:
 These settings reflect the current codebase state, not the final target architecture.
 The intended direction is to keep only the configuration required to fetch and store
 raw data.
+
+## Runtime CLI Options
+
+The `scraperweb` CLI now defines runtime options that are intentionally compatible
+with the future Typer migration.
+
+Required options:
+
+- none (safe defaults are provided for development runs)
+
+Optional options:
+
+- `--region <slug>` (repeatable): limit scraping to specific regions
+- `--max-pages <int>`: max listing pages per selected region (default `1`)
+- `--max-estates <int>`: max estates in one run (default `50`)
+- `--storage-backend <filesystem|mongodb>`: target storage backend (default `filesystem`)
+- `--output-dir <path>`: filesystem output root (default `data/raw`)
+- `--mongodb-uri <uri>`: MongoDB URI for MongoDB backend
+- `--mongodb-database <name>`: MongoDB database for MongoDB backend
+
+Mutually exclusive / constrained option rules:
+
+- `--mongodb-uri` and `--mongodb-database` are allowed only with
+  `--storage-backend mongodb`
+- `--output-dir` custom values are allowed only with
+  `--storage-backend filesystem`
+
+Note:
+
+- Storage backend selection is currently a validated CLI contract.
+  Backend-specific persistence wiring is planned in `TASK-006`.

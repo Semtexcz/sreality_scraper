@@ -1,6 +1,6 @@
 ---
 task: TASK-003
-status: "backlog"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Define runtime options for the future Typer CLI
 
 Task: TASK-003
-Status: backlog
+Status: done
 Priority: P1
 Type: feature
 Author:
@@ -23,10 +23,10 @@ that fits the raw-data-only scope and the planned `typer` migration.
 
 ## Definition of Done
 
-- [ ] Define the supported runtime options for scraper execution, including region selection, page limits, and estate count limits.
-- [ ] Define how storage backend selection should be exposed through the CLI.
-- [ ] Document which options are required, optional, or mutually exclusive.
-- [ ] Ensure the option design can be implemented cleanly in the Typer CLI planned in `TASK-007`.
+- [x] Define the supported runtime options for scraper execution, including region selection, page limits, and estate count limits.
+- [x] Define how storage backend selection should be exposed through the CLI.
+- [x] Document which options are required, optional, or mutually exclusive.
+- [x] Ensure the option design can be implemented cleanly in the Typer CLI planned in `TASK-007`.
 
 ## Notes
 
