@@ -1,6 +1,6 @@
 ---
 task: TASK-005
-status: "backlog"
+status: "done"
 priority: P1
 type: refactor
 ---
@@ -8,7 +8,7 @@ type: refactor
 # Refactor the scraper into explicit services and classes
 
 Task: TASK-005
-Status: backlog
+Status: done
 Priority: P1
 Type: refactor
 Author:
@@ -23,12 +23,12 @@ prevents clean separation between acquisition, parsing, and persistence concerns
 
 ## Definition of Done
 
-- [ ] Extract HTTP fetching into dedicated client classes.
-- [ ] Extract listing-page and detail-page parsing into dedicated parser classes.
-- [ ] Introduce an orchestration service that coordinates discovery and raw record collection.
-- [ ] Remove direct persistence and delivery side effects from parsing logic.
-- [ ] Ensure new modules, classes, and functions include docstrings and type hints.
-- [ ] Preserve behavior needed for raw data acquisition while preparing the codebase for storage abstraction and CLI integration.
+- [x] Extract HTTP fetching into dedicated client classes.
+- [x] Extract listing-page and detail-page parsing into dedicated parser classes.
+- [x] Introduce an orchestration service that coordinates discovery and raw record collection.
+- [x] Remove direct persistence and delivery side effects from parsing logic.
+- [x] Ensure new modules, classes, and functions include docstrings and type hints.
+- [x] Preserve behavior needed for raw data acquisition while preparing the codebase for storage abstraction and CLI integration.
 
 ## Notes
 

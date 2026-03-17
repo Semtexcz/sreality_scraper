@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [0.1.8] - 2026-03-17
+
+### Added
+
+- added `scraperweb.scraping.clients` with dedicated HTTP client classes for listing and detail page retrieval
+- added `scraperweb.scraping.parsers` with dedicated listing-page and detail-page parser classes
+- added `scraperweb.application.acquisition_service.RawAcquisitionService` for explicit orchestration of discovery and detail record collection
+
+### Changed
+
+- refactored `scraperweb.estate_scraper` to compose runtime behavior from injected services instead of a single procedural flow
+- moved record delivery side effects behind `EstateRecordProcessor`, keeping parser classes side-effect free
+- preserved compatibility helper functions (`get_range_of_estates`, `get_list_of_estates`, `get_final_data_for_estate_to_database`) by delegating them to the new classes
+
 ## [0.1.7] - 2026-03-17
 
 ### Added

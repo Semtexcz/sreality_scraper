@@ -1,20 +1,26 @@
-"""Legacy scraper runtime with transitional CLI runtime option support."""
+"""Scraper runtime composed from explicit clients, parsers, and services."""
 
 from __future__ import annotations
 
-import re
 import time
 from datetime import datetime
 from typing import Any
 
 import pymongo
 import requests as req
-from bs4 import BeautifulSoup as bSoup
 from geopy.geocoders import Nominatim
 from loguru import logger
 
+from scraperweb.application.acquisition_service import RawAcquisitionService
 from scraperweb.cli_runtime_options import REGION_CHOICES, RuntimeCliOptions, parse_runtime_cli_options
 from scraperweb.config import get_settings
+from scraperweb.scraping.clients import DetailPageClient, ListingPageClient, SrealityHttpClient
+from scraperweb.scraping.parsers import (
+    SrealityDetailPageParser,
+    SrealityListingPageParser,
+    clean_string as parser_clean_string,
+    remove_spaces as parser_remove_spaces,
+)
 
 
 LINKS_CZ = [
@@ -52,6 +58,56 @@ DISTRICTS = [
 ]
 
 
+class EstateRecordProcessor:
+    """Process parsed estate records and deliver payloads to the current API endpoint."""
+
+    def __init__(
+        self,
+        db: pymongo.database.Database,
+        geolocator: Nominatim,
+        api_url: str,
+        http_client: SrealityHttpClient,
+    ) -> None:
+        """Store runtime collaborators for record processing and delivery."""
+
+        self._db = db
+        self._geolocator = geolocator
+        self._api_url = api_url
+        self._http_client = http_client
+
+    def handle_record(self, district_index: int, estate_url: str, property_data: dict[str, Any]) -> None:
+        """Normalize and submit one parsed estate payload."""
+
+        if "Celková cena:" not in property_data:
+            property_data["Celková cena:"] = "Cenanavyžádání"
+        else:
+            property_data["Celková cena:"] = parser_remove_spaces(
+                property_data["Celková cena:"],
+            ).replace("Kč", "")
+
+        property_data["Čas"] = str(datetime.now())
+        property_data["ID nemovitosti"] = estate_url.split("/")[-1]
+
+        enrich_property_location(self._db, self._geolocator, property_data, DISTRICTS[district_index])
+
+        building_state = property_data.get("Stavba:", "")
+        property_data["Typ stavby"] = building_state.split(",")[0] if building_state else ""
+
+        parts = property_data.get("Název", "").split(" ")
+        if len(parts) > 3:
+            property_data["Velikost bytu"] = parts[3].split("²")[0].replace("m", "")
+        else:
+            property_data["Velikost bytu"] = ""
+
+        payload = {
+            "collection_name": DISTRICTS[district_index],
+            "data_of_properties": property_data,
+        }
+        logger.debug(f"Payload:{payload}")
+        self._http_client.post_json(self._api_url, payload)
+        logger.debug(property_data)
+
+
 def build_runtime() -> tuple[pymongo.database.Database, Nominatim, str]:
     """Build runtime dependencies used by the current scraper implementation."""
 
@@ -65,42 +121,33 @@ def build_runtime() -> tuple[pymongo.database.Database, Nominatim, str]:
 def get_range_of_estates(links_of_estates: str) -> int:
     """Return available page count inferred from listing pagination links."""
 
-    response = req.get(links_of_estates, timeout=30)
-    received_data = bSoup(response.text, "html.parser")
-    page_numbers: list[int] = []
-    for estate in received_data.find_all("a"):
-        href = estate.get("href")
-        if href and "strana" in href and "=" in href:
-            try:
-                page_numbers.append(int(href.split("=")[1]))
-            except ValueError:
-                continue
-    return (max(page_numbers) if page_numbers else 1) + 1
+    http_client = SrealityHttpClient(http_module=req)
+    listing_client = ListingPageClient(http_client)
+    parser = SrealityListingPageParser()
+    listing_html = listing_client.fetch(links_of_estates)
+    return parser.parse_range_of_estates(listing_html)
 
 
 def get_list_of_estates(links_of_estates: str) -> list[str]:
     """Return estate detail URLs extracted from a listing page."""
 
-    response = req.get(links_of_estates, timeout=30)
-    received_data = bSoup(response.text, "html.parser")
-    estates: list[str] = []
-    for estate in received_data.find_all("a"):
-        href = estate.get("href")
-        if href and "detail" in href:
-            estates.append(f"https://www.sreality.cz{href}")
-    return estates
+    http_client = SrealityHttpClient(http_module=req)
+    listing_client = ListingPageClient(http_client)
+    parser = SrealityListingPageParser()
+    listing_html = listing_client.fetch(links_of_estates)
+    return parser.parse_estate_urls(listing_html)
 
 
 def remove_spaces(value: str) -> str:
     """Remove all whitespace from the provided string."""
 
-    return re.sub(r"\s+", "", value)
+    return parser_remove_spaces(value)
 
 
 def clean_string(value: str) -> str:
     """Remove zero-width and non-breaking spaces from the provided string."""
 
-    return re.sub(r"[\u200b\xa0]", "", value)
+    return parser_clean_string(value)
 
 
 def get_coordinates(geolocator: Nominatim, address: str) -> tuple[float, float] | None:
@@ -115,24 +162,11 @@ def get_coordinates(geolocator: Nominatim, address: str) -> tuple[float, float] 
 def get_final_data_for_estate_to_database(link_of_estate: str) -> dict[str, Any]:
     """Fetch and parse one estate detail page into a dictionary payload."""
 
-    response = req.get(link_of_estate, timeout=30)
-    received_data = bSoup(response.text, "html.parser")
-    dictionary_data: dict[str, Any] = {}
-    title = received_data.find("h1")
-    dictionary_data["Název"] = clean_string(title.text) if title else ""
-
-    dt_elements = received_data.find_all("dt")
-    dd_elements = received_data.find_all("dd")
-
-    for dt, dd in zip(dt_elements, dd_elements):
-        term = dt.get_text(strip=True)
-        description = dd.get_text(strip=True)
-        sub_items = [div.get_text(strip=True) for div in dd.find_all("div")]
-        if sub_items:
-            description = ", ".join(sub_items)
-        dictionary_data[term] = clean_string(description)
-
-    return dictionary_data
+    http_client = SrealityHttpClient(http_module=req)
+    detail_client = DetailPageClient(http_client)
+    parser = SrealityDetailPageParser()
+    detail_html = detail_client.fetch(link_of_estate)
+    return parser.parse_raw_payload(detail_html)
 
 
 def get_district_by_postcode(db: pymongo.database.Database, psc: str) -> str:
@@ -206,33 +240,13 @@ def process_estate(
     """Process one estate URL and submit its transformed payload to the API."""
 
     property_data = get_final_data_for_estate_to_database(estate_url)
-
-    if "Celková cena:" not in property_data:
-        property_data["Celková cena:"] = "Cenanavyžádání"
-    else:
-        property_data["Celková cena:"] = remove_spaces(property_data["Celková cena:"]).replace("Kč", "")
-
-    property_data["Čas"] = str(datetime.now())
-    property_data["ID nemovitosti"] = estate_url.split("/")[-1]
-
-    enrich_property_location(db, geolocator, property_data, DISTRICTS[district_index])
-
-    building_state = property_data.get("Stavba:", "")
-    property_data["Typ stavby"] = building_state.split(",")[0] if building_state else ""
-
-    parts = property_data.get("Název", "").split(" ")
-    if len(parts) > 3:
-        property_data["Velikost bytu"] = parts[3].split("²")[0].replace("m", "")
-    else:
-        property_data["Velikost bytu"] = ""
-
-    payload = {
-        "collection_name": DISTRICTS[district_index],
-        "data_of_properties": property_data,
-    }
-    logger.debug(f"Payload:{payload}")
-    req.post(api_url, json=payload, timeout=30)
-    logger.debug(property_data)
+    processor = EstateRecordProcessor(
+        db=db,
+        geolocator=geolocator,
+        api_url=api_url,
+        http_client=SrealityHttpClient(http_module=req),
+    )
+    processor.handle_record(district_index, estate_url, property_data)
     return property_data
 
 
@@ -249,21 +263,36 @@ def run_scraper(options: RuntimeCliOptions) -> int:
     db, geolocator, api_url = build_runtime()
     tracked_estates = 0
 
+    http_client = SrealityHttpClient(http_module=req)
+    record_processor = EstateRecordProcessor(
+        db=db,
+        geolocator=geolocator,
+        api_url=api_url,
+        http_client=http_client,
+    )
+    acquisition_service = RawAcquisitionService(
+        listing_page_client=ListingPageClient(http_client),
+        detail_page_client=DetailPageClient(http_client),
+        listing_page_parser=SrealityListingPageParser(),
+        detail_page_parser=SrealityDetailPageParser(),
+        on_record_collected=record_processor.handle_record,
+    )
+
     for district_index in _resolve_region_indices(options.regions):
         district_link = LINKS_CZ[district_index]
-        listing_range = get_range_of_estates(f"{district_link}1")
-        max_pages = min(listing_range, options.max_pages)
-        for page_number in range(1, max_pages + 1):
-            current_link = f"{district_link}{page_number}"
-            estates = get_list_of_estates(current_link)
-            for estate_url in estates:
-                process_estate(db, geolocator, api_url, district_index, estate_url)
-                tracked_estates += 1
-                logger.debug(tracked_estates)
-                if tracked_estates >= options.max_estates:
-                    logger.info(f"Reached max estate limit: {options.max_estates}.")
-                    logger.info(f"Processed {tracked_estates} estates.")
-                    return tracked_estates
+        tracked_estates = acquisition_service.collect_for_region(
+            district_index=district_index,
+            district_link=district_link,
+            max_pages=options.max_pages,
+            max_estates=options.max_estates,
+            tracked_estates=tracked_estates,
+        )
+        logger.debug(tracked_estates)
+
+        if tracked_estates >= options.max_estates:
+            logger.info(f"Reached max estate limit: {options.max_estates}.")
+            logger.info(f"Processed {tracked_estates} estates.")
+            return tracked_estates
 
     logger.info(f"Processed {tracked_estates} estates.")
     return tracked_estates
