@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [0.1.4] - 2026-03-17
+
+### Changed
+
+- rewrote backlog tasks into a structured front-matter format with problem statements and definitions of done
+- documented the new task template in `project/README.md`
+
 ## [0.1.3] - 2026-03-17
 
 ### Added

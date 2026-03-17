@@ -1,27 +1,37 @@
-# Task 007: Build Typer CLI
+---
+task: TASK-007
+status: "backlog"
+priority: P1
+type: feature
+---
 
-## Status
+# Build a Typer-based CLI for scraper operations
 
-backlog
+Task: TASK-007
+Status: backlog
+Priority: P1
+Type: feature
+Author:
+Created: 2026-03-17
+Related: TASK-003, TASK-004, TASK-006, TASK-009
 
-## Goal
+## Problem
 
-Provide a clean operator-facing CLI built with `typer`.
+The project currently lacks a modern, explicit, and testable command-line interface.
+The new runtime should be exposed through `typer`, with commands and options that map
+cleanly to application services rather than embedding scraper logic in script wrappers.
 
-## Scope
+## Definition of Done
 
-- add `typer` as the command-line framework
-- create a top-level CLI application with explicit commands for scraping and auxiliary data loading
-- support runtime options such as region selection, page limits, item limits, and storage backend selection
-- provide help text and argument validation that reflect the raw-data-only scope
-- replace or retire legacy entrypoints that no longer fit the target interface
+- [ ] Add `typer` as the CLI framework dependency.
+- [ ] Create a top-level CLI application with commands for scraping and auxiliary data-loading flows that are still required.
+- [ ] Implement runtime options for region selection, page limits, estate count limits, and storage backend selection.
+- [ ] Ensure CLI help text and validation reflect the raw-data-only scope.
+- [ ] Replace or retire legacy entrypoints that no longer match the target interface.
+- [ ] Keep command handlers thin and delegate work to application services.
 
 ## Notes
 
-The CLI should be thin and delegate work to application services. Command functions should parse input, construct runtime dependencies, and call the orchestrating layer without embedding scraping logic.
-
-## Verification
-
-- `poetry run scraperweb --help` exposes the new Typer-based interface
-- scraper commands accept bounded runtime options
-- invalid CLI input returns clear validation errors
+- CLI commands should construct runtime dependencies and call orchestrating services.
+- Avoid duplicating option parsing logic across commands.
+- The CLI surface should be stable enough to support future automation.

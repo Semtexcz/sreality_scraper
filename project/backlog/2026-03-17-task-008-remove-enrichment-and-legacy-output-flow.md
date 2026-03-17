@@ -1,27 +1,36 @@
-# Task 008: Remove Enrichment and Legacy Output Flow
+---
+task: TASK-008
+status: "backlog"
+priority: P1
+type: refactor
+---
 
-## Status
+# Remove enrichment and legacy output behavior from the scraper path
 
-backlog
+Task: TASK-008
+Status: backlog
+Priority: P1
+Type: refactor
+Author:
+Created: 2026-03-17
+Related: TASK-004, TASK-005, TASK-006, TASK-007, TASK-009
 
-## Goal
+## Problem
 
-Eliminate behavior that conflicts with the raw-data acquisition objective.
+The current scraper runtime still performs geocoding, generates derived fields, and
+posts data to an external API endpoint. Those behaviors conflict with the project goal
+of capturing and storing raw source data only.
 
-## Scope
+## Definition of Done
 
-- remove geocoding from the scraper runtime path
-- remove API posting from the scraper runtime path
-- remove or isolate derived-field generation that mutates source records
-- simplify configuration to the values required for fetching and raw persistence only
-- update documentation to reflect the final runtime behavior after implementation
+- [ ] Remove geocoding from the scraper runtime path.
+- [ ] Remove API posting from the scraper runtime path.
+- [ ] Remove or isolate derived-field generation that mutates captured source records.
+- [ ] Simplify configuration so it only includes values required for fetching and raw persistence.
+- [ ] Update runtime documentation to reflect the final raw-data-only behavior.
 
 ## Notes
 
-This task should be executed after the new service and storage layers exist. The result should be a scraper that downloads and stores source data, not a pipeline that enriches or transforms it.
-
-## Verification
-
-- runtime execution no longer depends on geocoding or external API delivery
-- stored records match the captured source content
-- obsolete configuration variables are removed or clearly marked as deprecated
+- Execute this task after the new service and storage layers exist.
+- Prefer deletion of obsolete behavior over retaining dormant branches unless backward compatibility is explicitly required.
+- Any deprecated configuration should be clearly documented during the transition.

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "scraperweb"
-version = "0.1.3"
+version = "0.1.4"
 description = "Sreality scraper and helper loaders for Czech real estate datasets."
 authors = ["scraperweb contributors"]
 readme = "README.md"

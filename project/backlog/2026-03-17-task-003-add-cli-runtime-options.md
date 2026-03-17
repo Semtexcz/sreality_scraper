@@ -1,20 +1,34 @@
-# Task 003: Add CLI Runtime Options
+---
+task: TASK-003
+status: "backlog"
+priority: P1
+type: feature
+---
 
-## Status
+# Define runtime options for the future Typer CLI
 
-backlog
+Task: TASK-003
+Status: backlog
+Priority: P1
+Type: feature
+Author:
+Created: 2026-03-17
+Related: TASK-004, TASK-007
 
-## Goal
+## Problem
 
-Improve operator control over scraper execution.
+The scraper does not yet expose a coherent operator-facing command-line interface.
+Runtime limits and selection controls are needed, but they should be defined in a way
+that fits the raw-data-only scope and the planned `typer` migration.
 
-## Scope
+## Definition of Done
 
-- allow selecting one or more regions
-- allow limiting page count
-- allow limiting processed estate count for smoke runs
-- expose options via a stable CLI surface
+- [ ] Define the supported runtime options for scraper execution, including region selection, page limits, and estate count limits.
+- [ ] Define how storage backend selection should be exposed through the CLI.
+- [ ] Document which options are required, optional, or mutually exclusive.
+- [ ] Ensure the option design can be implemented cleanly in the Typer CLI planned in `TASK-007`.
 
 ## Notes
 
-This will make the project easier to test and safer to run during development.
+- Avoid options that expose legacy enrichment or API-delivery behavior.
+- Prefer names and defaults that are explicit and safe for development runs.

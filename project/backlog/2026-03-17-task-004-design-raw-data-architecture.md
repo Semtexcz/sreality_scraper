@@ -1,25 +1,37 @@
-# Task 004: Design Raw Data Architecture
+---
+task: TASK-004
+status: "backlog"
+priority: P1
+type: design
+---
 
-## Status
+# Design the target architecture for raw data acquisition
 
-backlog
+Task: TASK-004
+Status: backlog
+Priority: P1
+Type: design
+Author:
+Created: 2026-03-17
+Related: TASK-003, TASK-005, TASK-006, TASK-007, TASK-008
 
-## Goal
+## Problem
 
-Define a target architecture that matches the raw-data-only scope and creates a safe base for the refactor.
+The current implementation mixes HTTP access, HTML parsing, geocoding, MongoDB access,
+and API submission in one procedural runtime path. That structure does not match the
+new project goal of downloading and persisting raw data from `sreality.cz` without
+further processing.
 
-## Scope
+## Definition of Done
 
-- define clear application layers for CLI, orchestration, scraping, parsing, and persistence
-- identify class responsibilities and boundaries according to SOLID principles
-- define the raw record contract that must be preserved without enrichment or normalization
-- document which current modules are transitional and should be retired after the refactor
+- [ ] Define the target application layers for CLI, orchestration, scraping, parsing, and persistence.
+- [ ] Define the core classes and interfaces with responsibilities aligned to SOLID principles.
+- [ ] Define the raw record contract and explicitly exclude enrichment, normalization, and derived fields from it.
+- [ ] Identify which existing modules are transitional and should be removed or replaced during the refactor.
+- [ ] Update architecture documentation to reflect the approved target structure.
 
 ## Notes
 
-The current implementation mixes HTTP access, HTML parsing, geocoding, MongoDB access, and API submission in one procedural flow. This task should produce the architectural target that guides the remaining implementation tasks and reduces refactor risk.
-
-## Verification
-
-- architecture documentation describes module boundaries and core classes
-- the raw data contract is documented and does not include derived fields
+- Keep dependencies flowing inward toward stable abstractions.
+- Prefer explicit constructor-injected dependencies over hidden global runtime state.
+- The output of this task should guide implementation tasks rather than introduce code by itself.

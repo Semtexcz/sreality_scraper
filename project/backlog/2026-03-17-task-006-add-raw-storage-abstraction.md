@@ -1,27 +1,37 @@
-# Task 006: Add Raw Storage Abstraction
+---
+task: TASK-006
+status: "backlog"
+priority: P1
+type: feature
+---
 
-## Status
+# Add a storage abstraction for raw scraper outputs
 
-backlog
+Task: TASK-006
+Status: backlog
+Priority: P1
+Type: feature
+Author:
+Created: 2026-03-17
+Related: TASK-004, TASK-005, TASK-007, TASK-008, TASK-009
 
-## Goal
+## Problem
 
-Introduce a persistence abstraction for raw records and provide interchangeable storage backends.
+The project has not yet decided whether raw scraper outputs should be stored in
+MongoDB or on the filesystem. Without a storage abstraction, that decision leaks into
+the scraper runtime and forces persistence choices into unrelated parts of the code.
 
-## Scope
+## Definition of Done
 
-- define a storage interface for saving raw listing records and optional raw page snapshots
-- implement a filesystem-based storage adapter
-- implement a MongoDB-based storage adapter
-- make storage backend selection configurable without changing scraper code
-- document tradeoffs and operational expectations for both backends
+- [ ] Define a storage interface for persisting raw listing records and optional raw page snapshots.
+- [ ] Implement a filesystem storage adapter.
+- [ ] Implement a MongoDB storage adapter.
+- [ ] Make storage backend selection configurable without changing scraper orchestration code.
+- [ ] Document operational tradeoffs for both storage backends.
+- [ ] Ensure stored records remain raw and are not enriched or normalized before persistence.
 
 ## Notes
 
-The scraper should not know whether records are stored in files or in MongoDB. This task is the key separation point that allows the project to evaluate both persistence strategies without rewriting the core flow.
-
-## Verification
-
-- the scraper can persist raw records through either backend
-- storage-specific behavior is covered by deterministic tests
-- no enrichment or normalization is introduced in stored records
+- The scraper should depend on a storage abstraction, not on MongoDB-specific APIs.
+- Storage adapters should own serialization and backend-specific write details.
+- Keep record identity and idempotency concerns explicit rather than implicit.
