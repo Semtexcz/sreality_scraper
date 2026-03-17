@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.0.5] - 2026-03-17
+
+### Changed
+
+- refined backlog tasks `TASK-010` through `TASK-015` with additive architectural guardrails for typed stage contracts, module ownership, dependency direction, stage version fields, raw-contract serialization, normalization idempotence, and contract-only pipeline handoffs
+
 ## [1.0.4] - 2026-03-17
 
 ### Added

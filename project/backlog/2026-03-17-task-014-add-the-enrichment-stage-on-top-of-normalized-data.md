@@ -24,13 +24,16 @@ either pollute earlier modules or produce inconsistent inputs for modeling work.
 ## Definition of Done
 
 - [ ] Define the enriched record model that wraps or extends normalized data with derived features.
+- [ ] Implement the contract as a typed Python model.
+- [ ] Place the contract/component in the appropriate module boundary.
 - [ ] Implement an enrichment component that accepts normalized records only.
 - [ ] Keep the initial feature set explicit, deterministic, and documented.
+- [ ] Include an `enrichment_version` field in the enriched contract.
 - [ ] Preserve access to the underlying normalized values for debugging and traceability.
 - [ ] Add focused tests proving enrichment is isolated from scraping and normalization behavior.
 
 ## Notes
 
-- Enrichment must not fetch external data or introduce network-dependent behavior.
+- Avoid network-dependent enrichment in V1 unless explicitly required.
 - Favor a small starter feature set over a broad speculative schema.
 - The output of this stage is the only valid input for modeling.

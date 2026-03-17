@@ -27,6 +27,10 @@ normalization, enrichment, and modeling responsibilities.
 - [ ] Introduce package-level module boundaries for `scraper`, `normalization`, `enrichment`, and `modeling` within the existing `scraperweb` project.
 - [ ] Move or alias current raw-acquisition components into the scraper boundary without changing runtime behavior.
 - [ ] Keep the CLI and current raw persistence path working after the package reorganization.
+- [ ] Enforce that `scraper` does not depend on `normalization`, `enrichment`, or `modeling`.
+- [ ] Enforce that `normalization` depends only on scraper contracts.
+- [ ] Enforce that `enrichment` depends only on normalization contracts.
+- [ ] Enforce that `modeling` depends only on enrichment contracts.
 - [ ] Mark any remaining transitional modules that still need follow-up cleanup.
 - [ ] Ensure new modules and package entrypoints include docstrings and type hints where applicable.
 

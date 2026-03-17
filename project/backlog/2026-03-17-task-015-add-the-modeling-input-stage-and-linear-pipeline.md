@@ -25,8 +25,12 @@ in-process linear flow.
 ## Definition of Done
 
 - [ ] Define the model-ready record or dataset contract consumed by the modeling boundary.
+- [ ] Implement the contract as a typed Python model.
+- [ ] Place the contract/component in the appropriate module boundary.
 - [ ] Implement a modeling input component that accepts enriched records only.
 - [ ] Introduce a simple in-process pipeline flow that composes scraper, normalization, enrichment, and modeling in sequence.
+- [ ] Include a `model_version` field in the model-ready contract when a versioned model contract is introduced.
+- [ ] Ensure each stage communicates only via explicit contracts, not shared mutable state.
 - [ ] Ensure the pipeline remains optional and does not break the existing raw-only acquisition path.
 - [ ] Add regression tests for the stage handoff contracts across the full linear pipeline.
 

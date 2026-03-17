@@ -28,6 +28,8 @@ services, repositories, brokers, or orchestration platforms.
 - [ ] Document the target module boundaries for `scraper`, `normalization`, `enrichment`, and `modeling` inside the existing Python project.
 - [ ] Define the one-way dependency flow from scraper to normalization to enrichment to modeling.
 - [ ] Define the record contract expected at each stage boundary.
+- [ ] Require each stage boundary contract to be implemented as a typed Python model.
+- [ ] Require each contract and component to live in the appropriate module boundary.
 - [ ] Explicitly state that the scraper collects raw facts only, normalization produces stable structured data, enrichment computes derived features, and modeling consumes enriched data only.
 - [ ] Update the architecture and module documentation so later implementation tasks can execute against one approved design.
 

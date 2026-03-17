@@ -25,8 +25,12 @@ only and remain independent from normalization, enrichment, and modeling concern
 ## Definition of Done
 
 - [ ] Define a raw scraper output model owned by the scraper boundary.
+- [ ] Implement the contract as a typed Python model.
+- [ ] Place the contract/component in the appropriate module boundary.
 - [ ] Refactor the scraper runtime so it emits raw records before any downstream transformation or storage-specific adaptation.
 - [ ] Keep source provenance needed for later stages, including listing identity and capture metadata.
+- [ ] Include a `parser_version` field in the raw contract.
+- [ ] Ensure the raw contract is JSON-serializable.
 - [ ] Ensure the raw scraper contract excludes normalized fields, enriched features, and model-oriented attributes.
 - [ ] Update or add tests proving the scraper output remains raw and source-faithful.
 
