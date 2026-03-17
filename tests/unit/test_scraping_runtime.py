@@ -12,7 +12,11 @@ from scraperweb.scraper.clients import (
     ListingPageClient,
     SrealityHttpClient,
 )
-from scraperweb.scraper.exceptions import ScraperResponseError, ScraperTransportError
+from scraperweb.scraper.exceptions import (
+    ScraperMarkupError,
+    ScraperResponseError,
+    ScraperTransportError,
+)
 from scraperweb.scraper.parsers import SrealityDetailPageParser, SrealityListingPageParser
 
 
@@ -181,6 +185,20 @@ def test_listing_parser_reads_representative_fixture(
     ]
 
 
+def test_listing_parser_rejects_fixture_without_detail_links(
+    html_fixture_loader: Callable[[str], str],
+) -> None:
+    """Reject listing HTML that no longer exposes any detail-page anchors."""
+
+    listing_html = html_fixture_loader("listing_page_without_detail_links.html")
+    parser = SrealityListingPageParser()
+
+    with pytest.raises(ScraperMarkupError) as exc_info:
+        parser.parse_estate_urls(listing_html)
+
+    assert "expected at least one detail link" in exc_info.value.message
+
+
 def test_detail_parser_reads_representative_fixture(
     html_fixture_loader: Callable[[str], str],
 ) -> None:
@@ -196,3 +214,31 @@ def test_detail_parser_reads_representative_fixture(
         "Stavba:": "Cihla, Velmi dobrý",
         "Energetická náročnost:": "B",
     }
+
+
+def test_detail_parser_rejects_fixture_without_title(
+    html_fixture_loader: Callable[[str], str],
+) -> None:
+    """Reject detail HTML when the title anchor disappears."""
+
+    detail_html = html_fixture_loader("detail_page_without_title.html")
+    parser = SrealityDetailPageParser()
+
+    with pytest.raises(ScraperMarkupError) as exc_info:
+        parser.parse_raw_payload(detail_html)
+
+    assert "missing non-empty listing title" in exc_info.value.message
+
+
+def test_detail_parser_rejects_fixture_with_misaligned_attribute_pairs(
+    html_fixture_loader: Callable[[str], str],
+) -> None:
+    """Reject detail HTML when raw attribute anchors drift out of alignment."""
+
+    detail_html = html_fixture_loader("detail_page_misaligned_attributes.html")
+    parser = SrealityDetailPageParser()
+
+    with pytest.raises(ScraperMarkupError) as exc_info:
+        parser.parse_raw_payload(detail_html)
+
+    assert "dt/dd attribute counts do not match" in exc_info.value.message

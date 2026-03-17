@@ -31,6 +31,7 @@ def test_parse_range_of_estates_returns_max_page_plus_one() -> None:
         <a href="/hledani/prodej/byty/praha?strana=1">1</a>
         <a href="/hledani/prodej/byty/praha?strana=6">6</a>
         <a href="/hledani/prodej/byty/praha?strana=x">x</a>
+        <a href="/detail/prodej/byt/praha/123">Detail 123</a>
       </body>
     </html>
     """

@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.5.0] - 2026-03-17
+
+### Added
+
+- added parser-owned markup validation errors for listing and detail pages so
+  missing detail links, missing titles, and malformed attribute sections fail
+  explicitly instead of producing low-value raw payloads
+- added fixture-based parser and collector tests that cover valid markup,
+  missing listing links, missing detail titles, and misaligned detail
+  attributes
+
+### Changed
+
+- updated the scraper runtime to translate parser validation failures into
+  contextual scraper response errors with region, listing-page, and listing-URL
+  metadata
+- documented the minimum listing-page and detail-page structural assumptions
+  that anchor the scraper-stage raw contract
+
 ## [1.4.0] - 2026-03-17
 
 ### Added

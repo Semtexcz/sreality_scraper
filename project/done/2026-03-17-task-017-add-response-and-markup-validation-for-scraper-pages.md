@@ -1,6 +1,6 @@
 ---
 task: TASK-017
-status: "todo"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add response and markup validation for scraper pages
 
 Task: TASK-017
-Status: todo
+Status: done
 Priority: P1
 Type: feature
 Author:

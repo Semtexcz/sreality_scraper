@@ -49,6 +49,9 @@ Canonical scraper-stage package for raw contracts, HTTP clients, and HTML parser
 `RawListingRecord` ownership now lives here.
 
 Status: active package boundary.
+Parser assumptions: listing pages must expose at least one detail-page link, and
+detail pages must preserve a non-empty `h1` title plus at least one aligned
+`dt/dd` attribute pair before raw scraper payloads are accepted.
 
 ### `scraperweb.normalization`
 

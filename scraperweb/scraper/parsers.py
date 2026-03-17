@@ -1,4 +1,10 @@
-"""HTML parsers owned by the scraper stage."""
+"""HTML parsers owned by the scraper stage.
+
+The scraper keeps extraction intentionally raw, but it still validates the
+minimum structural anchors that define the raw contract. Listing pages must
+contain at least one detail link. Detail pages must contain a non-empty title
+and at least one aligned ``dt/dd`` attribute pair.
+"""
 
 from __future__ import annotations
 
@@ -6,6 +12,7 @@ import re
 
 from bs4 import BeautifulSoup as bSoup
 
+from scraperweb.scraper.exceptions import ScraperMarkupError
 from scraperweb.scraper.models import JsonValue
 
 
@@ -28,6 +35,7 @@ class SrealityListingPageParser:
         """Infer page count as ``max(strana) + 1`` from listing HTML."""
 
         received_data = bSoup(listing_html, "html.parser")
+        self._extract_estate_urls(received_data)
         page_numbers: list[int] = []
         for estate in received_data.find_all("a"):
             href = estate.get("href")
@@ -42,27 +50,56 @@ class SrealityListingPageParser:
         """Extract absolute detail-page URLs from listing HTML."""
 
         received_data = bSoup(listing_html, "html.parser")
+        return self._extract_estate_urls(received_data)
+
+    def _extract_estate_urls(self, listing_document: bSoup) -> list[str]:
+        """Return unique detail URLs or raise when listing anchors are missing."""
+
         estates: list[str] = []
-        for estate in received_data.find_all("a"):
+        for estate in listing_document.find_all("a"):
             href = estate.get("href")
-            if href and "detail" in href:
+            if href and href.startswith("/detail/"):
                 estates.append(f"https://www.sreality.cz{href}")
-        return estates
+
+        unique_estates = list(dict.fromkeys(estates))
+        if not unique_estates:
+            raise ScraperMarkupError(
+                "listing page validation failed: expected at least one detail link",
+            )
+        return unique_estates
 
 
 class SrealityDetailPageParser:
     """Parser for estate detail pages."""
 
     def parse_raw_payload(self, detail_html: str) -> dict[str, JsonValue]:
-        """Extract title and ``dt/dd`` values from a detail page."""
+        """Extract title and ``dt/dd`` values from a validated detail page."""
 
         received_data = bSoup(detail_html, "html.parser")
         dictionary_data: dict[str, JsonValue] = {}
         title = received_data.find("h1")
-        dictionary_data["Název"] = clean_string(title.text) if title else ""
+        if title is None:
+            raise ScraperMarkupError(
+                "detail page validation failed: missing non-empty listing title",
+            )
+
+        title_text = clean_string(title.get_text(strip=True))
+        if not title_text:
+            raise ScraperMarkupError(
+                "detail page validation failed: missing non-empty listing title",
+            )
+        dictionary_data["Název"] = title_text
 
         dt_elements = received_data.find_all("dt")
         dd_elements = received_data.find_all("dd")
+        if not dt_elements or not dd_elements:
+            raise ScraperMarkupError(
+                "detail page validation failed: expected at least one dt/dd attribute pair",
+            )
+        if len(dt_elements) != len(dd_elements):
+            raise ScraperMarkupError(
+                "detail page validation failed: dt/dd attribute counts do not match",
+            )
 
         for dt, dd in zip(dt_elements, dd_elements):
             term = dt.get_text(strip=True)
@@ -70,6 +107,11 @@ class SrealityDetailPageParser:
             sub_items = [div.get_text(strip=True) for div in dd.find_all("div")]
             if sub_items:
                 description = ", ".join(sub_items)
-            dictionary_data[term] = clean_string(description)
+            cleaned_description = clean_string(description)
+            if not term or not cleaned_description:
+                raise ScraperMarkupError(
+                    "detail page validation failed: encountered empty attribute name or value",
+                )
+            dictionary_data[term] = cleaned_description
 
         return dictionary_data

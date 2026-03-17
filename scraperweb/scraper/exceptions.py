@@ -72,3 +72,13 @@ class ScraperResponseError(ScraperHttpError):
             listing_url=listing_url,
         )
         self.status_code = status_code
+
+
+class ScraperMarkupError(RuntimeError):
+    """Raised when page markup no longer satisfies parser-owned invariants."""
+
+    def __init__(self, message: str) -> None:
+        """Store a human-readable parser validation failure message."""
+
+        super().__init__(message)
+        self.message = message

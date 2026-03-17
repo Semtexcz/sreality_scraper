@@ -15,6 +15,7 @@ from scraperweb.estate_scraper import build_raw_record_repository
 from scraperweb.persistence.repositories import FilesystemRawRecordRepository, MongoRawRecordRepository
 from scraperweb.scraper.exceptions import ScraperResponseError, ScraperTransportError
 from scraperweb.scraper.models import RawListingRecord, RawSourceMetadata
+from scraperweb.scraper.parsers import SrealityDetailPageParser, SrealityListingPageParser
 from scraperweb.scraper.runtime import RawListingCollector
 
 
@@ -501,6 +502,76 @@ def test_raw_listing_collector_preserves_detail_page_context_on_response_failure
     assert exc_info.value.region_slug == "praha"
     assert exc_info.value.listing_page_number == 1
     assert exc_info.value.listing_url == "https://detail/1"
+
+
+def test_raw_listing_collector_surfaces_listing_markup_validation_failures() -> None:
+    """Convert invalid listing markup into contextual scraper response errors."""
+
+    collector = RawListingCollector(
+        listing_page_client=FakeListingPageClient(
+            {
+                "https://example.test/praha?strana=1": "<html><body><a href=\"/search\">Search</a></body></html>",
+            },
+        ),
+        detail_page_client=FakeDetailPageClient({}),
+        listing_page_parser=SrealityListingPageParser(),
+        detail_page_parser=FakeDetailPageParser(),
+        region_slug="praha",
+        scrape_run_id="run-listing-markup",
+    )
+
+    with pytest.raises(ScraperResponseError) as exc_info:
+        list(
+            collector.collect_region_records(
+                district_link="https://example.test/praha?strana=",
+                max_pages=1,
+            ),
+        )
+
+    assert exc_info.value.region_slug == "praha"
+    assert exc_info.value.listing_page_number == 1
+    assert exc_info.value.listing_url is None
+    assert exc_info.value.request_url == "https://example.test/praha?strana=1"
+    assert "expected at least one detail link" in exc_info.value.message
+
+
+def test_raw_listing_collector_surfaces_detail_markup_validation_failures() -> None:
+    """Convert invalid detail markup into contextual scraper response errors."""
+
+    collector = RawListingCollector(
+        listing_page_client=FakeListingPageClient(
+            {
+                "https://example.test/praha?strana=1": (
+                    "pages:1\nhttps://www.sreality.cz/detail/prodej/byt/praha/1"
+                ),
+            },
+        ),
+        detail_page_client=FakeDetailPageClient(
+            {
+                "https://www.sreality.cz/detail/prodej/byt/praha/1": (
+                    "<html><body><dl><dt>Celková cena:</dt></dl></body></html>"
+                ),
+            },
+        ),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=SrealityDetailPageParser(),
+        region_slug="praha",
+        scrape_run_id="run-detail-markup",
+    )
+
+    with pytest.raises(ScraperResponseError) as exc_info:
+        list(
+            collector.collect_region_records(
+                district_link="https://example.test/praha?strana=",
+                max_pages=1,
+            ),
+        )
+
+    assert exc_info.value.region_slug == "praha"
+    assert exc_info.value.listing_page_number == 1
+    assert exc_info.value.listing_url == "https://www.sreality.cz/detail/prodej/byt/praha/1"
+    assert exc_info.value.request_url == "https://www.sreality.cz/detail/prodej/byt/praha/1"
+    assert "missing non-empty listing title" in exc_info.value.message
 
 
 def test_acquisition_service_logs_context_before_propagating_scraper_http_failures(

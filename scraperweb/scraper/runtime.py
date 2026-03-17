@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from scraperweb.scraper.clients import DetailPageClient, ListingPageClient
 from scraperweb.scraper.exceptions import (
     ScraperHttpError,
+    ScraperMarkupError,
     ScraperResponseError,
     ScraperTransportError,
 )
@@ -53,22 +54,47 @@ class RawListingCollector:
             listing_url=f"{district_link}1",
             page_number=1,
         )
-        listing_range = self._listing_page_parser.parse_range_of_estates(first_page_html)
+        try:
+            listing_range = self._listing_page_parser.parse_range_of_estates(first_page_html)
+        except ScraperMarkupError as error:
+            raise self._build_markup_response_error(
+                error=error,
+                request_url=f"{district_link}1",
+                page_number=1,
+                listing_url=None,
+            ) from error
         page_limit = min(listing_range, max_pages)
 
         for page_number in range(1, page_limit + 1):
+            listing_url = f"{district_link}{page_number}"
             listing_html = self._fetch_listing_page(
-                listing_url=f"{district_link}{page_number}",
+                listing_url=listing_url,
                 page_number=page_number,
             )
-            estate_urls = self._listing_page_parser.parse_estate_urls(listing_html)
+            try:
+                estate_urls = self._listing_page_parser.parse_estate_urls(listing_html)
+            except ScraperMarkupError as error:
+                raise self._build_markup_response_error(
+                    error=error,
+                    request_url=listing_url,
+                    page_number=page_number,
+                    listing_url=None,
+                ) from error
 
             for estate_url in estate_urls:
                 detail_html = self._fetch_detail_page(
                     detail_url=estate_url,
                     page_number=page_number,
                 )
-                raw_payload = self._detail_page_parser.parse_raw_payload(detail_html)
+                try:
+                    raw_payload = self._detail_page_parser.parse_raw_payload(detail_html)
+                except ScraperMarkupError as error:
+                    raise self._build_markup_response_error(
+                        error=error,
+                        request_url=estate_url,
+                        page_number=page_number,
+                        listing_url=estate_url,
+                    ) from error
                 yield self._build_raw_listing_record(
                     estate_url=estate_url,
                     page_number=page_number,
@@ -167,3 +193,21 @@ class RawListingCollector:
         """Extract the source listing identifier from the detail page URL."""
 
         return estate_url.rstrip("/").split("/")[-1]
+
+    def _build_markup_response_error(
+        self,
+        error: ScraperMarkupError,
+        request_url: str,
+        page_number: int,
+        listing_url: str | None,
+    ) -> ScraperResponseError:
+        """Convert parser validation failures into contextual response errors."""
+
+        return ScraperResponseError(
+            message=error.message,
+            request_url=request_url,
+            status_code=DETAIL_PAGE_HTTP_STATUS,
+            region_slug=self._region_slug,
+            listing_page_number=page_number,
+            listing_url=listing_url,
+        )
