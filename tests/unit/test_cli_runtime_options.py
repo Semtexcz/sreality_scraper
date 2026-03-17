@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from scraperweb.cli_runtime_options import (
+    ALL_CZECHIA_REGION,
     DEFAULT_MAX_ESTATES,
     DEFAULT_MAX_PAGES,
     DEFAULT_OUTPUT_DIR,
@@ -22,7 +23,7 @@ def test_build_runtime_cli_options_uses_safe_defaults() -> None:
 
     options = build_runtime_cli_options()
 
-    assert options.regions == REGION_CHOICES
+    assert options.regions == (ALL_CZECHIA_REGION,)
     assert options.max_pages == DEFAULT_MAX_PAGES
     assert options.max_estates == DEFAULT_MAX_ESTATES
     assert options.storage_backend == StorageBackend.FILESYSTEM
@@ -35,14 +36,23 @@ def test_build_runtime_cli_options_supports_region_and_limits() -> None:
     """Normalize selected regions and explicit limit overrides."""
 
     options = build_runtime_cli_options(
-        regions=["praha", "jihomoravsky-kraj", "praha"],
+        regions=["all-czechia", "jihomoravsky-kraj", "all-czechia"],
         max_pages=3,
         max_estates=120,
     )
 
-    assert options.regions == ("praha", "jihomoravsky-kraj")
+    assert options.regions == ("all-czechia", "jihomoravsky-kraj")
     assert options.max_pages == 3
     assert options.max_estates == 120
+
+
+def test_build_runtime_cli_options_supports_explicit_region_only_runs() -> None:
+    """Allow callers to override the global default with specific region slugs."""
+
+    options = build_runtime_cli_options(regions=["praha"])
+
+    assert options.regions == ("praha",)
+    assert "praha" in REGION_CHOICES
 
 
 def test_build_runtime_cli_options_rejects_non_positive_limits() -> None:

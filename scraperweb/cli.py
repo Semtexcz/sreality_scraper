@@ -70,7 +70,7 @@ def scrape_command(
             "--region",
             help=(
                 "Region slug to scrape. Repeat the option to target multiple regions. "
-                "When omitted, all supported regions are scraped."
+                "When omitted, the global all-czechia listing target is scraped."
             ),
             show_default=False,
         ),

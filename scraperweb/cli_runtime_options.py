@@ -11,8 +11,10 @@ from typing import Sequence
 DEFAULT_MAX_PAGES = 1
 DEFAULT_MAX_ESTATES = 50
 DEFAULT_OUTPUT_DIR = Path("data/raw")
+ALL_CZECHIA_REGION = "all-czechia"
 
 REGION_CHOICES = (
+    ALL_CZECHIA_REGION,
     "praha",
     "stredocesky-kraj",
     "jihocesky-kraj",
@@ -90,7 +92,7 @@ def _normalize_regions(regions: Sequence[str] | None) -> tuple[str, ...]:
     """Normalize region selection while preserving declaration order."""
 
     if not regions:
-        return REGION_CHOICES
+        return (ALL_CZECHIA_REGION,)
 
     unique_regions = tuple(dict.fromkeys(regions))
     invalid_regions = [region for region in unique_regions if region not in REGION_CHOICES]

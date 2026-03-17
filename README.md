@@ -90,7 +90,8 @@ derived-output options.
 
 Scrape command options:
 
-- `--region <slug>` (repeatable): limit scraping to specific regions
+- `--region <slug>` (repeatable): limit scraping to specific regions; when omitted, the
+  CLI scrapes the global `all-czechia` listing target
 - `--max-pages <int>`: max listing pages per selected region (default `1`)
 - `--max-estates <int>`: max estates in one run (default `50`)
 - `--storage-backend <filesystem|mongodb>`: target storage backend (default `filesystem`)

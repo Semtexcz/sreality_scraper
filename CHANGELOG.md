@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.7.0] - 2026-03-17
+
+### Added
+
+- added a global `all-czechia` scrape target that points to the nationwide
+  apartment-sale listing URL on `sreality.cz`
+- added regression coverage for the new default global target at both CLI and
+  runtime-composition levels
+
+### Changed
+
+- changed the default CLI behavior so runs without `--region` now scrape the
+  global all-Czechia apartment listing target instead of iterating region URLs
+- replaced index-based region URL selection with explicit region-slug to listing
+  URL mapping in the scraper runtime
+
 ## [1.6.0] - 2026-03-17
 
 ### Added
