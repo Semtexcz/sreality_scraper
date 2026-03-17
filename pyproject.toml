@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "scraperweb"
 version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
+description = "Sreality scraper and helper loaders for Czech real estate datasets."
+authors = ["scraperweb contributors"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
@@ -16,6 +16,11 @@ bs4 = "^0.0.2"
 loguru = "^0.7.2"
 pandas = "^2.2.3"
 geopy = "^2.4.1"
+
+[tool.poetry.scripts]
+scraperweb = "scraperweb.estate_scraper:main"
+scraperweb-load-towns = "scraperweb.towns:main"
+scraperweb-load-districts = "scraperweb.districts_loader:main"
 
 
 [build-system]
