@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [0.2.0] - 2026-03-17
+
+### Added
+
+- added a Typer-based `scraperweb` CLI with explicit `scrape`, `load-towns`, and `load-districts` commands
+- added CLI regression tests covering scraper command option handling and auxiliary loader command dispatch
+
+### Changed
+
+- replaced the primary Poetry script entrypoint with the new Typer application while keeping legacy loader entrypoints as compatibility wrappers
+- refactored runtime option parsing into reusable validation helpers so CLI handlers stay thin and service-oriented
+- documented the raw-data-only CLI contract and updated operator usage examples in `README.md`
+
 ## [0.1.9] - 2026-03-17
 
 ### Added

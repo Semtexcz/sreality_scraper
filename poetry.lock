@@ -1610,4 +1610,4 @@ dev = ["black (>=19.3b0) ; python_version >= \"3.6\"", "pytest (>=4.6.2)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12.7"
-content-hash = "055fe069c9edc5ecab72f8e2ea99a6596e47878456e0284f0c29b9b819f9b016"
+content-hash = "dfbc4441d45e39ef07fe3bf561a84555d75615a6670d15d9dd1435c31ec01a9d"

@@ -1,8 +1,7 @@
-"""Runtime option schema and validation for scraper CLI entrypoints."""
+"""Runtime option schema and validation for scraper CLI commands."""
 
 from __future__ import annotations
 
-import argparse
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
@@ -38,6 +37,10 @@ class StorageBackend(StrEnum):
     FILESYSTEM = "filesystem"
 
 
+class RuntimeCliOptionsError(ValueError):
+    """Raised when scraper CLI options are internally inconsistent."""
+
+
 @dataclass(frozen=True)
 class RuntimeCliOptions:
     """Runtime options accepted by the scraper command-line interface."""
@@ -51,113 +54,63 @@ class RuntimeCliOptions:
     output_dir: Path | None
 
 
-def positive_int(value: str) -> int:
-    """Parse and validate a positive integer for CLI options."""
+def build_runtime_cli_options(
+    *,
+    regions: Sequence[str] | None = None,
+    max_pages: int = DEFAULT_MAX_PAGES,
+    max_estates: int = DEFAULT_MAX_ESTATES,
+    storage_backend: StorageBackend = StorageBackend.FILESYSTEM,
+    mongodb_uri: str | None = None,
+    mongodb_database: str | None = None,
+    output_dir: Path | None = DEFAULT_OUTPUT_DIR,
+) -> RuntimeCliOptions:
+    """Build validated runtime CLI options for scraper execution."""
 
-    parsed = int(value)
-    if parsed <= 0:
-        raise argparse.ArgumentTypeError("value must be greater than zero")
-    return parsed
-
-
-def build_parser() -> argparse.ArgumentParser:
-    """Build the runtime options parser for current and future CLI frontends."""
-
-    parser = argparse.ArgumentParser(
-        prog="scraperweb",
-        description=(
-            "Run scraper with explicit runtime controls suitable for future Typer "
-            "migration."
-        ),
-    )
-    parser.add_argument(
-        "--region",
-        dest="regions",
-        action="append",
-        choices=REGION_CHOICES,
-        default=[],
-        help=(
-            "Region slug to scrape. Repeat the option to target multiple regions. "
-            "When omitted, all regions are scraped."
-        ),
-    )
-    parser.add_argument(
-        "--max-pages",
-        dest="max_pages",
-        type=positive_int,
-        default=DEFAULT_MAX_PAGES,
-        help=(
-            "Maximum number of listing pages per selected region. "
-            f"Default: {DEFAULT_MAX_PAGES}."
-        ),
-    )
-    parser.add_argument(
-        "--max-estates",
-        dest="max_estates",
-        type=positive_int,
-        default=DEFAULT_MAX_ESTATES,
-        help=(
-            "Maximum number of estates processed in a run. "
-            f"Default: {DEFAULT_MAX_ESTATES}."
-        ),
-    )
-    parser.add_argument(
-        "--storage-backend",
-        dest="storage_backend",
-        choices=[backend.value for backend in StorageBackend],
-        default=StorageBackend.FILESYSTEM.value,
-        help="Storage backend for raw data output.",
-    )
-    parser.add_argument(
-        "--mongodb-uri",
-        dest="mongodb_uri",
-        default=None,
-        help="MongoDB connection URI. Allowed only with --storage-backend mongodb.",
-    )
-    parser.add_argument(
-        "--mongodb-database",
-        dest="mongodb_database",
-        default=None,
-        help="MongoDB database name. Allowed only with --storage-backend mongodb.",
-    )
-    parser.add_argument(
-        "--output-dir",
-        dest="output_dir",
-        type=Path,
-        default=DEFAULT_OUTPUT_DIR,
-        help="Output directory for filesystem backend.",
-    )
-    return parser
-
-
-def parse_runtime_cli_options(argv: Sequence[str] | None = None) -> RuntimeCliOptions:
-    """Parse and validate CLI runtime options."""
-
-    parser = build_parser()
-    args = parser.parse_args(argv)
-    storage_backend = StorageBackend(args.storage_backend)
+    validated_regions = _normalize_regions(regions)
+    _validate_positive_limit("max_pages", max_pages)
+    _validate_positive_limit("max_estates", max_estates)
     _validate_backend_specific_options(
-        parser=parser,
         storage_backend=storage_backend,
-        mongodb_uri=args.mongodb_uri,
-        mongodb_database=args.mongodb_database,
-        output_dir=args.output_dir,
+        mongodb_uri=mongodb_uri,
+        mongodb_database=mongodb_database,
+        output_dir=output_dir,
+    )
+    return RuntimeCliOptions(
+        regions=validated_regions,
+        max_pages=max_pages,
+        max_estates=max_estates,
+        storage_backend=storage_backend,
+        mongodb_uri=mongodb_uri,
+        mongodb_database=mongodb_database,
+        output_dir=output_dir,
     )
 
-    regions = tuple(dict.fromkeys(args.regions)) if args.regions else REGION_CHOICES
-    return RuntimeCliOptions(
-        regions=regions,
-        max_pages=args.max_pages,
-        max_estates=args.max_estates,
-        storage_backend=storage_backend,
-        mongodb_uri=args.mongodb_uri,
-        mongodb_database=args.mongodb_database,
-        output_dir=args.output_dir,
-    )
+
+def _normalize_regions(regions: Sequence[str] | None) -> tuple[str, ...]:
+    """Normalize region selection while preserving declaration order."""
+
+    if not regions:
+        return REGION_CHOICES
+
+    unique_regions = tuple(dict.fromkeys(regions))
+    invalid_regions = [region for region in unique_regions if region not in REGION_CHOICES]
+    if invalid_regions:
+        raise RuntimeCliOptionsError(
+            "Unsupported region value(s): "
+            f"{', '.join(invalid_regions)}. Supported values: {', '.join(REGION_CHOICES)}.",
+        )
+    return unique_regions
+
+
+def _validate_positive_limit(name: str, value: int) -> None:
+    """Validate that a numeric runtime limit is greater than zero."""
+
+    if value <= 0:
+        raise RuntimeCliOptionsError(f"{name} must be greater than zero.")
 
 
 def _validate_backend_specific_options(
-    parser: argparse.ArgumentParser,
+    *,
     storage_backend: StorageBackend,
     mongodb_uri: str | None,
     mongodb_database: str | None,
@@ -166,20 +119,21 @@ def _validate_backend_specific_options(
     """Validate mutually exclusive backend option groups."""
 
     using_mongodb_options = mongodb_uri is not None or mongodb_database is not None
-    using_output_dir = output_dir is not None
 
     if storage_backend == StorageBackend.MONGODB:
-        if output_dir != DEFAULT_OUTPUT_DIR and output_dir is not None:
-            parser.error("--output-dir is not allowed with --storage-backend mongodb")
+        if output_dir not in (None, DEFAULT_OUTPUT_DIR):
+            raise RuntimeCliOptionsError(
+                "--output-dir is not allowed with --storage-backend mongodb.",
+            )
         return
 
     if using_mongodb_options:
-        parser.error(
+        raise RuntimeCliOptionsError(
             "--mongodb-uri and --mongodb-database are only allowed "
-            "with --storage-backend mongodb",
+            "with --storage-backend mongodb.",
         )
 
-    if not using_output_dir:
-        parser.error(
-            "--output-dir must be set when --storage-backend filesystem is used",
+    if output_dir is None:
+        raise RuntimeCliOptionsError(
+            "--output-dir must be set when --storage-backend filesystem is used.",
         )

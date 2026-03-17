@@ -1,6 +1,6 @@
 ---
 task: TASK-007
-status: "backlog"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Build a Typer-based CLI for scraper operations
 
 Task: TASK-007
-Status: backlog
+Status: done
 Priority: P1
 Type: feature
 Author:
@@ -23,12 +23,12 @@ cleanly to application services rather than embedding scraper logic in script wr
 
 ## Definition of Done
 
-- [ ] Add `typer` as the CLI framework dependency.
-- [ ] Create a top-level CLI application with commands for scraping and auxiliary data-loading flows that are still required.
-- [ ] Implement runtime options for region selection, page limits, estate count limits, and storage backend selection.
-- [ ] Ensure CLI help text and validation reflect the raw-data-only scope.
-- [ ] Replace or retire legacy entrypoints that no longer match the target interface.
-- [ ] Keep command handlers thin and delegate work to application services.
+- [x] Add `typer` as the CLI framework dependency.
+- [x] Create a top-level CLI application with commands for scraping and auxiliary data-loading flows that are still required.
+- [x] Implement runtime options for region selection, page limits, estate count limits, and storage backend selection.
+- [x] Ensure CLI help text and validation reflect the raw-data-only scope.
+- [x] Replace or retire legacy entrypoints that no longer match the target interface.
+- [x] Keep command handlers thin and delegate work to application services.
 
 ## Notes
 

@@ -8,7 +8,7 @@ import requests as req
 from loguru import logger
 
 from scraperweb.application.acquisition_service import RawAcquisitionService
-from scraperweb.cli_runtime_options import REGION_CHOICES, RuntimeCliOptions, StorageBackend, parse_runtime_cli_options
+from scraperweb.cli_runtime_options import REGION_CHOICES, RuntimeCliOptions, StorageBackend
 from scraperweb.config import get_settings
 from scraperweb.persistence.repositories import (
     FilesystemRawRecordRepository,
@@ -143,14 +143,8 @@ def run_scraper(options: RuntimeCliOptions) -> int:
 
 
 def main() -> None:
-    """Run the scraper entrypoint using parsed command-line runtime options."""
+    """Run the Typer CLI from the legacy scraper module entrypoint."""
 
-    options = parse_runtime_cli_options()
-    logger.info(
-        "Selected runtime options: regions={}, max_pages={}, max_estates={}, storage_backend={}",
-        options.regions,
-        options.max_pages,
-        options.max_estates,
-        options.storage_backend.value,
-    )
-    run_scraper(options)
+    from scraperweb.cli import main as cli_main
+
+    cli_main()

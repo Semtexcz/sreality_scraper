@@ -1,3 +1,5 @@
+"""District-loading services for auxiliary coordinate datasets."""
+
 from __future__ import annotations
 
 import csv
@@ -8,14 +10,18 @@ from scraperweb.config import DATA_DIR, get_settings
 
 
 def build_runtime() -> pymongo.database.Database:
+    """Build the MongoDB database handle used by the district loader."""
+
     settings = get_settings()
     client = pymongo.MongoClient(settings.mongodb_uri)
     return client[settings.mongodb_database]
 
 
 def load_districts() -> int:
-    db = build_runtime()
-    collection = db["Okresy"]
+    """Load district coordinate rows from the bundled CSV into MongoDB."""
+
+    database = build_runtime()
+    collection = database["Okresy"]
     inserted = 0
 
     with (DATA_DIR / "souradnice.csv").open(mode="r", encoding="utf-8") as file:
@@ -35,4 +41,6 @@ def load_districts() -> int:
 
 
 def main() -> None:
+    """Run the districts loader entrypoint."""
+
     load_districts()

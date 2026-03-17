@@ -31,8 +31,9 @@ The storage backend is still under evaluation. Current options are:
 ```bash
 poetry install
 poetry run scraperweb --help
-poetry run scraperweb-load-towns --help
-poetry run scraperweb-load-districts --help
+poetry run scraperweb scrape --help
+poetry run scraperweb load-towns --help
+poetry run scraperweb load-districts --help
 ```
 
 ## Configuration
@@ -49,16 +50,18 @@ These settings reflect the current codebase state, not the final target architec
 The intended direction is to keep only the configuration required to fetch and store
 raw data.
 
-## Runtime CLI Options
+## Runtime CLI
 
-The `scraperweb` CLI now defines runtime options that are intentionally compatible
-with the future Typer migration.
+The project now exposes a Typer-based CLI with explicit subcommands:
 
-Required options:
+- `poetry run scraperweb scrape`: scrape raw listing records from `sreality.cz`
+- `poetry run scraperweb load-towns`: load auxiliary town geodata
+- `poetry run scraperweb load-districts`: load auxiliary district coordinates
 
-- none (safe defaults are provided for development runs)
+The `scrape` command is intentionally scoped to raw-data acquisition and persistence.
+It does not expose enrichment, normalization, or derived-output options.
 
-Optional options:
+Scrape command options:
 
 - `--region <slug>` (repeatable): limit scraping to specific regions
 - `--max-pages <int>`: max listing pages per selected region (default `1`)
@@ -68,14 +71,12 @@ Optional options:
 - `--mongodb-uri <uri>`: MongoDB URI for MongoDB backend
 - `--mongodb-database <name>`: MongoDB database for MongoDB backend
 
-Mutually exclusive / constrained option rules:
+Validation rules:
 
 - `--mongodb-uri` and `--mongodb-database` are allowed only with
   `--storage-backend mongodb`
 - `--output-dir` custom values are allowed only with
   `--storage-backend filesystem`
 
-Note:
-
-- Storage backend selection is currently a validated CLI contract.
-  Backend-specific persistence wiring is planned in `TASK-006`.
+Legacy entrypoints `scraperweb-load-towns` and `scraperweb-load-districts` remain
+available as compatibility wrappers around the new CLI command handlers.
