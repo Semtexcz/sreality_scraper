@@ -9,7 +9,6 @@ import pytest
 from scraperweb.cli_runtime_options import (
     ALL_CZECHIA_REGION,
     DEFAULT_MAX_ESTATES,
-    DEFAULT_MAX_PAGES,
     DEFAULT_OUTPUT_DIR,
     REGION_CHOICES,
     RuntimeCliOptionsError,
@@ -24,7 +23,7 @@ def test_build_runtime_cli_options_uses_safe_defaults() -> None:
     options = build_runtime_cli_options()
 
     assert options.regions == (ALL_CZECHIA_REGION,)
-    assert options.max_pages == DEFAULT_MAX_PAGES
+    assert options.max_pages is None
     assert options.max_estates == DEFAULT_MAX_ESTATES
     assert options.storage_backend == StorageBackend.FILESYSTEM
     assert options.mongodb_uri is None

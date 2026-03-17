@@ -9,7 +9,7 @@ from scraperweb.estate_scraper import run_scraper
 def test_run_scraper_uses_global_all_czechia_listing_url_by_default(monkeypatch) -> None:
     """Route the default CLI region selection to the global Czechia listing URL."""
 
-    captured_calls: list[tuple[str, str]] = []
+    captured_calls: list[tuple[str, str, int | None]] = []
 
     class FakeAcquisitionService:
         """Capture region slug and district link selected by the runtime."""
@@ -22,14 +22,14 @@ def test_run_scraper_uses_global_all_czechia_listing_url_by_default(monkeypatch)
         def collect_for_region(
             self,
             district_link: str,
-            max_pages: int,
+            max_pages: int | None,
             max_estates: int,
             tracked_estates: int,
         ) -> int:
             """Capture the URL used for the selected region and stop immediately."""
 
-            del max_pages, max_estates, tracked_estates
-            captured_calls.append((self._region_slug, district_link))
+            captured_calls.append((self._region_slug, district_link, max_pages))
+            del max_estates, tracked_estates
             return 0
 
     monkeypatch.setattr("scraperweb.estate_scraper.RawAcquisitionService", FakeAcquisitionService)
@@ -39,5 +39,5 @@ def test_run_scraper_uses_global_all_czechia_listing_url_by_default(monkeypatch)
 
     assert processed_estates == 0
     assert captured_calls == [
-        ("all-czechia", "https://www.sreality.cz/hledani/prodej/byty?strana="),
+        ("all-czechia", "https://www.sreality.cz/hledani/prodej/byty?strana=", None),
     ]

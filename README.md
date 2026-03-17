@@ -92,7 +92,8 @@ Scrape command options:
 
 - `--region <slug>` (repeatable): limit scraping to specific regions; when omitted, the
   CLI scrapes the global `all-czechia` listing target
-- `--max-pages <int>`: max listing pages per selected region (default `1`)
+- `--max-pages <int>`: optional max listing pages per selected region; when omitted,
+  traversal continues until scraper stop conditions are met
 - `--max-estates <int>`: max estates in one run (default `50`)
 - `--storage-backend <filesystem|mongodb>`: target storage backend (default `filesystem`)
 - `--output-dir <path>`: filesystem output root (default `data/raw`)
@@ -101,7 +102,8 @@ Scrape command options:
 
 Region traversal semantics:
 
-- traversal always stops at `--max-pages`, even if pagination markup suggests more pages
+- when `--max-pages` is provided, traversal stops at that page limit even if pagination
+  markup suggests more pages
 - traversal stops early when a listing page is empty
 - traversal stops early when a listing page repeats an already observed estate URL set
 - traversal stops early when a listing page contains only already-seen estate URLs, which protects runs from duplicate tail pages and pagination drift

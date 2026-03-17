@@ -404,6 +404,45 @@ def test_raw_listing_collector_stops_on_repeated_listing_page_signature() -> Non
     ]
 
 
+def test_raw_listing_collector_without_page_limit_relies_on_stop_conditions() -> None:
+    """Traverse unbounded page numbers until observed listing outcomes stop the run."""
+
+    listing_page_client = FakeListingPageClient(
+        {
+            "https://example.test/praha?strana=1": "pages:9\nhttps://detail/1",
+            "https://example.test/praha?strana=2": "pages:9\nhttps://detail/2",
+            "https://example.test/praha?strana=3": "pages:9\nhttps://detail/2",
+        },
+    )
+    collector = RawListingCollector(
+        listing_page_client=listing_page_client,
+        detail_page_client=FakeDetailPageClient(
+            {
+                "https://detail/1": "<html>detail 1</html>",
+                "https://detail/2": "<html>detail 2</html>",
+            },
+        ),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=FakeDetailPageParser(),
+        region_slug="praha",
+        scrape_run_id="run-unbounded",
+    )
+
+    collected_records = list(
+        collector.collect_region_records(
+            district_link="https://example.test/praha?strana=",
+            max_pages=None,
+        ),
+    )
+
+    assert [record.listing_id for record in collected_records] == ["1", "2"]
+    assert listing_page_client.calls == [
+        "https://example.test/praha?strana=1",
+        "https://example.test/praha?strana=2",
+        "https://example.test/praha?strana=3",
+    ]
+
+
 def test_raw_listing_collector_stops_on_empty_listing_page() -> None:
     """Stop region traversal when the parser reports an empty listing page."""
 

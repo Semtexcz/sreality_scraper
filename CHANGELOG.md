@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.7.1] - 2026-03-17
+
+### Fixed
+
+- fixed the default scrape behavior so runs without `--max-pages` no longer stop
+  after the first listing page and instead continue across the all-Czechia
+  listing target until scraper stop conditions are met
+
+### Changed
+
+- changed the `--max-pages` CLI option from a required default page cap to an
+  optional traversal limit
+
 ## [1.7.0] - 2026-03-17
 
 ### Added

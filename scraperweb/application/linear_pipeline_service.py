@@ -34,7 +34,7 @@ class LinearListingPipelineService:
     def collect_modeling_inputs(
         self,
         district_link: str,
-        max_pages: int,
+        max_pages: int | None,
         max_estates: int | None = None,
     ) -> Iterator[ModelingInputRecord]:
         """Yield model-ready records through the full synchronous stage sequence."""

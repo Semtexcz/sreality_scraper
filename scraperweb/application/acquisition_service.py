@@ -43,7 +43,7 @@ class RawAcquisitionService:
     def collect_for_region(
         self,
         district_link: str,
-        max_pages: int,
+        max_pages: int | None,
         max_estates: int,
         tracked_estates: int,
     ) -> int:

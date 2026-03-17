@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Sequence
 
 
-DEFAULT_MAX_PAGES = 1
 DEFAULT_MAX_ESTATES = 50
 DEFAULT_OUTPUT_DIR = Path("data/raw")
 ALL_CZECHIA_REGION = "all-czechia"
@@ -48,7 +47,7 @@ class RuntimeCliOptions:
     """Runtime options accepted by the scraper command-line interface."""
 
     regions: tuple[str, ...]
-    max_pages: int
+    max_pages: int | None
     max_estates: int
     storage_backend: StorageBackend
     mongodb_uri: str | None
@@ -59,7 +58,7 @@ class RuntimeCliOptions:
 def build_runtime_cli_options(
     *,
     regions: Sequence[str] | None = None,
-    max_pages: int = DEFAULT_MAX_PAGES,
+    max_pages: int | None = None,
     max_estates: int = DEFAULT_MAX_ESTATES,
     storage_backend: StorageBackend = StorageBackend.FILESYSTEM,
     mongodb_uri: str | None = None,
@@ -104,10 +103,10 @@ def _normalize_regions(regions: Sequence[str] | None) -> tuple[str, ...]:
     return unique_regions
 
 
-def _validate_positive_limit(name: str, value: int) -> None:
-    """Validate that a numeric runtime limit is greater than zero."""
+def _validate_positive_limit(name: str, value: int | None) -> None:
+    """Validate that an optional numeric runtime limit is greater than zero."""
 
-    if value <= 0:
+    if value is not None and value <= 0:
         raise RuntimeCliOptionsError(f"{name} must be greater than zero.")
 
 

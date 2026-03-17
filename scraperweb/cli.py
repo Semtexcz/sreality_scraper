@@ -10,7 +10,6 @@ from loguru import logger
 
 from scraperweb.cli_runtime_options import (
     DEFAULT_MAX_ESTATES,
-    DEFAULT_MAX_PAGES,
     DEFAULT_OUTPUT_DIR,
     REGION_CHOICES,
     RuntimeCliOptions,
@@ -39,7 +38,7 @@ def app_callback() -> None:
 def _build_scrape_options(
     *,
     regions: list[str] | None,
-    max_pages: int,
+    max_pages: int | None,
     max_estates: int,
     storage_backend: StorageBackend,
     mongodb_uri: str | None,
@@ -76,13 +75,13 @@ def scrape_command(
         ),
     ] = None,
     max_pages: Annotated[
-        int,
+        int | None,
         typer.Option(
             "--max-pages",
             min=1,
-            help="Maximum number of listing pages per selected region.",
+            help="Optional maximum number of listing pages per selected region.",
         ),
-    ] = DEFAULT_MAX_PAGES,
+    ] = None,
     max_estates: Annotated[
         int,
         typer.Option(

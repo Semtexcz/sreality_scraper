@@ -25,12 +25,12 @@ class StubRawListingCollector:
         """Store deterministic raw records for pipeline tests."""
 
         self._records = records
-        self.calls: list[tuple[str, int]] = []
+        self.calls: list[tuple[str, int | None]] = []
 
     def collect_region_records(
         self,
         district_link: str,
-        max_pages: int,
+        max_pages: int | None,
     ) -> Iterator[RawListingRecord]:
         """Yield configured records while recording invocation arguments."""
 

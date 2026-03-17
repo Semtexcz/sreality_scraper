@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from itertools import count
 
 from scraperweb.scraper.clients import DetailPageClient, ListingPageClient
 from scraperweb.scraper.exceptions import (
@@ -32,10 +33,10 @@ class ListingTraversalState:
 class RawListingCollector:
     """Collect raw listing records from listing and detail page HTML.
 
-    Region traversal is always bounded by ``max_pages``. It also stops early
-    when a listing page is empty, repeats an already observed estate URL set, or
-    contains no estate URLs that were not already seen in the same region
-    traversal.
+    Region traversal can be bounded by ``max_pages`` when an explicit limit is
+    provided. It also stops early when a listing page is empty, repeats an
+    already observed estate URL set, or contains no estate URLs that were not
+    already seen in the same region traversal.
     """
 
     def __init__(
@@ -61,13 +62,14 @@ class RawListingCollector:
     def collect_region_records(
         self,
         district_link: str,
-        max_pages: int,
+        max_pages: int | None,
     ) -> Iterator[RawListingRecord]:
         """Yield raw listing records for one region until traversal exhaustion."""
 
         traversal_state = ListingTraversalState()
+        page_numbers = range(1, max_pages + 1) if max_pages is not None else count(1)
 
-        for page_number in range(1, max_pages + 1):
+        for page_number in page_numbers:
             listing_url = f"{district_link}{page_number}"
             listing_html = self._fetch_listing_page(
                 listing_url=listing_url,

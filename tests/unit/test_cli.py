@@ -81,6 +81,7 @@ def test_scrape_command_defaults_to_global_all_czechia_target(monkeypatch) -> No
     assert result.exit_code == 0
     assert "Processed 1 estates." in result.stdout
     assert captured_options["value"].regions == ("all-czechia",)
+    assert captured_options["value"].max_pages is None
 
 
 def test_scrape_command_rejects_mongodb_options_for_filesystem_backend() -> None:
