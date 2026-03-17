@@ -1,6 +1,6 @@
 ---
 task: TASK-002
-status: "backlog"
+status: "done"
 priority: P2
 type: test
 ---
@@ -8,7 +8,7 @@ type: test
 # Bootstrap deterministic test coverage for the scraper refactor
 
 Task: TASK-002
-Status: backlog
+Status: done
 Priority: P2
 Type: test
 Author:
@@ -23,10 +23,10 @@ incremental implementation.
 
 ## Definition of Done
 
-- [ ] Add a `tests/` directory and configure the project so tests run via `poetry run pytest`.
-- [ ] Add deterministic tests for small parsing helpers and configuration defaults.
-- [ ] Add fixtures or mocks so tests do not depend on live network services.
-- [ ] Ensure the initial test layout supports later coverage for services, storage adapters, and CLI commands.
+- [x] Add a `tests/` directory and configure the project so tests run via `poetry run pytest`.
+- [x] Add deterministic tests for small parsing helpers and configuration defaults.
+- [x] Add fixtures or mocks so tests do not depend on live network services.
+- [x] Ensure the initial test layout supports later coverage for services, storage adapters, and CLI commands.
 
 ## Notes
 

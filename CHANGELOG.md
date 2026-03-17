@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [0.1.5] - 2026-03-17
+
+### Added
+
+- added bootstrap `tests/` coverage for configuration defaults and deterministic parsing helpers
+- added shared test fixtures for mocked HTTP responses to keep tests independent from live network services
+
+### Changed
+
+- configured pytest discovery via `pyproject.toml` and registered `pytest` as a Poetry development dependency
+
+### Fixed
+
+- fixed `scraperweb.config.Settings` so environment variable overrides are evaluated at runtime instead of module import time
+
 ## [0.1.4] - 2026-03-17
 
 ### Changed
