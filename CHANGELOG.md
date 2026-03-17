@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [0.1.7] - 2026-03-17
+
+### Added
+
+- documented target application layers for CLI, orchestration, scraping/parsing, and persistence in `docs/ARCHITECTURE.md`
+- documented the raw record contract (`RawListingRecord`) with explicit exclusions for enrichment, normalization, and derived fields
+- documented target core interfaces and planned concrete adapters aligned to SOLID boundaries
+
+### Changed
+
+- updated `docs/MODULES.md` with target layered module boundaries for the refactor
+- identified transitional modules and replacement/removal direction for the raw-data architecture migration
+
 ## [0.1.6] - 2026-03-17
 
 ### Added
