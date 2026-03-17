@@ -24,18 +24,18 @@ creates avoidable partial-run instability.
 
 ## Definition of Done
 
-- [ ] Introduce explicit scraper-stage HTTP error handling for request failures,
+- [x] Introduce explicit scraper-stage HTTP error handling for request failures,
       non-success status codes, and missing response content.
-- [ ] Define scraper-owned exception types or result contracts so runtime callers
+- [x] Define scraper-owned exception types or result contracts so runtime callers
       can distinguish retryable transport failures from unrecoverable response
       errors.
-- [ ] Add bounded retry behavior with explicit timeout handling for transient
+- [x] Add bounded retry behavior with explicit timeout handling for transient
       network failures without creating unbounded loops.
-- [ ] Ensure the acquisition flow records or logs enough context to identify the
+- [x] Ensure the acquisition flow records or logs enough context to identify the
       failed region, page, and listing URL.
-- [ ] Keep the raw-only runtime contract intact and avoid introducing downstream
+- [x] Keep the raw-only runtime contract intact and avoid introducing downstream
       normalization or enrichment behavior.
-- [ ] Add deterministic unit tests that cover success, retry, and terminal-failure
+- [x] Add deterministic unit tests that cover success, retry, and terminal-failure
       paths for listing-page and detail-page fetches.
 
 ## Notes

@@ -23,18 +23,18 @@ or incomplete raw payloads while still appearing successful.
 
 ## Definition of Done
 
-- [ ] Define explicit validation rules for minimum expected listing-page and
+- [x] Define explicit validation rules for minimum expected listing-page and
       detail-page structure before parser output is accepted.
-- [ ] Detect and surface markup-drift conditions such as missing listing links,
+- [x] Detect and surface markup-drift conditions such as missing listing links,
       empty detail payloads, or absent key elements that previously anchored the
       raw contract.
-- [ ] Ensure invalid pages fail clearly with scraper-stage validation errors rather
+- [x] Ensure invalid pages fail clearly with scraper-stage validation errors rather
       than silently producing low-value records.
-- [ ] Preserve the existing raw payload goal by validating page structure without
+- [x] Preserve the existing raw payload goal by validating page structure without
       normalizing or enriching extracted values.
-- [ ] Add representative fixture-based tests for valid pages, malformed pages, and
+- [x] Add representative fixture-based tests for valid pages, malformed pages, and
       known markup-drift scenarios.
-- [ ] Document any new parser assumptions in the scraper-stage technical docs or
+- [x] Document any new parser assumptions in the scraper-stage technical docs or
       module docstrings.
 
 ## Notes

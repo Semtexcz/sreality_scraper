@@ -14,9 +14,9 @@ repository. Unchecked items represent the next supported milestones.
   storage-backend options.
 - [x] Cover the scraper runtime with deterministic unit tests and an opt-in live
   integration test.
-- [ ] Harden runtime behavior around HTTP failures, response validation, and markup
+- [x] Harden runtime behavior around HTTP failures, response validation, and markup
   drift.
-- [ ] Revisit stop conditions and traversal assumptions that currently depend on
+- [x] Revisit stop conditions and traversal assumptions that currently depend on
   simple listing-page HTML parsing.
 
 ## Normalization Stage
