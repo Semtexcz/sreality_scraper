@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [0.1.2] - 2026-03-17
+
+### Changed
+
+- clarified the project scope in the documentation as raw data acquisition from `sreality.cz`
+- documented that scraper outputs should remain unprocessed and unnormalized
+- recorded the open storage decision between MongoDB and filesystem-based persistence
+
 ## [0.1.1] - 2026-03-17
 
 ### Added

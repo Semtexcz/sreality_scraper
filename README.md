@@ -1,17 +1,32 @@
 # scraperweb
 
-`scraperweb` je maly Python projekt pro scraping nabidek bytu ze `sreality.cz` a pomocne nacteni referencnich mest do MongoDB.
+`scraperweb` is a Python project for collecting raw listing data from `sreality.cz`.
 
-## Struktura
+The primary goal is data acquisition, not downstream processing. Scraper runs should
+capture the source payloads as faithfully as possible and avoid enrichment,
+normalization, geocoding, or other transformations that alter the original data.
 
-- `scraperweb/`: aplikacni kod
-- `scripts/`: spousteci skripty
-- `data/`: CSV vstupy a pomocna data
-- `docs/`: technicka dokumentace a vygenerovane API docs
-- `project/`: backlog a historie hotovych ukolu
-- `AGENTS.md`: pravidla pro AI agenty a automatizovane prispevatele
+## Project Scope
 
-## Rychly start
+- Fetch raw real-estate listing data from `sreality.cz`.
+- Persist downloaded records in a raw, replayable form.
+- Keep storage concerns explicit and replaceable.
+
+The storage backend is still under evaluation. Current options are:
+
+- storing raw outputs in MongoDB
+- storing raw outputs on the filesystem
+
+## Structure
+
+- `scraperweb/`: application code
+- `scripts/`: executable wrappers
+- `data/`: CSV inputs and helper datasets
+- `docs/`: technical documentation and generated API docs
+- `project/`: backlog and completed task history
+- `AGENTS.md`: rules for AI agents and automated contributors
+
+## Quick Start
 
 ```bash
 poetry install
@@ -20,19 +35,16 @@ poetry run scraperweb-load-towns --help
 poetry run scraperweb-load-districts --help
 ```
 
-## Konfigurace
+## Configuration
 
-Projekt pouziva environment promenne:
+Current runtime configuration still exposes environment variables used by the existing
+implementation:
 
 - `MONGODB_URI` (default `mongodb://localhost:27017`)
 - `MONGODB_DATABASE` (default `RealEstates`)
 - `SCRAPER_API_URL` (default `http://localhost:8000/receivedData`)
 - `GEOPY_USER_AGENT` (default `scraperweb`)
 
-Priklad:
-
-```bash
-export MONGODB_URI="mongodb://localhost:27017"
-export MONGODB_DATABASE="RealEstates"
-poetry run scraperweb
-```
+These settings reflect the current codebase state, not the final target architecture.
+The intended direction is to keep only the configuration required to fetch and store
+raw data.

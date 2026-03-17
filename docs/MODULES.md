@@ -8,7 +8,8 @@ Centralized runtime settings and path helpers.
 
 ### `scraperweb.estate_scraper`
 
-Primary scraping workflow for estate listings, parsing, enrichment, and API submission.
+Primary scraping workflow for downloading raw estate listings from `sreality.cz` and
+persisting them without transformation.
 
 ### `scraperweb.towns`
 

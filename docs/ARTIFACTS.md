@@ -12,12 +12,15 @@ These files are treated as input datasets for reference-data loading.
 
 The repository currently does not define a dedicated output directory for scraper runs.
 
-Operational outputs are external to the repo:
+The intended generated output is raw data downloaded from `sreality.cz` without
+post-processing.
 
-- MongoDB collections:
-  - `Okresy`
-  - `Towns`
-- HTTP payloads sent to `SCRAPER_API_URL`
+The persistence backend is still undecided. Candidate outputs are:
+
+- MongoDB collections containing raw listing records
+- filesystem snapshots containing raw JSON or HTML responses
+
+Derived or normalized payloads are not a target artifact for this project scope.
 
 ## Generated Documentation
 
