@@ -7,7 +7,9 @@
 - `scraperweb/`: aplikacni kod
 - `scripts/`: spousteci skripty
 - `data/`: CSV vstupy a pomocna data
-- `docs/`: dokumentace a vygenerovane API docs
+- `docs/`: technicka dokumentace a vygenerovane API docs
+- `project/`: backlog a historie hotovych ukolu
+- `AGENTS.md`: pravidla pro AI agenty a automatizovane prispevatele
 
 ## Rychly start
 
