@@ -15,12 +15,27 @@ The repository currently does not define a dedicated output directory for scrape
 The intended generated output is raw data downloaded from `sreality.cz` without
 post-processing.
 
-The persistence backend is still undecided. Candidate outputs are:
+The persistence backend is configurable. Generated outputs are:
 
-- MongoDB collections containing raw listing records
-- filesystem snapshots containing raw JSON or HTML responses
+- MongoDB collection `raw_listings` containing immutable raw listing records
+- filesystem snapshots under `data/raw/<region>/<listing_id>/<captured_at_utc>.json`
+- optional sibling HTML snapshots under `data/raw/<region>/<listing_id>/<captured_at_utc>.html`
 
 Derived or normalized payloads are not a target artifact for this project scope.
+
+## Backend Tradeoffs
+
+### Filesystem
+
+- simple to inspect, archive, and export into later analytical pipelines
+- convenient for local development and reproducible dataset snapshots
+- weaker for concurrent writers and query-heavy workflows
+
+### MongoDB
+
+- better for continuous collection runs, indexing, and filtered retrieval
+- supports historical snapshot querying without additional file scanning
+- adds operational dependency on a running database service
 
 ## Generated Documentation
 

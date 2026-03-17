@@ -82,7 +82,7 @@ Responsibilities:
 Rules:
 
 - no parsing or transformation logic
-- idempotency strategy belongs here (for example, upsert by listing id)
+- historical snapshot identity belongs here (for example, unique key on `listing_id` and `captured_at_utc`)
 
 ## Core Interfaces and Classes
 
@@ -124,6 +124,10 @@ Required fields:
 - `source_payload`: raw extracted payload (JSON-like mapping and/or raw HTML)
 - `source_metadata`: capture metadata (parser version, HTTP status, region/page context)
 
+Optional fields:
+
+- `raw_page_snapshot`: raw detail-page HTML stored without transformation when snapshot capture is enabled
+
 Explicit exclusions (must not appear in raw record contract):
 
 - geocoding results
@@ -145,6 +149,11 @@ The storage target is intentionally not fixed yet. The architecture must support
 
 - MongoDB for document-oriented raw record storage
 - filesystem storage for raw JSON or HTML snapshots
+
+The selected persistence strategy for the current implementation is historical
+snapshot storage. Each capture is immutable and identified by the combination of
+`listing_id` and `captured_at_utc` so later analytical pipelines can reconstruct
+price changes over time.
 
 ### Reference data loading flow
 

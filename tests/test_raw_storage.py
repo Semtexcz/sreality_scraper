@@ -1,0 +1,287 @@
+"""Tests for raw storage models, adapters, and runtime wiring."""
+
+from __future__ import annotations
+
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from scraperweb.application.acquisition_service import RawAcquisitionService
+from scraperweb.cli_runtime_options import RuntimeCliOptions, StorageBackend
+from scraperweb.estate_scraper import build_raw_record_repository
+from scraperweb.persistence.models import RawListingRecord, RawSourceMetadata
+from scraperweb.persistence.repositories import FilesystemRawRecordRepository, MongoRawRecordRepository
+
+
+class FakeListingPageClient:
+    """Return deterministic listing HTML for orchestration tests."""
+
+    def __init__(self, html_by_url: dict[str, str]) -> None:
+        """Store fake listing page responses."""
+
+        self._html_by_url = html_by_url
+
+    def fetch(self, url: str) -> str:
+        """Return the configured HTML response for the requested URL."""
+
+        return self._html_by_url[url]
+
+
+class FakeDetailPageClient:
+    """Return deterministic detail HTML for orchestration tests."""
+
+    def __init__(self, html_by_url: dict[str, str]) -> None:
+        """Store fake detail page responses."""
+
+        self._html_by_url = html_by_url
+
+    def fetch(self, url: str) -> str:
+        """Return the configured HTML response for the requested URL."""
+
+        return self._html_by_url[url]
+
+
+class FakeListingPageParser:
+    """Parse deterministic fake listing HTML into page count and URLs."""
+
+    def parse_range_of_estates(self, listing_html: str) -> int:
+        """Extract the configured number of pages from fake HTML."""
+
+        lines = listing_html.splitlines()
+        return int(lines[0].split(":", maxsplit=1)[1])
+
+    def parse_estate_urls(self, listing_html: str) -> list[str]:
+        """Extract fake estate URLs from fake HTML."""
+
+        return [line for line in listing_html.splitlines()[1:] if line]
+
+
+class FakeDetailPageParser:
+    """Produce deterministic raw payloads from fake detail HTML."""
+
+    def parse_raw_payload(self, detail_html: str) -> dict[str, Any]:
+        """Convert fake detail HTML into a raw payload dictionary."""
+
+        return {"payload": detail_html}
+
+
+class RecordingRepository:
+    """Collect stored records for assertions."""
+
+    def __init__(self) -> None:
+        """Initialize empty in-memory storage."""
+
+        self.records: list[RawListingRecord] = []
+
+    def save_record(self, record: RawListingRecord) -> None:
+        """Record each stored raw listing snapshot."""
+
+        self.records.append(record)
+
+
+class FakeCollection:
+    """Minimal MongoDB collection stub for repository tests."""
+
+    def __init__(self) -> None:
+        """Initialize captured inserts and index declarations."""
+
+        self.created_indexes: list[tuple[tuple[tuple[str, int], ...], dict[str, Any]]] = []
+        self.inserted_documents: list[dict[str, Any]] = []
+
+    def create_index(self, keys: list[tuple[str, int]], **kwargs: Any) -> None:
+        """Capture index creation calls."""
+
+        self.created_indexes.append((tuple(keys), kwargs))
+
+    def insert_one(self, document: dict[str, Any]) -> None:
+        """Capture inserted documents."""
+
+        self.inserted_documents.append(document)
+
+
+class FakeDatabase:
+    """Minimal MongoDB database stub for repository tests."""
+
+    def __init__(self, collection: FakeCollection) -> None:
+        """Store the collection returned for all collection lookups."""
+
+        self._collection = collection
+
+    def __getitem__(self, name: str) -> FakeCollection:
+        """Return the configured fake collection."""
+
+        return self._collection
+
+
+class FakeMongoClient:
+    """Minimal MongoDB client stub for repository tests."""
+
+    def __init__(self, collection: FakeCollection) -> None:
+        """Store the fake database exposed by the client."""
+
+        self._database = FakeDatabase(collection)
+
+    def __getitem__(self, name: str) -> FakeDatabase:
+        """Return the configured fake database."""
+
+        return self._database
+
+
+@pytest.fixture
+def sample_record() -> RawListingRecord:
+    """Return a representative raw listing record for storage tests."""
+
+    return RawListingRecord(
+        listing_id="1234567890",
+        source_url="https://www.sreality.cz/detail/prodej/byt/1234567890",
+        captured_at_utc=datetime(2026, 3, 17, 11, 22, 33, tzinfo=timezone.utc),
+        source_payload={"Nazev": "Byt 2+kk", "Cena": "7500000"},
+        source_metadata=RawSourceMetadata(
+            region="praha",
+            listing_page_number=2,
+            scrape_run_id="run-001",
+            http_status=200,
+            parser_version="sreality-detail-v1",
+            captured_from="detail_page",
+        ),
+        raw_page_snapshot="<html>detail</html>",
+    )
+
+
+def test_filesystem_repository_stores_json_and_optional_snapshot(
+    tmp_path: Path,
+    sample_record: RawListingRecord,
+) -> None:
+    """Persist JSON records and sibling HTML snapshots for filesystem storage."""
+
+    repository = FilesystemRawRecordRepository(tmp_path)
+
+    repository.save_record(sample_record)
+
+    listing_directory = tmp_path / "praha" / "1234567890"
+    stored_files = sorted(path.name for path in listing_directory.iterdir())
+
+    assert stored_files == ["2026-03-17T11-22-33+00-00.html", "2026-03-17T11-22-33+00-00.json"]
+
+    stored_record = json.loads((listing_directory / stored_files[1]).read_text(encoding="utf-8"))
+    assert stored_record["listing_id"] == sample_record.listing_id
+    assert stored_record["captured_at_utc"] == "2026-03-17T11:22:33+00:00"
+    assert stored_record["source_metadata"]["region"] == "praha"
+    assert (listing_directory / stored_files[0]).read_text(encoding="utf-8") == "<html>detail</html>"
+
+
+def test_mongo_repository_creates_expected_indexes_and_inserts_document(
+    monkeypatch: pytest.MonkeyPatch,
+    sample_record: RawListingRecord,
+) -> None:
+    """Configure the expected MongoDB indexes and insert serialized records."""
+
+    fake_collection = FakeCollection()
+
+    def fake_mongo_client(uri: str) -> FakeMongoClient:
+        """Return a deterministic fake client for repository construction."""
+
+        assert uri == "mongodb://example.test:27017"
+        return FakeMongoClient(fake_collection)
+
+    monkeypatch.setattr("scraperweb.persistence.repositories.pymongo.MongoClient", fake_mongo_client)
+
+    repository = MongoRawRecordRepository(
+        mongodb_uri="mongodb://example.test:27017",
+        mongodb_database="RawListings",
+    )
+    repository.save_record(sample_record)
+
+    assert len(fake_collection.created_indexes) == 3
+    assert fake_collection.inserted_documents[0]["listing_id"] == "1234567890"
+    assert fake_collection.inserted_documents[0]["captured_at_utc"] == "2026-03-17T11:22:33+00:00"
+
+
+def test_acquisition_service_builds_raw_records_with_history_metadata() -> None:
+    """Create canonical raw listing records before persistence callbacks are invoked."""
+
+    repository = RecordingRepository()
+    service = RawAcquisitionService(
+        listing_page_client=FakeListingPageClient(
+            {
+                "https://example.test/praha?strana=1": "pages:1\nhttps://detail/1",
+            },
+        ),
+        detail_page_client=FakeDetailPageClient(
+            {
+                "https://detail/1": "<html>detail payload</html>",
+            },
+        ),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=FakeDetailPageParser(),
+        raw_record_repository=repository,
+        region_slug="praha",
+        scrape_run_id="run-123",
+        capture_raw_page_snapshots=True,
+    )
+
+    tracked_estates = service.collect_for_region(
+        district_link="https://example.test/praha?strana=",
+        max_pages=1,
+        max_estates=10,
+        tracked_estates=0,
+    )
+
+    assert tracked_estates == 1
+    assert len(repository.records) == 1
+    stored_record = repository.records[0]
+    assert stored_record.listing_id == "1"
+    assert stored_record.source_metadata.region == "praha"
+    assert stored_record.source_metadata.listing_page_number == 1
+    assert stored_record.source_metadata.scrape_run_id == "run-123"
+    assert stored_record.raw_page_snapshot == "<html>detail payload</html>"
+    assert stored_record.source_payload == {"payload": "<html>detail payload</html>"}
+
+
+def test_build_raw_record_repository_uses_filesystem_backend(tmp_path: Path) -> None:
+    """Build the filesystem repository when runtime options select it."""
+
+    repository = build_raw_record_repository(
+        RuntimeCliOptions(
+            regions=("praha",),
+            max_pages=1,
+            max_estates=1,
+            storage_backend=StorageBackend.FILESYSTEM,
+            mongodb_uri=None,
+            mongodb_database=None,
+            output_dir=tmp_path,
+        ),
+    )
+
+    assert isinstance(repository, FilesystemRawRecordRepository)
+
+
+def test_build_raw_record_repository_uses_mongodb_backend(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Build the MongoDB repository when runtime options select it."""
+
+    fake_collection = FakeCollection()
+
+    def fake_mongo_client(uri: str) -> FakeMongoClient:
+        """Return a deterministic fake client for repository construction."""
+
+        assert uri == "mongodb://example.test:27017"
+        return FakeMongoClient(fake_collection)
+
+    monkeypatch.setattr("scraperweb.persistence.repositories.pymongo.MongoClient", fake_mongo_client)
+
+    repository = build_raw_record_repository(
+        RuntimeCliOptions(
+            regions=("praha",),
+            max_pages=1,
+            max_estates=1,
+            storage_backend=StorageBackend.MONGODB,
+            mongodb_uri="mongodb://example.test:27017",
+            mongodb_database="RawListings",
+            output_dir=None,
+        ),
+    )
+
+    assert isinstance(repository, MongoRawRecordRepository)

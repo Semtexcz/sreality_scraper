@@ -1,6 +1,6 @@
 ---
 task: TASK-006
-status: "backlog"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add a storage abstraction for raw scraper outputs
 
 Task: TASK-006
-Status: backlog
+Status: done
 Priority: P1
 Type: feature
 Author:
@@ -23,12 +23,12 @@ the scraper runtime and forces persistence choices into unrelated parts of the c
 
 ## Definition of Done
 
-- [ ] Define a storage interface for persisting raw listing records and optional raw page snapshots.
-- [ ] Implement a filesystem storage adapter.
-- [ ] Implement a MongoDB storage adapter.
-- [ ] Make storage backend selection configurable without changing scraper orchestration code.
-- [ ] Document operational tradeoffs for both storage backends.
-- [ ] Ensure stored records remain raw and are not enriched or normalized before persistence.
+- [x] Define a storage interface for persisting raw listing records and optional raw page snapshots.
+- [x] Implement a filesystem storage adapter.
+- [x] Implement a MongoDB storage adapter.
+- [x] Make storage backend selection configurable without changing scraper orchestration code.
+- [x] Document operational tradeoffs for both storage backends.
+- [x] Ensure stored records remain raw and are not enriched or normalized before persistence.
 
 ## Notes
 

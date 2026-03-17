@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [0.1.9] - 2026-03-17
+
+### Added
+
+- added `scraperweb.persistence` with canonical raw-record models plus filesystem and MongoDB storage adapters
+- added historical snapshot persistence keyed by `listing_id` and `captured_at_utc` to preserve longitudinal price data for later analysis
+- added repository tests covering filesystem storage, MongoDB index setup, and raw acquisition record construction
+
+### Changed
+
+- refactored `scraperweb.application.acquisition_service.RawAcquisitionService` to build immutable `RawListingRecord` objects and persist them through a storage abstraction
+- updated `scraperweb.estate_scraper` to select persistence backends without changing orchestration flow
+- documented operational tradeoffs and generated artifact layout for filesystem and MongoDB raw storage backends
+
 ## [0.1.8] - 2026-03-17
 
 ### Added
