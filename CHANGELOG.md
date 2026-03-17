@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.0.1] - 2026-03-17
+
+### Added
+
+- added representative HTML fixtures plus regression tests for scraping clients and parser contracts
+- added CLI tests for MongoDB runtime selection and Typer-enforced bounded runtime options
+
+### Changed
+
+- expanded raw storage and acquisition service coverage to verify path sanitization, immutable raw payload persistence, and runtime stop conditions
+
 ## [1.0.0] - 2026-03-17
 
 ### Changed

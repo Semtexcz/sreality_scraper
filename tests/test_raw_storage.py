@@ -173,6 +173,50 @@ def test_filesystem_repository_stores_json_and_optional_snapshot(
     assert (listing_directory / stored_files[0]).read_text(encoding="utf-8") == "<html>detail</html>"
 
 
+def test_filesystem_repository_sanitizes_paths_and_preserves_raw_payload(
+    tmp_path: Path,
+) -> None:
+    """Sanitize storage paths without mutating the serialized raw source payload."""
+
+    record = RawListingRecord(
+        listing_id=" detail id / 42 ",
+        source_url="https://www.sreality.cz/detail/prodej/byt/detail-id-42",
+        captured_at_utc=datetime(2026, 3, 17, 14, 0, 0, tzinfo=timezone.utc),
+        source_payload={
+            "Název": "Byt 2+kk",
+            "Vybavení": ["Sklep", "Balkon"],
+            "Cena": {"částka": "8 490 000 Kč"},
+        },
+        source_metadata=RawSourceMetadata(
+            region=" Praha / Karlín ",
+            listing_page_number=1,
+            scrape_run_id="run-raw",
+            http_status=200,
+            parser_version="sreality-detail-v1",
+            captured_from="detail_page",
+        ),
+        raw_page_snapshot=None,
+    )
+    repository = FilesystemRawRecordRepository(tmp_path)
+
+    repository.save_record(record)
+
+    json_path = (
+        tmp_path
+        / "Praha-Karl-n"
+        / "detail-id-42"
+        / "2026-03-17T14-00-00+00-00.json"
+    )
+    stored_record = json.loads(json_path.read_text(encoding="utf-8"))
+
+    assert stored_record["source_payload"] == {
+        "Název": "Byt 2+kk",
+        "Vybavení": ["Sklep", "Balkon"],
+        "Cena": {"částka": "8 490 000 Kč"},
+    }
+    assert not json_path.with_suffix(".html").exists()
+
+
 def test_mongo_repository_creates_expected_indexes_and_inserts_document(
     monkeypatch: pytest.MonkeyPatch,
     sample_record: RawListingRecord,
@@ -239,6 +283,50 @@ def test_acquisition_service_builds_raw_records_with_history_metadata() -> None:
     assert stored_record.source_metadata.scrape_run_id == "run-123"
     assert stored_record.raw_page_snapshot == "<html>detail payload</html>"
     assert stored_record.source_payload == {"payload": "<html>detail payload</html>"}
+
+
+def test_acquisition_service_respects_max_pages_and_max_estates_limits() -> None:
+    """Stop collection when the configured page and estate bounds are reached."""
+
+    repository = RecordingRepository()
+    listing_page_client = FakeListingPageClient(
+        {
+            "https://example.test/praha?strana=1": (
+                "pages:3\nhttps://detail/1\nhttps://detail/2"
+            ),
+            "https://example.test/praha?strana=2": (
+                "pages:3\nhttps://detail/3\nhttps://detail/4"
+            ),
+        },
+    )
+    service = RawAcquisitionService(
+        listing_page_client=listing_page_client,
+        detail_page_client=FakeDetailPageClient(
+            {
+                "https://detail/1": "<html>detail 1</html>",
+                "https://detail/2": "<html>detail 2</html>",
+                "https://detail/3": "<html>detail 3</html>",
+                "https://detail/4": "<html>detail 4</html>",
+            },
+        ),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=FakeDetailPageParser(),
+        raw_record_repository=repository,
+        region_slug="praha",
+        scrape_run_id="run-limits",
+        capture_raw_page_snapshots=False,
+    )
+
+    tracked_estates = service.collect_for_region(
+        district_link="https://example.test/praha?strana=",
+        max_pages=2,
+        max_estates=3,
+        tracked_estates=0,
+    )
+
+    assert tracked_estates == 3
+    assert [record.listing_id for record in repository.records] == ["1", "2", "3"]
+    assert all(record.raw_page_snapshot is None for record in repository.records)
 
 
 def test_build_raw_record_repository_uses_filesystem_backend(tmp_path: Path) -> None:

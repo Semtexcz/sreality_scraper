@@ -1,6 +1,6 @@
 ---
 task: TASK-009
-status: "backlog"
+status: "done"
 priority: P1
 type: test
 ---
@@ -8,7 +8,7 @@ type: test
 # Add regression-safe test coverage for the refactored runtime
 
 Task: TASK-009
-Status: backlog
+Status: done
 Priority: P1
 Type: test
 Author:
@@ -23,12 +23,12 @@ and the refactor will remain fragile.
 
 ## Definition of Done
 
-- [ ] Add unit tests for scraper clients, parsers, storage adapters, and orchestration services.
-- [ ] Add CLI tests for Typer commands, argument validation, and bounded runtime options.
-- [ ] Add fixture-based tests for representative listing and detail pages.
-- [ ] Keep all tests deterministic and independent from live network services.
-- [ ] Verify both filesystem and MongoDB storage behavior where practical.
-- [ ] Ensure `poetry run pytest` passes in the refactored project.
+- [x] Add unit tests for scraper clients, parsers, storage adapters, and orchestration services.
+- [x] Add CLI tests for Typer commands, argument validation, and bounded runtime options.
+- [x] Add fixture-based tests for representative listing and detail pages.
+- [x] Keep all tests deterministic and independent from live network services.
+- [x] Verify both filesystem and MongoDB storage behavior where practical.
+- [x] Ensure `poetry run pytest` passes in the refactored project.
 
 ## Notes
 

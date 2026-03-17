@@ -95,3 +95,55 @@ def test_scrape_command_rejects_unknown_region() -> None:
 
     assert result.exit_code != 0
     assert "Unsupported region value(s): not-a-region." in result.stdout
+
+
+def test_scrape_command_accepts_mongodb_backend_options(monkeypatch) -> None:
+    """Pass MongoDB backend options through CLI validation into the runtime."""
+
+    captured_options = {}
+
+    def fake_run_scraper(options) -> int:
+        """Capture runtime options passed from the CLI."""
+
+        captured_options["value"] = options
+        return 2
+
+    monkeypatch.setattr("scraperweb.cli.run_scraper", fake_run_scraper)
+
+    result = runner.invoke(
+        app,
+        [
+            "scrape",
+            "--storage-backend",
+            "mongodb",
+            "--mongodb-uri",
+            "mongodb://example.test:27017",
+            "--mongodb-database",
+            "RawListings",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Processed 2 estates." in result.stdout
+    assert captured_options["value"].storage_backend == StorageBackend.MONGODB
+    assert captured_options["value"].mongodb_uri == "mongodb://example.test:27017"
+    assert captured_options["value"].mongodb_database == "RawListings"
+    assert captured_options["value"].output_dir == Path("data/raw")
+
+
+def test_scrape_command_rejects_non_positive_page_limit() -> None:
+    """Reject invalid page limits before the scraper runtime is called."""
+
+    result = runner.invoke(app, ["scrape", "--max-pages", "0"])
+
+    assert result.exit_code != 0
+    assert "Invalid value for '--max-pages'" in result.stdout
+
+
+def test_scrape_command_rejects_non_positive_estate_limit() -> None:
+    """Reject invalid estate limits before the scraper runtime is called."""
+
+    result = runner.invoke(app, ["scrape", "--max-estates", "0"])
+
+    assert result.exit_code != 0
+    assert "Invalid value for '--max-estates'" in result.stdout
