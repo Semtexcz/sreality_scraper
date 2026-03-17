@@ -1,6 +1,6 @@
 ---
 task: TASK-013
-status: "backlog"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add the normalization stage and stable normalized contract
 
 Task: TASK-013
-Status: backlog
+Status: done
 Priority: P1
 Type: feature
 Author:
@@ -24,15 +24,15 @@ to the captured source record.
 
 ## Definition of Done
 
-- [ ] Define the canonical normalized record model produced from raw scraper output.
-- [ ] Implement the contract as a typed Python model.
-- [ ] Place the contract/component in the appropriate module boundary.
-- [ ] Implement a dedicated normalization component that converts raw records into the normalized contract.
-- [ ] Preserve source identity and provenance so normalized records can be traced back to the originating raw capture.
-- [ ] Include a `normalization_version` field in the normalized contract.
-- [ ] Document how missing, partial, or source-specific values are represented in the normalized structure.
-- [ ] Ensure normalization produces identical output for identical raw input.
-- [ ] Add deterministic tests for the normalized contract and representative mapping cases.
+- [x] Define the canonical normalized record model produced from raw scraper output.
+- [x] Implement the contract as a typed Python model.
+- [x] Place the contract/component in the appropriate module boundary.
+- [x] Implement a dedicated normalization component that converts raw records into the normalized contract.
+- [x] Preserve source identity and provenance so normalized records can be traced back to the originating raw capture.
+- [x] Include a `normalization_version` field in the normalized contract.
+- [x] Document how missing, partial, or source-specific values are represented in the normalized structure.
+- [x] Ensure normalization produces identical output for identical raw input.
+- [x] Add deterministic tests for the normalized contract and representative mapping cases.
 
 ## Notes
 

@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.1.0] - 2026-03-17
+
+### Added
+
+- added a normalization-stage `RawListingNormalizer` component that converts
+  scraper-owned `RawListingRecord` snapshots into stable `NormalizedListingRecord`
+  contracts with explicit provenance metadata
+- added explicit normalized price, building, and location sub-contracts plus
+  deterministic regression tests for representative normalization mappings
+
+### Changed
+
+- replaced the placeholder normalization contract with a stable typed schema that
+  includes `normalization_version`, preserves unmapped raw fields under
+  `source_specific_attributes`, and represents missing typed values as `None`
+
 ## [1.0.9] - 2026-03-17
 
 ### Added
