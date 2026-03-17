@@ -26,10 +26,12 @@ class FakeListingPageClient:
         """Store fake listing page responses."""
 
         self._html_by_url = html_by_url
+        self.calls: list[str] = []
 
     def fetch(self, url: str) -> str:
         """Return the configured HTML response for the requested URL."""
 
+        self.calls.append(url)
         return self._html_by_url[url]
 
 
@@ -48,10 +50,10 @@ class FakeDetailPageClient:
 
 
 class FakeListingPageParser:
-    """Parse deterministic fake listing HTML into page count and URLs."""
+    """Parse deterministic fake listing HTML into pagination hints and URLs."""
 
     def parse_range_of_estates(self, listing_html: str) -> int:
-        """Extract the configured number of pages from fake HTML."""
+        """Extract the configured pagination hint from fake HTML."""
 
         lines = listing_html.splitlines()
         return int(lines[0].split(":", maxsplit=1)[1])
@@ -353,6 +355,128 @@ def test_raw_listing_collector_emits_source_faithful_raw_records() -> None:
     }
     assert "price_per_square_meter" not in collected_record.to_serializable_dict()
     json.dumps(collected_record.to_serializable_dict())
+
+
+def test_raw_listing_collector_stops_on_repeated_listing_page_signature() -> None:
+    """Stop region traversal when a later page repeats an earlier estate URL set."""
+
+    listing_page_client = FakeListingPageClient(
+        {
+            "https://example.test/praha?strana=1": (
+                "pages:5\nhttps://detail/1\nhttps://detail/2"
+            ),
+            "https://example.test/praha?strana=2": (
+                "pages:5\nhttps://detail/3\nhttps://detail/4"
+            ),
+            "https://example.test/praha?strana=3": (
+                "pages:5\nhttps://detail/3\nhttps://detail/4"
+            ),
+        },
+    )
+    collector = RawListingCollector(
+        listing_page_client=listing_page_client,
+        detail_page_client=FakeDetailPageClient(
+            {
+                "https://detail/1": "<html>detail 1</html>",
+                "https://detail/2": "<html>detail 2</html>",
+                "https://detail/3": "<html>detail 3</html>",
+                "https://detail/4": "<html>detail 4</html>",
+            },
+        ),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=FakeDetailPageParser(),
+        region_slug="praha",
+        scrape_run_id="run-repeat",
+    )
+
+    collected_records = list(
+        collector.collect_region_records(
+            district_link="https://example.test/praha?strana=",
+            max_pages=5,
+        ),
+    )
+
+    assert [record.listing_id for record in collected_records] == ["1", "2", "3", "4"]
+    assert listing_page_client.calls == [
+        "https://example.test/praha?strana=1",
+        "https://example.test/praha?strana=2",
+        "https://example.test/praha?strana=3",
+    ]
+
+
+def test_raw_listing_collector_stops_on_empty_listing_page() -> None:
+    """Stop region traversal when the parser reports an empty listing page."""
+
+    collector = RawListingCollector(
+        listing_page_client=FakeListingPageClient(
+            {
+                "https://example.test/praha?strana=1": (
+                    "pages:5\nhttps://detail/1\nhttps://detail/2"
+                ),
+                "https://example.test/praha?strana=2": "pages:5",
+            },
+        ),
+        detail_page_client=FakeDetailPageClient(
+            {
+                "https://detail/1": "<html>detail 1</html>",
+                "https://detail/2": "<html>detail 2</html>",
+            },
+        ),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=FakeDetailPageParser(),
+        region_slug="praha",
+        scrape_run_id="run-empty-page",
+    )
+
+    collected_records = list(
+        collector.collect_region_records(
+            district_link="https://example.test/praha?strana=",
+            max_pages=5,
+        ),
+    )
+
+    assert [record.listing_id for record in collected_records] == ["1", "2"]
+
+
+def test_raw_listing_collector_stops_when_listing_page_has_no_new_estates() -> None:
+    """Stop region traversal when a later page contributes no unseen estate URLs."""
+
+    listing_page_client = FakeListingPageClient(
+        {
+            "https://example.test/praha?strana=1": (
+                "pages:5\nhttps://detail/1\nhttps://detail/2"
+            ),
+            "https://example.test/praha?strana=2": (
+                "pages:5\nhttps://detail/2\nhttps://detail/1"
+            ),
+        },
+    )
+    collector = RawListingCollector(
+        listing_page_client=listing_page_client,
+        detail_page_client=FakeDetailPageClient(
+            {
+                "https://detail/1": "<html>detail 1</html>",
+                "https://detail/2": "<html>detail 2</html>",
+            },
+        ),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=FakeDetailPageParser(),
+        region_slug="praha",
+        scrape_run_id="run-drift",
+    )
+
+    collected_records = list(
+        collector.collect_region_records(
+            district_link="https://example.test/praha?strana=",
+            max_pages=5,
+        ),
+    )
+
+    assert [record.listing_id for record in collected_records] == ["1", "2"]
+    assert listing_page_client.calls == [
+        "https://example.test/praha?strana=1",
+        "https://example.test/praha?strana=2",
+    ]
 
 
 def test_acquisition_service_persists_emitted_raw_records() -> None:

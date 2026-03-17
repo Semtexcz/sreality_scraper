@@ -29,10 +29,10 @@ def clean_string(value: str) -> str:
 
 
 class SrealityListingPageParser:
-    """Parser for listing pagination and detail links."""
+    """Parser for listing pagination hints and detail links."""
 
     def parse_range_of_estates(self, listing_html: str) -> int:
-        """Infer page count as ``max(strana) + 1`` from listing HTML."""
+        """Return a best-effort pagination hint derived from ``strana`` anchors."""
 
         received_data = bSoup(listing_html, "html.parser")
         self._extract_estate_urls(received_data)

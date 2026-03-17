@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from scraperweb.scraper.clients import DetailPageClient, ListingPageClient
@@ -20,8 +21,22 @@ DETAIL_PAGE_HTTP_STATUS = 200
 DETAIL_PAGE_CAPTURED_FROM = "detail_page"
 
 
+@dataclass
+class ListingTraversalState:
+    """Track observed listing-page outcomes during one region traversal."""
+
+    seen_page_signatures: set[tuple[str, ...]] = field(default_factory=set)
+    seen_estate_urls: set[str] = field(default_factory=set)
+
+
 class RawListingCollector:
-    """Collect raw listing records from listing and detail page HTML."""
+    """Collect raw listing records from listing and detail page HTML.
+
+    Region traversal is always bounded by ``max_pages``. It also stops early
+    when a listing page is empty, repeats an already observed estate URL set, or
+    contains no estate URLs that were not already seen in the same region
+    traversal.
+    """
 
     def __init__(
         self,
@@ -48,24 +63,11 @@ class RawListingCollector:
         district_link: str,
         max_pages: int,
     ) -> Iterator[RawListingRecord]:
-        """Yield raw listing records for one region up to the requested page limit."""
+        """Yield raw listing records for one region until traversal exhaustion."""
 
-        first_page_html = self._fetch_listing_page(
-            listing_url=f"{district_link}1",
-            page_number=1,
-        )
-        try:
-            listing_range = self._listing_page_parser.parse_range_of_estates(first_page_html)
-        except ScraperMarkupError as error:
-            raise self._build_markup_response_error(
-                error=error,
-                request_url=f"{district_link}1",
-                page_number=1,
-                listing_url=None,
-            ) from error
-        page_limit = min(listing_range, max_pages)
+        traversal_state = ListingTraversalState()
 
-        for page_number in range(1, page_limit + 1):
+        for page_number in range(1, max_pages + 1):
             listing_url = f"{district_link}{page_number}"
             listing_html = self._fetch_listing_page(
                 listing_url=listing_url,
@@ -81,7 +83,14 @@ class RawListingCollector:
                     listing_url=None,
                 ) from error
 
-            for estate_url in estate_urls:
+            should_continue, new_estate_urls = self._evaluate_listing_page(
+                estate_urls=estate_urls,
+                traversal_state=traversal_state,
+            )
+            if not should_continue:
+                return
+
+            for estate_url in new_estate_urls:
                 detail_html = self._fetch_detail_page(
                     detail_url=estate_url,
                     page_number=page_number,
@@ -101,6 +110,32 @@ class RawListingCollector:
                     raw_payload=raw_payload,
                     detail_html=detail_html,
                 )
+
+    def _evaluate_listing_page(
+        self,
+        estate_urls: list[str],
+        traversal_state: ListingTraversalState,
+    ) -> tuple[bool, list[str]]:
+        """Return whether traversal should continue and which estate URLs are new."""
+
+        if not estate_urls:
+            return False, []
+
+        page_signature = tuple(estate_urls)
+        if page_signature in traversal_state.seen_page_signatures:
+            return False, []
+
+        traversal_state.seen_page_signatures.add(page_signature)
+        new_estate_urls = [
+            estate_url
+            for estate_url in estate_urls
+            if estate_url not in traversal_state.seen_estate_urls
+        ]
+        if not new_estate_urls:
+            return False, []
+
+        traversal_state.seen_estate_urls.update(new_estate_urls)
+        return True, new_estate_urls
 
     def _fetch_listing_page(self, listing_url: str, page_number: int) -> str:
         """Fetch one listing page and attach region and page context to failures."""

@@ -98,6 +98,13 @@ Scrape command options:
 - `--mongodb-uri <uri>`: MongoDB URI for MongoDB backend
 - `--mongodb-database <name>`: MongoDB database for MongoDB backend
 
+Region traversal semantics:
+
+- traversal always stops at `--max-pages`, even if pagination markup suggests more pages
+- traversal stops early when a listing page is empty
+- traversal stops early when a listing page repeats an already observed estate URL set
+- traversal stops early when a listing page contains only already-seen estate URLs, which protects runs from duplicate tail pages and pagination drift
+
 Validation rules:
 
 - `--mongodb-uri` and `--mongodb-database` are allowed only with

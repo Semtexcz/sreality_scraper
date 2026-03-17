@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.6.0] - 2026-03-17
+
+### Added
+
+- added deterministic traversal regression coverage for repeated listing pages,
+  empty listing pages, and pagination drift pages that contain no unseen estate
+  URLs
+
+### Changed
+
+- replaced the collector's pagination-count traversal assumption with
+  page-by-page stop conditions driven by observed listing-page outcomes
+- documented the operator-visible region traversal stop conditions that now end a
+  run on empty, repeated, or fully duplicated listing pages before `max_pages`
+
 ## [1.5.0] - 2026-03-17
 
 ### Added
