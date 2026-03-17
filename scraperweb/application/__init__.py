@@ -2,4 +2,5 @@
 
 __all__ = [
     "acquisition_service",
+    "linear_pipeline_service",
 ]

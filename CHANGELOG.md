@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.3.0] - 2026-03-17
+
+### Added
+
+- added a deterministic modeling-stage `EnrichedListingModelingInputBuilder`
+  component that accepts `EnrichedListingRecord` inputs only and emits stable
+  `ModelingInputRecord` contracts with explicit model-ready feature and target sets
+- added a synchronous `LinearListingPipelineService` that composes scraper,
+  normalization, enrichment, and modeling in one in-process sequence without
+  replacing the existing raw-only acquisition workflow
+- added regression tests that cover stage handoff contracts across the full linear
+  pipeline and keep the modeling boundary isolated from upstream non-enriched inputs
+
+### Changed
+
+- replaced the modeling placeholder contract with a typed schema that includes
+  `model_version`, `modeling_input_version`, explicit modeling metadata, and full
+  enriched-record traceability for downstream consumers
+- updated module documentation to mark the modeling package as an active stage with
+  a concrete runtime component
+
 ## [1.2.0] - 2026-03-17
 
 ### Added

@@ -1,6 +1,6 @@
 ---
 task: TASK-015
-status: "backlog"
+status: "done"
 priority: P2
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add the modeling input stage and linear pipeline wiring
 
 Task: TASK-015
-Status: backlog
+Status: done
 Priority: P2
 Type: feature
 Author:

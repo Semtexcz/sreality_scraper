@@ -71,9 +71,11 @@ while preserving the full normalized input record for traceability.
 
 ### `scraperweb.modeling`
 
-Canonical modeling-stage package for typed output contracts.
+Canonical modeling-stage package for typed output contracts and deterministic
+model-ready input builders.
 
-Status: package boundary in place; modeling builders follow in later tasks.
+Status: active package boundary with `EnrichedListingModelingInputBuilder` and a
+stable modeling input contract that depends on enrichment outputs only.
 
 ### `scraperweb.persistence`
 

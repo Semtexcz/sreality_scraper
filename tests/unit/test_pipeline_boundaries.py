@@ -36,6 +36,14 @@ def test_stage_contract_modules_are_importable() -> None:
     assert ModelingInputRecord.__name__ == "ModelingInputRecord"
 
 
+def test_application_layer_exposes_linear_pipeline_module() -> None:
+    """Keep the application-layer linear pipeline orchestration importable."""
+
+    module_path = PACKAGE_ROOT / "application" / "linear_pipeline_service.py"
+
+    assert module_path.exists()
+
+
 def test_stage_packages_follow_one_way_dependency_rules() -> None:
     """Reject imports from downstream pipeline stages inside upstream packages."""
 
