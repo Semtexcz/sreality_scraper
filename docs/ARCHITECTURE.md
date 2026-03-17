@@ -139,7 +139,7 @@ Explicit exclusions (must not appear in raw record contract):
 
 ### Estate scraping flow
 
-1. `scraperweb.estate_scraper` builds runtime configuration from environment.
+1. `scraperweb.cli` validates runtime options for a raw scraping run.
 2. Listing pages are fetched from `sreality.cz`.
 3. Estate detail pages are downloaded and parsed into a raw machine-readable form.
 4. The captured records are stored without additional data operations.
@@ -154,35 +154,19 @@ snapshot storage. Each capture is immutable and identified by the combination of
 `listing_id` and `captured_at_utc` so later analytical pipelines can reconstruct
 price changes over time.
 
-### Reference data loading flow
-
-1. `scraperweb.towns` reads city datasets from `data/`.
-2. `scraperweb.districts_loader` reads postcode coordinates from `data/souradnice.csv`.
-3. Records are prepared for auxiliary use when the selected storage or runtime model
-   requires them.
-
 ## Configuration
 
 Runtime configuration is centralized in `scraperweb.config` and uses:
 
 - `MONGODB_URI`
 - `MONGODB_DATABASE`
-- `GEOPY_USER_AGENT`
 
 ## Transitional Modules and Replacement Plan
 
-This module remains transitional and should still be simplified during the refactor:
+This module remains transitional and should still be simplified during future cleanup:
 
 - `scraperweb.estate_scraper`: currently a mixed procedural runtime; replace with thin
   CLI adapter plus `RawAcquisitionService` orchestration.
-
-Potentially obsolete for raw-only scope and subject to follow-up decision:
-
-- `scraperweb.towns`
-- `scraperweb.districts_loader`
-
-These two loaders should remain until tasks explicitly removing enrichment/reference-data
-flows are completed.
 
 ## Constraints
 

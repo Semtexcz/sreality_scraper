@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.0.0] - 2026-03-17
+
+### Changed
+
+- narrowed the supported runtime surface to raw listing acquisition and raw persistence only
+- simplified runtime configuration to MongoDB values used for raw storage selection
+- updated operator documentation to remove enrichment and auxiliary loader workflows
+
+### Removed
+
+- removed the `load-towns` and `load-districts` CLI commands and their legacy runtime modules
+- removed geocoding-specific settings and the `geopy` dependency from the active runtime path
+
 ## [0.2.1] - 2026-03-17
 
 ### Changed

@@ -1,6 +1,6 @@
 ---
 task: TASK-008
-status: "backlog"
+status: "done"
 priority: P1
 type: refactor
 ---
@@ -8,7 +8,7 @@ type: refactor
 # Remove enrichment and legacy output behavior from the scraper path
 
 Task: TASK-008
-Status: backlog
+Status: done
 Priority: P1
 Type: refactor
 Author:
@@ -23,11 +23,11 @@ of capturing and storing raw source data only.
 
 ## Definition of Done
 
-- [ ] Remove geocoding from the scraper runtime path.
-- [ ] Remove API posting from the scraper runtime path.
-- [ ] Remove or isolate derived-field generation that mutates captured source records.
-- [ ] Simplify configuration so it only includes values required for fetching and raw persistence.
-- [ ] Update runtime documentation to reflect the final raw-data-only behavior.
+- [x] Remove geocoding from the scraper runtime path.
+- [x] Remove API posting from the scraper runtime path.
+- [x] Remove or isolate derived-field generation that mutates captured source records.
+- [x] Simplify configuration so it only includes values required for fetching and raw persistence.
+- [x] Update runtime documentation to reflect the final raw-data-only behavior.
 
 ## Notes
 

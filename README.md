@@ -20,7 +20,7 @@ The storage backend is still under evaluation. Current options are:
 ## Structure
 
 - `scraperweb/`: application code
-- `data/`: CSV inputs and helper datasets
+- `data/`: raw output directory and bundled source datasets
 - `docs/`: technical documentation and generated API docs
 - `project/`: backlog and completed task history
 - `AGENTS.md`: rules for AI agents and automated contributors
@@ -31,29 +31,24 @@ The storage backend is still under evaluation. Current options are:
 poetry install
 poetry run scraperweb --help
 poetry run scraperweb scrape --help
-poetry run scraperweb load-towns --help
-poetry run scraperweb load-districts --help
 ```
 
 ## Configuration
 
-Current runtime configuration still exposes environment variables used by the existing
-implementation:
+Runtime configuration only exposes values required for raw persistence:
 
 - `MONGODB_URI` (default `mongodb://localhost:27017`)
-- `MONGODB_DATABASE` (default `RealEstates`)
-- `GEOPY_USER_AGENT` (default `scraperweb`)
+- `MONGODB_DATABASE` (default `RawListings`)
 
 ## Runtime CLI
 
 The project now exposes a Typer-based CLI with explicit subcommands:
 
 - `poetry run scraperweb scrape`: scrape raw listing records from `sreality.cz`
-- `poetry run scraperweb load-towns`: load auxiliary town geodata
-- `poetry run scraperweb load-districts`: load auxiliary district coordinates
 
 The `scrape` command is intentionally scoped to raw-data acquisition and persistence.
-It does not expose enrichment, normalization, or derived-output options.
+It does not expose enrichment, geocoding, normalization, reference-data loaders, or
+derived-output options.
 
 Scrape command options:
 

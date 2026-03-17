@@ -13,6 +13,17 @@ from scraperweb.cli_runtime_options import StorageBackend
 runner = CliRunner()
 
 
+def test_root_help_lists_only_raw_scrape_command() -> None:
+    """Expose only the raw scraper command on the public CLI surface."""
+
+    result = runner.invoke(app, ["--help"])
+
+    assert result.exit_code == 0
+    assert "scrape" in result.stdout
+    assert "load-towns" not in result.stdout
+    assert "load-districts" not in result.stdout
+
+
 def test_scrape_command_runs_with_explicit_runtime_options(monkeypatch) -> None:
     """Pass validated runtime options from the CLI into the scraper runtime."""
 
@@ -84,30 +95,3 @@ def test_scrape_command_rejects_unknown_region() -> None:
 
     assert result.exit_code != 0
     assert "Unsupported region value(s): not-a-region." in result.stdout
-
-
-def test_load_towns_command_runs_loader(monkeypatch) -> None:
-    """Delegate the towns subcommand directly to the loader service."""
-
-    called = {"value": False}
-
-    def fake_load_towns() -> None:
-        called["value"] = True
-
-    monkeypatch.setattr("scraperweb.cli.load_towns", fake_load_towns)
-
-    result = runner.invoke(app, ["load-towns"])
-
-    assert result.exit_code == 0
-    assert called["value"] is True
-
-
-def test_load_districts_command_reports_inserted_rows(monkeypatch) -> None:
-    """Delegate the districts subcommand and report the inserted row count."""
-
-    monkeypatch.setattr("scraperweb.cli.load_districts", lambda: 15)
-
-    result = runner.invoke(app, ["load-districts"])
-
-    assert result.exit_code == 0
-    assert "Inserted 15 district rows." in result.stdout

@@ -16,8 +16,7 @@ class Settings:
     """Application settings loaded from environment with sensible defaults."""
 
     mongodb_uri: str = field(default_factory=lambda: os.getenv("MONGODB_URI", "mongodb://localhost:27017"))
-    mongodb_database: str = field(default_factory=lambda: os.getenv("MONGODB_DATABASE", "RealEstates"))
-    geopy_user_agent: str = field(default_factory=lambda: os.getenv("GEOPY_USER_AGENT", "scraperweb"))
+    mongodb_database: str = field(default_factory=lambda: os.getenv("MONGODB_DATABASE", "RawListings"))
 
 
 def get_settings() -> Settings:

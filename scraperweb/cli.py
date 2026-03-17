@@ -18,19 +18,22 @@ from scraperweb.cli_runtime_options import (
     StorageBackend,
     build_runtime_cli_options,
 )
-from scraperweb.districts_loader import load_districts
 from scraperweb.estate_scraper import run_scraper
-from scraperweb.towns import load_towns
 
 
 app = typer.Typer(
     help=(
-        "Run raw-data scraper operations and auxiliary dataset loaders. "
+        "Run raw-data scraper operations. "
         "The CLI is intentionally scoped to raw acquisition and persistence flows."
     ),
     no_args_is_help=True,
     pretty_exceptions_enable=False,
 )
+
+
+@app.callback()
+def app_callback() -> None:
+    """Expose scraper commands through a stable top-level CLI group."""
 
 
 def _build_scrape_options(
@@ -138,21 +141,6 @@ def scrape_command(
     )
     processed_estates = run_scraper(options)
     typer.echo(f"Processed {processed_estates} estates.")
-
-
-@app.command("load-towns")
-def load_towns_command() -> None:
-    """Load auxiliary town geodata required by the current project workflow."""
-
-    load_towns()
-
-
-@app.command("load-districts")
-def load_districts_command() -> None:
-    """Load auxiliary district coordinate data required by the current workflow."""
-
-    inserted_rows = load_districts()
-    typer.echo(f"Inserted {inserted_rows} district rows.")
 
 
 def main() -> None:

@@ -26,14 +26,6 @@ persisting them without transformation.
 
 Status: transitional module pending replacement by layered services.
 
-### `scraperweb.towns`
-
-Loader for regional towns, district towns, and towns with extended competence.
-
-### `scraperweb.districts_loader`
-
-Loader for postcode and district reference data from `data/souradnice.csv`.
-
 Poetry also exposes:
 
 - `scraperweb`
