@@ -1,6 +1,6 @@
 ---
 task: TASK-010
-status: "backlog"
+status: "done"
 priority: P1
 type: design
 ---
@@ -8,7 +8,7 @@ type: design
 # Design the simple modular pipeline target architecture
 
 Task: TASK-010
-Status: backlog
+Status: done
 Priority: P1
 Type: design
 Author:
@@ -25,13 +25,13 @@ services, repositories, brokers, or orchestration platforms.
 
 ## Definition of Done
 
-- [ ] Document the target module boundaries for `scraper`, `normalization`, `enrichment`, and `modeling` inside the existing Python project.
-- [ ] Define the one-way dependency flow from scraper to normalization to enrichment to modeling.
-- [ ] Define the record contract expected at each stage boundary.
-- [ ] Require each stage boundary contract to be implemented as a typed Python model.
-- [ ] Require each contract and component to live in the appropriate module boundary.
-- [ ] Explicitly state that the scraper collects raw facts only, normalization produces stable structured data, enrichment computes derived features, and modeling consumes enriched data only.
-- [ ] Update the architecture and module documentation so later implementation tasks can execute against one approved design.
+- [x] Document the target module boundaries for `scraper`, `normalization`, `enrichment`, and `modeling` inside the existing Python project.
+- [x] Define the one-way dependency flow from scraper to normalization to enrichment to modeling.
+- [x] Define the record contract expected at each stage boundary.
+- [x] Require each stage boundary contract to be implemented as a typed Python model.
+- [x] Require each contract and component to live in the appropriate module boundary.
+- [x] Explicitly state that the scraper collects raw facts only, normalization produces stable structured data, enrichment computes derived features, and modeling consumes enriched data only.
+- [x] Update the architecture and module documentation so later implementation tasks can execute against one approved design.
 
 ## Notes
 

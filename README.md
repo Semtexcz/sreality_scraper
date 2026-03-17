@@ -6,6 +6,18 @@ The primary goal is data acquisition, not downstream processing. Scraper runs sh
 capture the source payloads as faithfully as possible and avoid enrichment,
 normalization, geocoding, or other transformations that alter the original data.
 
+The approved target architecture extends the repository into a simple linear
+in-process pipeline with explicit stage boundaries:
+
+- `scraper`
+- `normalization`
+- `enrichment`
+- `modeling`
+
+Each stage boundary is defined as a typed Python model and follows a one-way
+dependency flow from scraper to normalization to enrichment to modeling. The current
+runtime still implements the scraper stage only.
+
 ## Project Scope
 
 - Fetch raw real-estate listing data from `sreality.cz`.

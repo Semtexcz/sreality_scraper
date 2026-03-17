@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.0.6] - 2026-03-17
+
+### Changed
+
+- approved and documented the in-repo modular pipeline target architecture with
+  explicit `scraper`, `normalization`, `enrichment`, and `modeling` stage boundaries
+- defined one-way stage dependencies, typed stage-boundary contracts, and module
+  ownership rules in the architecture and module documentation
+- synchronized package version metadata so `pyproject.toml` and `scraperweb.__version__`
+  expose the same release version
+
 ## [1.0.5] - 2026-03-17
 
 ### Changed
