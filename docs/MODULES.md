@@ -13,8 +13,9 @@ The refactor target is a layered module layout with inward dependency flow:
 - `scraperweb.modeling.*`: modeling-input builders and modeling-input contracts
 - `scraperweb.persistence.*`: repository interfaces and backend adapters
 
-This structure is a target architecture and is implemented incrementally in follow-up
-tasks.
+This structure is now partially implemented. The `scraper`, `normalization`,
+`enrichment`, and `modeling` packages exist as explicit boundaries, while later-stage
+runtime behavior is still implemented incrementally in follow-up tasks.
 
 Approved dependency direction:
 
@@ -45,12 +46,40 @@ This layer wires stage components together but does not own stage contracts.
 ### `scraperweb.scraping`
 
 Current implementation package for HTTP adapters and HTML parsers. This package is a
-transitional precursor to the target `scraperweb.scraper` boundary.
+transitional compatibility layer that re-exports scraper-owned clients and parsers.
+
+Status: transitional module pending cleanup after import sites are migrated.
+
+### `scraperweb.scraper`
+
+Canonical scraper-stage package for raw contracts, HTTP clients, and HTML parsers.
+`RawListingRecord` ownership now lives here.
+
+Status: active package boundary.
+
+### `scraperweb.normalization`
+
+Canonical normalization-stage package for typed output contracts.
+
+Status: package boundary in place; transformation services follow in later tasks.
+
+### `scraperweb.enrichment`
+
+Canonical enrichment-stage package for typed output contracts.
+
+Status: package boundary in place; transformation services follow in later tasks.
+
+### `scraperweb.modeling`
+
+Canonical modeling-stage package for typed output contracts.
+
+Status: package boundary in place; modeling builders follow in later tasks.
 
 ### `scraperweb.persistence`
 
 Repository interfaces and storage adapters. Current raw contracts live here
-temporarily, but long-term contract ownership belongs to the producing stage.
+through compatibility re-exports, but canonical raw-contract ownership now belongs to
+the producing scraper stage.
 
 ### `scraperweb.estate_scraper`
 

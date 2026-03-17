@@ -15,8 +15,8 @@ from scraperweb.persistence.repositories import (
     MongoRawRecordRepository,
     RawRecordRepository,
 )
-from scraperweb.scraping.clients import DetailPageClient, ListingPageClient, SrealityHttpClient
-from scraperweb.scraping.parsers import SrealityDetailPageParser, SrealityListingPageParser
+from scraperweb.scraper.clients import DetailPageClient, ListingPageClient, SrealityHttpClient
+from scraperweb.scraper.parsers import SrealityDetailPageParser, SrealityListingPageParser
 
 LINKS_CZ: Final[list[str]] = [
     "https://www.sreality.cz/hledani/prodej/byty/praha?strana=",

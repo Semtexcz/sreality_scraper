@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.0.7] - 2026-03-17
+
+### Added
+
+- added explicit `scraperweb.scraper`, `scraperweb.normalization`,
+  `scraperweb.enrichment`, and `scraperweb.modeling` package boundaries with typed
+  stage-contract modules for the planned linear pipeline
+- added regression tests that enforce one-way stage dependencies across the new
+  pipeline packages
+
+### Changed
+
+- moved canonical raw-contract ownership to `scraperweb.scraper.models` and updated
+  the active runtime to import scraper-stage clients, parsers, and contracts from the
+  new package boundary
+- converted `scraperweb.scraping.*` and `scraperweb.persistence.models` into
+  documented compatibility wrappers so the CLI and raw persistence path keep working
+  during the transition
+
 ## [1.0.6] - 2026-03-17
 
 ### Changed

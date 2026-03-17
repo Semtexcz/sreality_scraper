@@ -1,11 +1,11 @@
-"""Persistence models and adapters for raw listing storage."""
+"""Persistence adapters for raw listing storage."""
 
-from scraperweb.persistence.models import RawListingRecord, RawSourceMetadata
 from scraperweb.persistence.repositories import (
     FilesystemRawRecordRepository,
     MongoRawRecordRepository,
     RawRecordRepository,
 )
+from scraperweb.scraper.models import RawListingRecord, RawSourceMetadata
 
 __all__ = [
     "FilesystemRawRecordRepository",

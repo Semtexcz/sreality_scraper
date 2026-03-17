@@ -9,7 +9,7 @@ from typing import Protocol
 
 import pymongo
 
-from scraperweb.persistence.models import RawListingRecord
+from scraperweb.scraper.models import RawListingRecord
 
 
 class RawRecordRepository(Protocol):

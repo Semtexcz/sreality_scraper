@@ -37,6 +37,20 @@ The storage backend is still under evaluation. Current options are:
 - `project/`: backlog and completed task history
 - `AGENTS.md`: rules for AI agents and automated contributors
 
+The `scraperweb/` package now exposes explicit stage boundaries:
+
+- `scraperweb.scraper`: canonical raw contracts, HTTP clients, and HTML parsers
+- `scraperweb.normalization`: normalization-stage contracts
+- `scraperweb.enrichment`: enrichment-stage contracts
+- `scraperweb.modeling`: modeling-stage contracts
+
+Compatibility note:
+
+- `scraperweb.scraping.*` remains as a transitional alias for scraper-owned clients
+  and parsers
+- `scraperweb.persistence.models` remains as a transitional alias for scraper-owned
+  raw contracts until downstream cleanup tasks remove the legacy import surface
+
 ## Quick Start
 
 ```bash

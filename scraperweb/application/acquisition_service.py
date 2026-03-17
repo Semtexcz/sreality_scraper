@@ -5,10 +5,10 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from scraperweb.persistence.models import RawListingRecord, RawSourceMetadata
 from scraperweb.persistence.repositories import RawRecordRepository
-from scraperweb.scraping.clients import DetailPageClient, ListingPageClient
-from scraperweb.scraping.parsers import SrealityDetailPageParser, SrealityListingPageParser
+from scraperweb.scraper.clients import DetailPageClient, ListingPageClient
+from scraperweb.scraper.models import RawListingRecord, RawSourceMetadata
+from scraperweb.scraper.parsers import SrealityDetailPageParser, SrealityListingPageParser
 
 DETAIL_PAGE_PARSER_VERSION = "sreality-detail-v1"
 DETAIL_PAGE_HTTP_STATUS = 200
