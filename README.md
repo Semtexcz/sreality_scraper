@@ -20,7 +20,6 @@ The storage backend is still under evaluation. Current options are:
 ## Structure
 
 - `scraperweb/`: application code
-- `scripts/`: executable wrappers
 - `data/`: CSV inputs and helper datasets
 - `docs/`: technical documentation and generated API docs
 - `project/`: backlog and completed task history
@@ -43,12 +42,7 @@ implementation:
 
 - `MONGODB_URI` (default `mongodb://localhost:27017`)
 - `MONGODB_DATABASE` (default `RealEstates`)
-- `SCRAPER_API_URL` (default `http://localhost:8000/receivedData`)
 - `GEOPY_USER_AGENT` (default `scraperweb`)
-
-These settings reflect the current codebase state, not the final target architecture.
-The intended direction is to keep only the configuration required to fetch and store
-raw data.
 
 ## Runtime CLI
 
@@ -77,6 +71,3 @@ Validation rules:
   `--storage-backend mongodb`
 - `--output-dir` custom values are allowed only with
   `--storage-backend filesystem`
-
-Legacy entrypoints `scraperweb-load-towns` and `scraperweb-load-districts` remain
-available as compatibility wrappers around the new CLI command handlers.

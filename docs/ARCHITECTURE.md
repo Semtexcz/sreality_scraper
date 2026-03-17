@@ -16,7 +16,6 @@ business-level normalization are outside the intended scope of the scraper itsel
 The project is intentionally split into four top-level areas:
 
 - `scraperweb/`: importable application modules
-- `scripts/`: thin executable wrappers
 - `data/`: CSV source datasets
 - `docs/`: technical documentation and generated API docs
 
@@ -168,23 +167,14 @@ Runtime configuration is centralized in `scraperweb.config` and uses:
 
 - `MONGODB_URI`
 - `MONGODB_DATABASE`
-- `SCRAPER_API_URL`
 - `GEOPY_USER_AGENT`
-
-Some of these variables belong to the current implementation and may become obsolete as
-the project is reduced to raw extraction and storage only.
 
 ## Transitional Modules and Replacement Plan
 
-These modules are transitional and should be removed or replaced during the refactor:
+This module remains transitional and should still be simplified during the refactor:
 
 - `scraperweb.estate_scraper`: currently a mixed procedural runtime; replace with thin
   CLI adapter plus `RawAcquisitionService` orchestration.
-- `scraperweb.main`: compatibility wrapper; remove once new CLI entrypoint is stable.
-- `scraperweb.cities_data`: legacy compatibility wrapper; remove after raw-only flow no
-  longer imports legacy names.
-- `scraperweb.districts`: legacy compatibility wrapper; remove after raw-only flow no
-  longer imports legacy names.
 
 Potentially obsolete for raw-only scope and subject to follow-up decision:
 

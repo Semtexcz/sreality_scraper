@@ -16,12 +16,7 @@ from scraperweb.persistence.repositories import (
     RawRecordRepository,
 )
 from scraperweb.scraping.clients import DetailPageClient, ListingPageClient, SrealityHttpClient
-from scraperweb.scraping.parsers import (
-    SrealityDetailPageParser,
-    SrealityListingPageParser,
-    clean_string as parser_clean_string,
-    remove_spaces as parser_remove_spaces,
-)
+from scraperweb.scraping.parsers import SrealityDetailPageParser, SrealityListingPageParser
 
 LINKS_CZ: Final[list[str]] = [
     "https://www.sreality.cz/hledani/prodej/byty/praha?strana=",
@@ -55,48 +50,6 @@ def build_raw_record_repository(options: RuntimeCliOptions) -> RawRecordReposito
     if output_dir is None:
         raise ValueError("Filesystem backend requires an output directory.")
     return FilesystemRawRecordRepository(output_dir=output_dir)
-
-
-def get_range_of_estates(links_of_estates: str) -> int:
-    """Return available page count inferred from listing pagination links."""
-
-    http_client = SrealityHttpClient(http_module=req)
-    listing_client = ListingPageClient(http_client)
-    parser = SrealityListingPageParser()
-    listing_html = listing_client.fetch(links_of_estates)
-    return parser.parse_range_of_estates(listing_html)
-
-
-def get_list_of_estates(links_of_estates: str) -> list[str]:
-    """Return estate detail URLs extracted from a listing page."""
-
-    http_client = SrealityHttpClient(http_module=req)
-    listing_client = ListingPageClient(http_client)
-    parser = SrealityListingPageParser()
-    listing_html = listing_client.fetch(links_of_estates)
-    return parser.parse_estate_urls(listing_html)
-
-
-def remove_spaces(value: str) -> str:
-    """Remove all whitespace from the provided string."""
-
-    return parser_remove_spaces(value)
-
-
-def clean_string(value: str) -> str:
-    """Remove zero-width and non-breaking spaces from the provided string."""
-
-    return parser_clean_string(value)
-
-
-def get_final_data_for_estate_to_database(link_of_estate: str) -> dict[str, object]:
-    """Fetch and parse one estate detail page into a raw dictionary payload."""
-
-    http_client = SrealityHttpClient(http_module=req)
-    detail_client = DetailPageClient(http_client)
-    parser = SrealityDetailPageParser()
-    detail_html = detail_client.fetch(link_of_estate)
-    return parser.parse_raw_payload(detail_html)
 
 
 def _resolve_region_indices(regions: tuple[str, ...]) -> list[int]:
@@ -143,7 +96,7 @@ def run_scraper(options: RuntimeCliOptions) -> int:
 
 
 def main() -> None:
-    """Run the Typer CLI from the legacy scraper module entrypoint."""
+    """Run the scraper CLI entrypoint."""
 
     from scraperweb.cli import main as cli_main
 

@@ -1,23 +1,28 @@
-"""Deterministic parser tests for estate scraper helper functions."""
+"""Deterministic parser tests for scraper parsing components."""
 
 from __future__ import annotations
 
-from scraperweb import estate_scraper
+from scraperweb.scraping.parsers import (
+    SrealityDetailPageParser,
+    SrealityListingPageParser,
+    clean_string,
+    remove_spaces,
+)
 
 
 def test_remove_spaces_removes_all_whitespace() -> None:
-    """Verify that all whitespace characters are removed from input."""
+    """Verify that all whitespace characters are removed from input values."""
 
-    assert estate_scraper.remove_spaces(" 1 250 000 \n Kč\t") == "1250000Kč"
+    assert remove_spaces(" 1 250 000 \n Kč\t") == "1250000Kč"
 
 
 def test_clean_string_removes_non_printing_spaces() -> None:
-    """Verify that zero-width and non-breaking spaces are removed."""
+    """Verify that zero-width and non-breaking spaces are removed from text."""
 
-    assert estate_scraper.clean_string("Byt\u200b\xa03+kk") == "Byt3+kk"
+    assert clean_string("Byt\u200b\xa03+kk") == "Byt3+kk"
 
 
-def test_get_range_of_estates_returns_max_page_plus_one(monkeypatch, response_factory) -> None:
+def test_parse_range_of_estates_returns_max_page_plus_one() -> None:
     """Parse available pages from HTML anchors and return ``max + 1``."""
 
     html = """
@@ -29,12 +34,12 @@ def test_get_range_of_estates_returns_max_page_plus_one(monkeypatch, response_fa
       </body>
     </html>
     """
-    monkeypatch.setattr(estate_scraper.req, "get", lambda _url, timeout: response_factory(html))
+    parser = SrealityListingPageParser()
 
-    assert estate_scraper.get_range_of_estates("https://example.test") == 7
+    assert parser.parse_range_of_estates(html) == 7
 
 
-def test_get_list_of_estates_returns_absolute_detail_links(monkeypatch, response_factory) -> None:
+def test_parse_estate_urls_returns_absolute_detail_links() -> None:
     """Extract only detail links and normalize them to absolute URLs."""
 
     html = """
@@ -46,15 +51,15 @@ def test_get_list_of_estates_returns_absolute_detail_links(monkeypatch, response
       </body>
     </html>
     """
-    monkeypatch.setattr(estate_scraper.req, "get", lambda _url, timeout: response_factory(html))
+    parser = SrealityListingPageParser()
 
-    assert estate_scraper.get_list_of_estates("https://example.test/listing") == [
+    assert parser.parse_estate_urls(html) == [
         "https://www.sreality.cz/detail/prodej/byt/123",
         "https://www.sreality.cz/detail/prodej/byt/456",
     ]
 
 
-def test_get_final_data_for_estate_to_database_extracts_title_and_pairs(monkeypatch, response_factory) -> None:
+def test_parse_raw_payload_extracts_title_and_pairs() -> None:
     """Build parsed estate dictionary from title and dt/dd pairs."""
 
     html = """
@@ -70,9 +75,9 @@ def test_get_final_data_for_estate_to_database_extracts_title_and_pairs(monkeypa
       </body>
     </html>
     """
-    monkeypatch.setattr(estate_scraper.req, "get", lambda _url, timeout: response_factory(html))
+    parser = SrealityDetailPageParser()
 
-    assert estate_scraper.get_final_data_for_estate_to_database("https://example.test/estate") == {
+    assert parser.parse_raw_payload(html) == {
         "Název": "Byt3+kk 75 m², Brno",
         "Celková cena:": "7 500 000 Kč",
         "Stavba:": "Cihla, Velmi dobrý",

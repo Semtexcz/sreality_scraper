@@ -34,25 +34,6 @@ Loader for regional towns, district towns, and towns with extended competence.
 
 Loader for postcode and district reference data from `data/souradnice.csv`.
 
-### Compatibility wrappers
-
-These modules exist to preserve the old import surface while delegating to the refactored implementation:
-
-- `scraperweb.main`
-- `scraperweb.cities_data`
-- `scraperweb.districts`
-
-Status: transitional modules, scheduled for removal once the new CLI and service
-boundaries are fully adopted.
-
-## Script Entry Points
-
-- `scripts/scrape_estates.py`
-- `scripts/load_towns.py`
-- `scripts/load_districts.py`
-
 Poetry also exposes:
 
 - `scraperweb`
-- `scraperweb-load-towns`
-- `scraperweb-load-districts`

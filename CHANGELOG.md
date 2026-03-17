@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [0.2.1] - 2026-03-17
+
+### Changed
+
+- removed legacy compatibility wrappers and compatibility-only entrypoints so the package exposes only the current CLI and module surface
+- updated parser tests and operator documentation to target the active implementation instead of transitional aliases
+
+### Removed
+
+- removed compatibility modules `scraperweb.main`, `scraperweb.cities_data`, and `scraperweb.districts`
+- removed compatibility-only Poetry script entrypoints and legacy wrapper scripts
+- removed obsolete `SCRAPER_API_URL` configuration and the unused HTTP JSON-post helper
+
 ## [0.2.0] - 2026-03-17
 
 ### Added

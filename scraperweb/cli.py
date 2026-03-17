@@ -155,18 +155,6 @@ def load_districts_command() -> None:
     typer.echo(f"Inserted {inserted_rows} district rows.")
 
 
-def legacy_load_towns_main() -> None:
-    """Run the legacy towns loader entrypoint via the shared CLI command handler."""
-
-    load_towns_command()
-
-
-def legacy_load_districts_main() -> None:
-    """Run the legacy districts loader entrypoint via the shared CLI command handler."""
-
-    load_districts_command()
-
-
 def main() -> None:
     """Run the top-level Typer application."""
 
@@ -176,8 +164,6 @@ def main() -> None:
 __all__ = [
     "REGION_CHOICES",
     "app",
-    "legacy_load_districts_main",
-    "legacy_load_towns_main",
     "main",
     "scrape_command",
 ]

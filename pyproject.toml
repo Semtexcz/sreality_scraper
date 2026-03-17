@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "scraperweb"
-version = "0.2.0"
+version = "0.2.1"
 description = "Sreality scraper and helper loaders for Czech real estate datasets."
 authors = ["scraperweb contributors"]
 readme = "README.md"
@@ -23,8 +23,6 @@ pytest = "^8.4.2"
 
 [tool.poetry.scripts]
 scraperweb = "scraperweb.cli:main"
-scraperweb-load-towns = "scraperweb.cli:legacy_load_towns_main"
-scraperweb-load-districts = "scraperweb.cli:legacy_load_districts_main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

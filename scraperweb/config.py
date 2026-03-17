@@ -17,7 +17,6 @@ class Settings:
 
     mongodb_uri: str = field(default_factory=lambda: os.getenv("MONGODB_URI", "mongodb://localhost:27017"))
     mongodb_database: str = field(default_factory=lambda: os.getenv("MONGODB_DATABASE", "RealEstates"))
-    scraper_api_url: str = field(default_factory=lambda: os.getenv("SCRAPER_API_URL", "http://localhost:8000/receivedData"))
     geopy_user_agent: str = field(default_factory=lambda: os.getenv("GEOPY_USER_AGENT", "scraperweb"))
 
 

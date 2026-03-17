@@ -21,12 +21,6 @@ class SrealityHttpClient:
         response = self._http_module.get(url, timeout=timeout)
         return response.text
 
-    def post_json(self, url: str, payload: dict[str, Any], timeout: int = 30) -> None:
-        """Send JSON payload to the destination URL."""
-
-        self._http_module.post(url, json=payload, timeout=timeout)
-
-
 class ListingPageClient:
     """Client responsible for listing-page downloads."""
 
