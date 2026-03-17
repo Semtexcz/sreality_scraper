@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.2.0] - 2026-03-17
+
+### Added
+
+- added a deterministic enrichment-stage `NormalizedListingEnricher` component that
+  accepts `NormalizedListingRecord` inputs only and emits stable
+  `EnrichedListingRecord` contracts
+- added explicit derived price and property feature contracts for parsed asking
+  price, disposition, floor area, price per square meter, and stage-level boolean
+  flags needed by downstream modeling work
+
+### Changed
+
+- replaced the enrichment placeholder contract with a typed schema that includes an
+  `enrichment_version` field, preserves the full normalized input record for
+  traceability, and documents the initial V1 feature derivations
+- expanded module and unit-test coverage so enrichment remains isolated from
+  scraper-stage contracts and normalization behavior
+
 ## [1.1.0] - 2026-03-17
 
 ### Added

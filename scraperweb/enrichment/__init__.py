@@ -1,12 +1,22 @@
 """Enrichment-stage package boundary.
 
-The active runtime does not implement enrichment yet. This package owns the
-typed enrichment contract and must depend only on normalization-stage contracts.
+This package owns the typed enrichment contract and the stage component that
+derives explicit features from normalized records only.
 """
 
-from scraperweb.enrichment.models import EnrichedListingRecord, EnrichmentMetadata
+from scraperweb.enrichment.models import (
+    EnrichedListingRecord,
+    EnrichedPriceFeatures,
+    EnrichedPropertyFeatures,
+    EnrichmentMetadata,
+)
+from scraperweb.enrichment.runtime import ENRICHMENT_VERSION, NormalizedListingEnricher
 
 __all__ = [
+    "ENRICHMENT_VERSION",
     "EnrichedListingRecord",
+    "EnrichedPriceFeatures",
+    "EnrichedPropertyFeatures",
     "EnrichmentMetadata",
+    "NormalizedListingEnricher",
 ]

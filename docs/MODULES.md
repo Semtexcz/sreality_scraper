@@ -62,9 +62,12 @@ fields remain under `source_specific_attributes`.
 
 ### `scraperweb.enrichment`
 
-Canonical enrichment-stage package for typed output contracts.
+Canonical enrichment-stage package for typed output contracts and deterministic
+derived-feature services built on normalized records only.
 
-Status: package boundary in place; transformation services follow in later tasks.
+Status: active package boundary with `NormalizedListingEnricher` and a stable
+enriched record contract. The initial feature set stays explicit and deterministic,
+while preserving the full normalized input record for traceability.
 
 ### `scraperweb.modeling`
 

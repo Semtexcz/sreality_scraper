@@ -1,6 +1,6 @@
 ---
 task: TASK-014
-status: "backlog"
+status: "done"
 priority: P2
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add the enrichment stage on top of normalized data
 
 Task: TASK-014
-Status: backlog
+Status: done
 Priority: P2
 Type: feature
 Author:
@@ -23,14 +23,14 @@ either pollute earlier modules or produce inconsistent inputs for modeling work.
 
 ## Definition of Done
 
-- [ ] Define the enriched record model that wraps or extends normalized data with derived features.
-- [ ] Implement the contract as a typed Python model.
-- [ ] Place the contract/component in the appropriate module boundary.
-- [ ] Implement an enrichment component that accepts normalized records only.
-- [ ] Keep the initial feature set explicit, deterministic, and documented.
-- [ ] Include an `enrichment_version` field in the enriched contract.
-- [ ] Preserve access to the underlying normalized values for debugging and traceability.
-- [ ] Add focused tests proving enrichment is isolated from scraping and normalization behavior.
+- [x] Define the enriched record model that wraps or extends normalized data with derived features.
+- [x] Implement the contract as a typed Python model.
+- [x] Place the contract/component in the appropriate module boundary.
+- [x] Implement an enrichment component that accepts normalized records only.
+- [x] Keep the initial feature set explicit, deterministic, and documented.
+- [x] Include an `enrichment_version` field in the enriched contract.
+- [x] Preserve access to the underlying normalized values for debugging and traceability.
+- [x] Add focused tests proving enrichment is isolated from scraping and normalization behavior.
 
 ## Notes
 
