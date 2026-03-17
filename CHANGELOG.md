@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.0.4] - 2026-03-17
+
+### Added
+
+- added a new `project/backlog/` task set for migrating the repository toward a simple modular pipeline with `scraper`, `normalization`, `enrichment`, and `modeling` stages
+
+### Changed
+
+- aligned the project planning backlog with the existing task template and explicit stage dependencies for the modular pipeline migration
+
 ## [1.0.3] - 2026-03-17
 
 ### Changed
