@@ -13,6 +13,7 @@ from scraperweb.application.acquisition_service import RawAcquisitionService
 from scraperweb.cli_runtime_options import RuntimeCliOptions, StorageBackend
 from scraperweb.estate_scraper import build_raw_record_repository
 from scraperweb.persistence.repositories import FilesystemRawRecordRepository, MongoRawRecordRepository
+from scraperweb.scraper.exceptions import ScraperResponseError, ScraperTransportError
 from scraperweb.scraper.models import RawListingRecord, RawSourceMetadata
 from scraperweb.scraper.runtime import RawListingCollector
 
@@ -81,6 +82,48 @@ class RecordingRepository:
         """Record each stored raw listing snapshot."""
 
         self.records.append(record)
+
+
+class RecordingLogger:
+    """Collect acquisition error logs for assertions."""
+
+    def __init__(self) -> None:
+        """Initialize captured error log calls."""
+
+        self.calls: list[tuple[str, tuple[Any, ...]]] = []
+
+    def error(self, message: str, *args: Any) -> None:
+        """Record one error log call."""
+
+        self.calls.append((message, args))
+
+
+class FailingListingPageClient:
+    """Raise a configured scraper HTTP error for every listing-page fetch."""
+
+    def __init__(self, error: ScraperTransportError | ScraperResponseError) -> None:
+        """Store the scraper-owned HTTP error to raise."""
+
+        self._error = error
+
+    def fetch(self, url: str) -> str:
+        """Raise the configured scraper-owned error."""
+
+        raise self._error
+
+
+class FailingDetailPageClient:
+    """Raise a configured scraper HTTP error for every detail-page fetch."""
+
+    def __init__(self, error: ScraperTransportError | ScraperResponseError) -> None:
+        """Store the scraper-owned HTTP error to raise."""
+
+        self._error = error
+
+    def fetch(self, url: str) -> str:
+        """Raise the configured scraper-owned error."""
+
+        raise self._error
 
 
 class RecordingDetailPageParser:
@@ -391,6 +434,119 @@ def test_acquisition_service_respects_max_pages_and_max_estates_limits() -> None
     assert tracked_estates == 3
     assert [record.listing_id for record in repository.records] == ["1", "2", "3"]
     assert all(record.raw_page_snapshot is None for record in repository.records)
+
+
+def test_raw_listing_collector_preserves_listing_page_context_on_transport_failure() -> None:
+    """Propagate listing-page failures with region and page context attached."""
+
+    collector = RawListingCollector(
+        listing_page_client=FailingListingPageClient(
+            ScraperTransportError(
+                message="timed out",
+                request_url="https://example.test/praha?strana=1",
+                timeout_seconds=30,
+                attempts=3,
+            ),
+        ),
+        detail_page_client=FakeDetailPageClient({}),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=FakeDetailPageParser(),
+        region_slug="praha",
+        scrape_run_id="run-transport",
+    )
+
+    with pytest.raises(ScraperTransportError) as exc_info:
+        list(
+            collector.collect_region_records(
+                district_link="https://example.test/praha?strana=",
+                max_pages=1,
+            ),
+        )
+
+    assert exc_info.value.region_slug == "praha"
+    assert exc_info.value.listing_page_number == 1
+    assert exc_info.value.listing_url is None
+
+
+def test_raw_listing_collector_preserves_detail_page_context_on_response_failure() -> None:
+    """Propagate detail-page failures with region, page, and listing URL context."""
+
+    collector = RawListingCollector(
+        listing_page_client=FakeListingPageClient(
+            {
+                "https://example.test/praha?strana=1": "pages:1\nhttps://detail/1",
+            },
+        ),
+        detail_page_client=FailingDetailPageClient(
+            ScraperResponseError(
+                message="received empty response",
+                request_url="https://detail/1",
+                status_code=200,
+            ),
+        ),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=FakeDetailPageParser(),
+        region_slug="praha",
+        scrape_run_id="run-response",
+    )
+
+    with pytest.raises(ScraperResponseError) as exc_info:
+        list(
+            collector.collect_region_records(
+                district_link="https://example.test/praha?strana=",
+                max_pages=1,
+            ),
+        )
+
+    assert exc_info.value.region_slug == "praha"
+    assert exc_info.value.listing_page_number == 1
+    assert exc_info.value.listing_url == "https://detail/1"
+
+
+def test_acquisition_service_logs_context_before_propagating_scraper_http_failures(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Log failure context and re-raise scraper HTTP errors to callers."""
+
+    recording_logger = RecordingLogger()
+    monkeypatch.setattr("scraperweb.application.acquisition_service.logger", recording_logger)
+    service = RawAcquisitionService(
+        listing_page_client=FailingListingPageClient(
+            ScraperTransportError(
+                message="timed out",
+                request_url="https://example.test/praha?strana=1",
+                timeout_seconds=30,
+                attempts=3,
+            ),
+        ),
+        detail_page_client=FakeDetailPageClient({}),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=FakeDetailPageParser(),
+        raw_record_repository=RecordingRepository(),
+        region_slug="praha",
+        scrape_run_id="run-logging",
+    )
+
+    with pytest.raises(ScraperTransportError):
+        service.collect_for_region(
+            district_link="https://example.test/praha?strana=",
+            max_pages=1,
+            max_estates=10,
+            tracked_estates=0,
+        )
+
+    assert recording_logger.calls == [
+        (
+            "Scraper HTTP failure for region={} page={} listing_url={} request_url={}: {}",
+            (
+                "praha",
+                1,
+                None,
+                "https://example.test/praha?strana=1",
+                "timed out",
+            ),
+        ),
+    ]
 
 
 def test_build_raw_record_repository_uses_filesystem_backend(tmp_path: Path) -> None:

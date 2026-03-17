@@ -6,6 +6,11 @@ from collections.abc import Iterator
 from datetime import datetime, timezone
 
 from scraperweb.scraper.clients import DetailPageClient, ListingPageClient
+from scraperweb.scraper.exceptions import (
+    ScraperHttpError,
+    ScraperResponseError,
+    ScraperTransportError,
+)
 from scraperweb.scraper.models import JsonValue, RawListingRecord, RawSourceMetadata
 from scraperweb.scraper.parsers import SrealityDetailPageParser, SrealityListingPageParser
 
@@ -44,16 +49,25 @@ class RawListingCollector:
     ) -> Iterator[RawListingRecord]:
         """Yield raw listing records for one region up to the requested page limit."""
 
-        first_page_html = self._listing_page_client.fetch(f"{district_link}1")
+        first_page_html = self._fetch_listing_page(
+            listing_url=f"{district_link}1",
+            page_number=1,
+        )
         listing_range = self._listing_page_parser.parse_range_of_estates(first_page_html)
         page_limit = min(listing_range, max_pages)
 
         for page_number in range(1, page_limit + 1):
-            listing_html = self._listing_page_client.fetch(f"{district_link}{page_number}")
+            listing_html = self._fetch_listing_page(
+                listing_url=f"{district_link}{page_number}",
+                page_number=page_number,
+            )
             estate_urls = self._listing_page_parser.parse_estate_urls(listing_html)
 
             for estate_url in estate_urls:
-                detail_html = self._detail_page_client.fetch(estate_url)
+                detail_html = self._fetch_detail_page(
+                    detail_url=estate_url,
+                    page_number=page_number,
+                )
                 raw_payload = self._detail_page_parser.parse_raw_payload(detail_html)
                 yield self._build_raw_listing_record(
                     estate_url=estate_url,
@@ -61,6 +75,67 @@ class RawListingCollector:
                     raw_payload=raw_payload,
                     detail_html=detail_html,
                 )
+
+    def _fetch_listing_page(self, listing_url: str, page_number: int) -> str:
+        """Fetch one listing page and attach region and page context to failures."""
+
+        try:
+            return self._listing_page_client.fetch(listing_url)
+        except ScraperHttpError as error:
+            raise self._enrich_http_error(
+                error=error,
+                page_number=page_number,
+                listing_url=None,
+            ) from error
+
+    def _fetch_detail_page(self, detail_url: str, page_number: int) -> str:
+        """Fetch one detail page and attach region, page, and listing URL context."""
+
+        try:
+            return self._detail_page_client.fetch(detail_url)
+        except ScraperHttpError as error:
+            raise self._enrich_http_error(
+                error=error,
+                page_number=page_number,
+                listing_url=detail_url,
+            ) from error
+
+    def _enrich_http_error(
+        self,
+        error: ScraperHttpError,
+        page_number: int,
+        listing_url: str | None,
+    ) -> ScraperHttpError:
+        """Return a same-category scraper error enriched with collector context."""
+
+        if isinstance(error, ScraperTransportError):
+            return ScraperTransportError(
+                message=error.message,
+                request_url=error.request_url,
+                timeout_seconds=error.timeout_seconds,
+                attempts=error.attempts,
+                region_slug=self._region_slug,
+                listing_page_number=page_number,
+                listing_url=listing_url,
+            )
+
+        if isinstance(error, ScraperResponseError):
+            return ScraperResponseError(
+                message=error.message,
+                request_url=error.request_url,
+                status_code=error.status_code,
+                region_slug=self._region_slug,
+                listing_page_number=page_number,
+                listing_url=listing_url,
+            )
+
+        return ScraperHttpError(
+            message=error.message,
+            request_url=error.request_url,
+            region_slug=self._region_slug,
+            listing_page_number=page_number,
+            listing_url=listing_url,
+        )
 
     def _build_raw_listing_record(
         self,

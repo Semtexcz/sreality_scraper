@@ -4,28 +4,56 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
+import pytest
+import requests as req
+
 from scraperweb.scraper.clients import (
     DetailPageClient,
     ListingPageClient,
     SrealityHttpClient,
 )
+from scraperweb.scraper.exceptions import ScraperResponseError, ScraperTransportError
 from scraperweb.scraper.parsers import SrealityDetailPageParser, SrealityListingPageParser
 
 
 class FakeHttpModule:
     """Minimal HTTP module stub that records requests and returns configured text."""
 
-    def __init__(self, response_text: str) -> None:
+    def __init__(self, response_text: str, status_code: int = 200) -> None:
         """Store deterministic response text and initialize captured calls."""
 
         self._response_text = response_text
+        self._status_code = status_code
         self.calls: list[tuple[str, int]] = []
 
     def get(self, url: str, timeout: int) -> Any:
         """Record request arguments and return a response-like object."""
 
         self.calls.append((url, timeout))
-        return type("Response", (), {"text": self._response_text})()
+        return type(
+            "Response",
+            (),
+            {"text": self._response_text, "status_code": self._status_code},
+        )()
+
+
+class SequenceHttpModule:
+    """Fake HTTP module that yields configured responses or raises exceptions."""
+
+    def __init__(self, results: list[Any]) -> None:
+        """Store deterministic per-attempt results and initialize captured calls."""
+
+        self._results = list(results)
+        self.calls: list[tuple[str, int]] = []
+
+    def get(self, url: str, timeout: int) -> Any:
+        """Return the next configured response or raise the configured exception."""
+
+        self.calls.append((url, timeout))
+        result = self._results.pop(0)
+        if isinstance(result, Exception):
+            raise result
+        return result
 
 
 class RecordingHttpClient:
@@ -53,6 +81,71 @@ def test_sreality_http_client_returns_response_text_and_forwards_timeout() -> No
 
     assert response_text == "<html>payload</html>"
     assert http_module.calls == [("https://example.test/listing", 12)]
+
+
+def test_sreality_http_client_retries_transient_transport_failures() -> None:
+    """Retry transient transport failures before returning response content."""
+
+    http_module = SequenceHttpModule(
+        results=[
+            req.exceptions.Timeout("timed out"),
+            type("Response", (), {"text": "<html>payload</html>", "status_code": 200})(),
+        ],
+    )
+    client = SrealityHttpClient(http_module=http_module, max_attempts=2)
+
+    response_text = client.get_text("https://example.test/listing", timeout=7)
+
+    assert response_text == "<html>payload</html>"
+    assert http_module.calls == [
+        ("https://example.test/listing", 7),
+        ("https://example.test/listing", 7),
+    ]
+
+
+def test_sreality_http_client_raises_transport_error_after_bounded_retries() -> None:
+    """Raise a transport error with retry metadata after the final transient failure."""
+
+    http_module = SequenceHttpModule(
+        results=[
+            req.exceptions.ConnectionError("offline"),
+            req.exceptions.Timeout("timed out"),
+        ],
+    )
+    client = SrealityHttpClient(http_module=http_module, max_attempts=2)
+
+    with pytest.raises(ScraperTransportError) as exc_info:
+        client.get_text("https://example.test/listing", timeout=9)
+
+    assert exc_info.value.request_url == "https://example.test/listing"
+    assert exc_info.value.timeout_seconds == 9
+    assert exc_info.value.attempts == 2
+
+
+def test_sreality_http_client_rejects_non_success_status_codes() -> None:
+    """Raise a terminal response error for non-success HTTP responses."""
+
+    http_module = FakeHttpModule("<html>payload</html>", status_code=503)
+    client = SrealityHttpClient(http_module=http_module)
+
+    with pytest.raises(ScraperResponseError) as exc_info:
+        client.get_text("https://example.test/listing")
+
+    assert exc_info.value.status_code == 503
+    assert exc_info.value.request_url == "https://example.test/listing"
+
+
+def test_sreality_http_client_rejects_empty_response_content() -> None:
+    """Raise a terminal response error when the HTTP body is missing."""
+
+    http_module = FakeHttpModule("   ", status_code=200)
+    client = SrealityHttpClient(http_module=http_module)
+
+    with pytest.raises(ScraperResponseError) as exc_info:
+        client.get_text("https://example.test/listing")
+
+    assert exc_info.value.status_code == 200
+    assert exc_info.value.request_url == "https://example.test/listing"
 
 
 def test_page_clients_delegate_fetches_to_shared_http_client() -> None:

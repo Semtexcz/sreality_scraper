@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.4.0] - 2026-03-17
+
+### Added
+
+- added scraper-owned HTTP exception types that distinguish bounded-retry
+  transport failures from terminal response validation errors while preserving
+  region, listing-page, and listing-URL context for callers
+- added deterministic unit coverage for successful fetches, transient retry
+  recovery, retry exhaustion, invalid HTTP status handling, empty-response
+  handling, and acquisition-time failure logging
+
+### Changed
+
+- hardened the scraper HTTP client to validate response status and content, apply
+  bounded retries only to transient timeout and connection failures, and fail
+  fast for terminal request and response errors
+- updated raw acquisition flow to log operator-visible failure context before
+  propagating scraper-stage HTTP errors without introducing downstream
+  normalization or enrichment behavior
+
 ## [1.3.3] - 2026-03-17
 
 ### Added
