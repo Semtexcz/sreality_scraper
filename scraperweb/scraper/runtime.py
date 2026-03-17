@@ -9,6 +9,7 @@ from itertools import count
 
 from loguru import logger
 
+from scraperweb.progress import ScrapeProgressReporter
 from scraperweb.scraper.clients import DetailPageClient, ListingPageClient
 from scraperweb.scraper.exceptions import (
     ScraperHttpError,
@@ -51,6 +52,7 @@ class RawListingCollector:
         scrape_run_id: str,
         capture_raw_page_snapshots: bool = False,
         fail_on_detail_http_error: bool = False,
+        progress_reporter: ScrapeProgressReporter | None = None,
     ) -> None:
         """Store collaborators used to build scraper-owned raw contracts."""
 
@@ -62,6 +64,7 @@ class RawListingCollector:
         self._scrape_run_id = scrape_run_id
         self._capture_raw_page_snapshots = capture_raw_page_snapshots
         self._fail_on_detail_http_error = fail_on_detail_http_error
+        self._progress_reporter = progress_reporter or ScrapeProgressReporter()
 
     def collect_region_records(
         self,
@@ -75,6 +78,10 @@ class RawListingCollector:
 
         for page_number in page_numbers:
             listing_url = f"{district_link}{page_number}"
+            self._progress_reporter.listing_page_started(
+                region_slug=self._region_slug,
+                page_number=page_number,
+            )
             listing_html = self._fetch_listing_page(
                 listing_url=listing_url,
                 page_number=page_number,
@@ -95,6 +102,11 @@ class RawListingCollector:
             )
             if not should_continue:
                 return
+            self._progress_reporter.listing_page_completed(
+                region_slug=self._region_slug,
+                page_number=page_number,
+                discovered_estates=len(new_estate_urls),
+            )
 
             for estate_url in new_estate_urls:
                 try:
@@ -112,6 +124,12 @@ class RawListingCollector:
                         error.listing_url,
                         error.request_url,
                         error.message,
+                    )
+                    self._progress_reporter.detail_http_error_skipped(
+                        region_slug=error.region_slug or self._region_slug,
+                        page_number=error.listing_page_number or page_number,
+                        listing_url=error.listing_url,
+                        message=error.message,
                     )
                     continue
                 try:

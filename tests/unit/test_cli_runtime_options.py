@@ -26,6 +26,8 @@ def test_build_runtime_cli_options_uses_safe_defaults() -> None:
     assert options.max_pages is None
     assert options.max_estates == DEFAULT_MAX_ESTATES
     assert options.fail_on_http_error is False
+    assert options.verbose is False
+    assert options.quiet is False
     assert options.storage_backend == StorageBackend.FILESYSTEM
     assert options.mongodb_uri is None
     assert options.mongodb_database is None
@@ -54,6 +56,15 @@ def test_build_runtime_cli_options_supports_fail_fast_http_mode() -> None:
     assert options.fail_on_http_error is True
 
 
+def test_build_runtime_cli_options_supports_verbose_progress_mode() -> None:
+    """Allow callers to opt into more detailed terminal progress output."""
+
+    options = build_runtime_cli_options(verbose=True)
+
+    assert options.verbose is True
+    assert options.quiet is False
+
+
 def test_build_runtime_cli_options_supports_explicit_region_only_runs() -> None:
     """Allow callers to override the global default with specific region slugs."""
 
@@ -78,6 +89,13 @@ def test_build_runtime_cli_options_rejects_unknown_regions() -> None:
 
     with pytest.raises(RuntimeCliOptionsError):
         build_runtime_cli_options(regions=["unknown-region"])
+
+
+def test_build_runtime_cli_options_rejects_conflicting_output_modes() -> None:
+    """Reject quiet and verbose modes when both are requested."""
+
+    with pytest.raises(RuntimeCliOptionsError):
+        build_runtime_cli_options(verbose=True, quiet=True)
 
 
 def test_build_runtime_cli_options_accepts_mongodb_backend_with_mongo_options() -> None:

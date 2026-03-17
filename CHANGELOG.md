@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.7.3] - 2026-03-17
+
+### Added
+
+- added terminal progress reporting so default scraper runs now announce start,
+  per-page activity, periodic processed-estate counts, skipped detail failures,
+  and region completion
+- added `--verbose` and `--quiet` CLI options to control scraper progress output
+
+### Changed
+
+- changed CLI runtime option validation to reject conflicting `--verbose` and
+  `--quiet` combinations
+- changed scraper runtime composition to inject a dedicated progress reporter
+  instead of relying only on logger output for operator visibility
+
 ## [1.7.2] - 2026-03-17
 
 ### Added

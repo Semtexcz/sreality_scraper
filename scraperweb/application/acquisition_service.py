@@ -7,6 +7,7 @@ from uuid import uuid4
 from loguru import logger
 
 from scraperweb.persistence.repositories import RawRecordRepository
+from scraperweb.progress import ScrapeProgressReporter
 from scraperweb.scraper.clients import DetailPageClient, ListingPageClient
 from scraperweb.scraper.exceptions import ScraperHttpError
 from scraperweb.scraper.parsers import SrealityDetailPageParser, SrealityListingPageParser
@@ -27,10 +28,13 @@ class RawAcquisitionService:
         scrape_run_id: str | None = None,
         capture_raw_page_snapshots: bool = False,
         fail_on_http_error: bool = False,
+        progress_reporter: ScrapeProgressReporter | None = None,
     ) -> None:
         """Store injected collaborators used by the acquisition workflow."""
 
         self._fail_on_http_error = fail_on_http_error
+        self._progress_reporter = progress_reporter or ScrapeProgressReporter()
+        self._region_slug = region_slug
         self._raw_record_repository = raw_record_repository
         self._raw_listing_collector = RawListingCollector(
             listing_page_client=listing_page_client,
@@ -41,6 +45,7 @@ class RawAcquisitionService:
             scrape_run_id=scrape_run_id or str(uuid4()),
             capture_raw_page_snapshots=capture_raw_page_snapshots,
             fail_on_detail_http_error=fail_on_http_error,
+            progress_reporter=self._progress_reporter,
         )
 
     def collect_for_region(
@@ -52,6 +57,8 @@ class RawAcquisitionService:
     ) -> int:
         """Collect detail records for one region until limits are reached."""
 
+        initial_tracked_estates = tracked_estates
+        self._progress_reporter.region_started(region_slug=self._region_slug)
         try:
             for record in self._raw_listing_collector.collect_region_records(
                 district_link=district_link,
@@ -60,7 +67,16 @@ class RawAcquisitionService:
                 self._raw_record_repository.save_record(record)
 
                 tracked_estates += 1
+                self._progress_reporter.estate_processed(
+                    total_processed=tracked_estates,
+                    max_estates=max_estates,
+                    listing_url=record.source_url,
+                )
                 if tracked_estates >= max_estates:
+                    self._progress_reporter.region_completed(
+                        region_slug=self._region_slug,
+                        processed_estates=tracked_estates - initial_tracked_estates,
+                    )
                     return tracked_estates
         except ScraperHttpError as error:
             logger.error(
@@ -74,4 +90,8 @@ class RawAcquisitionService:
             if self._fail_on_http_error:
                 raise
 
+        self._progress_reporter.region_completed(
+            region_slug=self._region_slug,
+            processed_estates=tracked_estates - initial_tracked_estates,
+        )
         return tracked_estates

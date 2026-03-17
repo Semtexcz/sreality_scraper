@@ -17,6 +17,7 @@ from scraperweb.persistence.repositories import (
 )
 from scraperweb.scraper.clients import DetailPageClient, ListingPageClient, SrealityHttpClient
 from scraperweb.scraper.parsers import SrealityDetailPageParser, SrealityListingPageParser
+from scraperweb.progress import ScrapeProgressReporter
 
 LISTING_URL_BY_REGION: Final[dict[str, str]] = {
     "all-czechia": "https://www.sreality.cz/hledani/prodej/byty?strana=",
@@ -53,12 +54,22 @@ def build_raw_record_repository(options: RuntimeCliOptions) -> RawRecordReposito
     return FilesystemRawRecordRepository(output_dir=output_dir)
 
 
-def run_scraper(options: RuntimeCliOptions) -> int:
+def run_scraper(
+    options: RuntimeCliOptions,
+    progress_reporter: ScrapeProgressReporter | None = None,
+) -> int:
     """Run the scraper with runtime limits and region selection from CLI options."""
 
     tracked_estates = 0
     http_client = SrealityHttpClient(http_module=req)
     raw_record_repository = build_raw_record_repository(options)
+    reporter = progress_reporter or ScrapeProgressReporter()
+
+    reporter.scrape_started(
+        regions=options.regions,
+        max_pages=options.max_pages,
+        max_estates=options.max_estates,
+    )
 
     for region_slug in options.regions:
         acquisition_service = RawAcquisitionService(
@@ -70,6 +81,7 @@ def run_scraper(options: RuntimeCliOptions) -> int:
             region_slug=region_slug,
             capture_raw_page_snapshots=False,
             fail_on_http_error=options.fail_on_http_error,
+            progress_reporter=reporter,
         )
         district_link = LISTING_URL_BY_REGION[region_slug]
         tracked_estates = acquisition_service.collect_for_region(

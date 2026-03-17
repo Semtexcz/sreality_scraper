@@ -18,6 +18,7 @@ from scraperweb.cli_runtime_options import (
     build_runtime_cli_options,
 )
 from scraperweb.estate_scraper import run_scraper
+from scraperweb.progress import TerminalScrapeProgressReporter
 
 
 app = typer.Typer(
@@ -41,6 +42,8 @@ def _build_scrape_options(
     max_pages: int | None,
     max_estates: int,
     fail_on_http_error: bool,
+    verbose: bool,
+    quiet: bool,
     storage_backend: StorageBackend,
     mongodb_uri: str | None,
     mongodb_database: str | None,
@@ -54,6 +57,8 @@ def _build_scrape_options(
             max_pages=max_pages,
             max_estates=max_estates,
             fail_on_http_error=fail_on_http_error,
+            verbose=verbose,
+            quiet=quiet,
             storage_backend=storage_backend,
             mongodb_uri=mongodb_uri,
             mongodb_database=mongodb_database,
@@ -102,6 +107,20 @@ def scrape_command(
             ),
         ),
     ] = False,
+    verbose: Annotated[
+        bool,
+        typer.Option(
+            "--verbose",
+            help="Show detailed progress output for pages and processed listings.",
+        ),
+    ] = False,
+    quiet: Annotated[
+        bool,
+        typer.Option(
+            "--quiet",
+            help="Suppress progress output and show only the final summary and errors.",
+        ),
+    ] = False,
     storage_backend: Annotated[
         StorageBackend,
         typer.Option(
@@ -139,20 +158,31 @@ def scrape_command(
         max_pages=max_pages,
         max_estates=max_estates,
         fail_on_http_error=fail_on_http_error,
+        verbose=verbose,
+        quiet=quiet,
         storage_backend=storage_backend,
         mongodb_uri=mongodb_uri,
         mongodb_database=mongodb_database,
         output_dir=output_dir,
     )
     logger.info(
-        "Selected runtime options: regions={}, max_pages={}, max_estates={}, fail_on_http_error={}, storage_backend={}",
+        "Selected runtime options: regions={}, max_pages={}, max_estates={}, fail_on_http_error={}, verbose={}, quiet={}, storage_backend={}",
         options.regions,
         options.max_pages,
         options.max_estates,
         options.fail_on_http_error,
+        options.verbose,
+        options.quiet,
         options.storage_backend.value,
     )
-    processed_estates = run_scraper(options)
+    processed_estates = run_scraper(
+        options,
+        progress_reporter=TerminalScrapeProgressReporter(
+            output=typer.echo,
+            verbose=options.verbose,
+            quiet=options.quiet,
+        ),
+    )
     typer.echo(f"Processed {processed_estates} estates.")
 
 
