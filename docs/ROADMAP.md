@@ -40,11 +40,11 @@ repository. Unchecked items represent the next supported milestones.
 - [x] Compute deterministic derived features from normalized records only.
 - [x] Preserve the full normalized input record for downstream traceability.
 - [x] Keep enrichment isolated from scraper-owned raw contracts.
-- [ ] Expand the derived feature set beyond the initial pricing, disposition, area,
+- [x] Expand the derived feature set beyond the initial pricing, disposition, area,
   and location flags.
 - [ ] Reduce reliance on regex parsing of normalized title text for feature
   derivation.
-- [ ] Expose enrichment as a supported operator-facing workflow instead of an
+- [x] Expose enrichment as a supported operator-facing workflow instead of an
   internal component only.
 
 ## Modeling Stage
@@ -67,19 +67,22 @@ repository. Unchecked items represent the next supported milestones.
 - [x] Implement an internal synchronous linear pipeline service from raw collection
   to modeling inputs.
 - [x] Keep the public runtime intentionally centered on raw acquisition while
-  allowing the documented normalization replay workflow as a deliberate
+  allowing the documented normalization and enrichment replay workflows as
+  deliberate
   later-stage entrypoint.
 - [ ] Expose the internal linear pipeline behind a deliberate user-facing
   entrypoint without weakening the raw-only workflow.
 - [x] Add a first-class persistence adapter for normalized filesystem artifacts
   alongside raw record persistence.
-- [ ] Decide whether enrichment and modeling outputs should gain first-class
+- [ ] Decide whether modeling outputs should gain first-class
   persistence adapters beyond the current raw and normalized record support.
+- [x] Add a first-class persistence adapter for enriched filesystem artifacts
+  alongside raw and normalized record persistence.
 - [ ] Decide whether the normalization workflow should expand beyond
   filesystem-backed raw snapshots to additional persistence backends.
 - [ ] Expand integration coverage so full stage handoffs are verified against
   representative real-world payloads, not only fixture-driven unit tests.
-- [ ] Refresh developer-facing documentation once the supported runtime surface for
+- [x] Refresh developer-facing documentation once the supported runtime surface for
   later stages is finalized.
 - [ ] Reassess whether the bundled CSV reference datasets in `data/` still belong
   in the active codebase or should be archived as historical artifacts.

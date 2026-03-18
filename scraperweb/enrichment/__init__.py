@@ -13,6 +13,14 @@ from scraperweb.enrichment.models import (
     EnrichmentMetadata,
 )
 from scraperweb.enrichment.runtime import ENRICHMENT_VERSION, NormalizedListingEnricher
+from scraperweb.enrichment.workflow import (
+    EnrichmentWorkflowError,
+    EnrichmentWorkflowSelection,
+    FilesystemEnrichedRecordRepository,
+    FilesystemEnrichmentWorkflowService,
+    FilesystemNormalizedSnapshotSource,
+    run_filesystem_enrichment_workflow,
+)
 
 __all__ = [
     "ENRICHMENT_VERSION",
@@ -23,4 +31,10 @@ __all__ = [
     "EnrichedPropertyFeatures",
     "EnrichmentMetadata",
     "NormalizedListingEnricher",
+    "EnrichmentWorkflowError",
+    "EnrichmentWorkflowSelection",
+    "FilesystemEnrichedRecordRepository",
+    "FilesystemEnrichmentWorkflowService",
+    "FilesystemNormalizedSnapshotSource",
+    "run_filesystem_enrichment_workflow",
 ]

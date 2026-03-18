@@ -9,9 +9,10 @@
 - structuring the repository so later processing stages can be added inside the
   same Python project
 
-The current runtime remains focused on raw acquisition. The approved target
-architecture extends that runtime into a simple in-repo pipeline with explicit
-`scraper`, `normalization`, `enrichment`, and `modeling` boundaries.
+The current runtime supports raw acquisition plus operator-facing normalization
+and enrichment replay workflows. The approved target architecture extends that
+runtime into a simple in-repo pipeline with explicit `scraper`,
+`normalization`, `enrichment`, and `modeling` boundaries.
 
 ## Runtime Shape
 

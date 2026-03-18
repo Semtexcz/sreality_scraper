@@ -79,21 +79,23 @@ normalization output fields.
 Canonical enrichment-stage package for typed output contracts and deterministic
 derived-feature services built on normalized records only.
 
-Status: active package boundary with `NormalizedListingEnricher` and a stable
-enriched record contract. The current feature set stays explicit and deterministic,
-while preserving the full normalized input record for traceability. Enrichment
-now derives canonical area and area-based price-density features from
-`normalized_record.area_details` only, keeping `floor_area_sqm` as a
-compatibility alias of the canonical area value. It also derives conservative
-building semantics from `normalized_record.core_attributes.building`, including
-ground-floor and upper-floor flags, a relative floor-position bucket, and coarse
-material and condition buckets. Enrichment also owns a dedicated
-`location_features` sub-contract that joins bundled reference datasets from
-`data/` and exposes explicit match status, administrative identifiers,
-municipality centroid coordinates, macro distances to district cities and
-district-local ORP centers, district-city and ORP-center flags, and
-conservative district normalization. Metropolitan district overrides and spatial
-buckets remain deferred to later follow-up tasks.
+Status: active package boundary with `NormalizedListingEnricher`, a stable
+enriched record contract, and a filesystem-backed operator workflow for
+replaying persisted normalized snapshots into enriched JSON artifacts. The
+current feature set stays explicit and deterministic, while preserving the full
+normalized input record for traceability. Enrichment now derives canonical area
+and area-based price-density features from `normalized_record.area_details`
+only, keeping `floor_area_sqm` as a compatibility alias of the canonical area
+value. It also derives conservative building semantics from
+`normalized_record.core_attributes.building`, including ground-floor and
+upper-floor flags, a relative floor-position bucket, and coarse material and
+condition buckets. Enrichment also owns a dedicated `location_features`
+sub-contract that joins bundled reference datasets from `data/` and exposes
+explicit match status, administrative identifiers, municipality centroid
+coordinates, macro distances to district cities and district-local ORP centers,
+district-city and ORP-center flags, metropolitan district overrides, Prague
+spatial buckets, nearby-place accessibility aggregates, and conservative
+district normalization.
 
 ### `scraperweb.modeling`
 

@@ -8,20 +8,22 @@ from typer.testing import CliRunner
 
 from scraperweb.cli import app
 from scraperweb.cli_runtime_options import StorageBackend
+from scraperweb.enrichment import EnrichmentWorkflowError
 from scraperweb.normalization import NormalizationWorkflowError
 
 
 runner = CliRunner()
 
 
-def test_root_help_lists_scrape_and_normalize_commands() -> None:
-    """Expose raw acquisition and normalization workflows on the public CLI surface."""
+def test_root_help_lists_scrape_normalize_and_enrich_commands() -> None:
+    """Expose raw acquisition plus replay workflows on the public CLI surface."""
 
     result = runner.invoke(app, ["--help"])
 
     assert result.exit_code == 0
     assert "scrape" in result.stdout
     assert "normalize" in result.stdout
+    assert "enrich" in result.stdout
     assert "load-towns" not in result.stdout
     assert "load-districts" not in result.stdout
 
@@ -328,3 +330,99 @@ def test_normalize_command_reports_workflow_validation_errors(monkeypatch) -> No
 
     assert result.exit_code != 0
     assert "Exactly one normalization selector must be provided." in result.stdout
+
+
+def test_enrich_command_runs_with_scrape_run_scope(monkeypatch) -> None:
+    """Pass scrape-run-scoped enrichment arguments into the workflow runner."""
+
+    captured_arguments = {}
+
+    def fake_run_filesystem_enrichment_workflow(**kwargs) -> int:
+        """Capture enrichment workflow arguments passed from the CLI."""
+
+        captured_arguments.update(kwargs)
+        return 5
+
+    monkeypatch.setattr(
+        "scraperweb.cli.run_filesystem_enrichment_workflow",
+        fake_run_filesystem_enrichment_workflow,
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "enrich",
+            "--scrape-run-id",
+            "dc733c67-1091-4a08-831f-f8243eb1b8f6",
+            "--input-dir",
+            "tmp/normalized",
+            "--output-dir",
+            "tmp/enriched",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Enriched 5 records." in result.stdout
+    assert captured_arguments == {
+        "input_dir": Path("tmp/normalized"),
+        "output_dir": Path("tmp/enriched"),
+        "region": None,
+        "listing_id": None,
+        "scrape_run_id": "dc733c67-1091-4a08-831f-f8243eb1b8f6",
+    }
+
+
+def test_enrich_command_supports_listing_scope(monkeypatch) -> None:
+    """Pass listing-scoped enrichment arguments into the workflow runner."""
+
+    captured_arguments = {}
+
+    def fake_run_filesystem_enrichment_workflow(**kwargs) -> int:
+        """Capture enrichment workflow arguments passed from the CLI."""
+
+        captured_arguments.update(kwargs)
+        return 2
+
+    monkeypatch.setattr(
+        "scraperweb.cli.run_filesystem_enrichment_workflow",
+        fake_run_filesystem_enrichment_workflow,
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "enrich",
+            "--listing-id",
+            "2664846156",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Enriched 2 records." in result.stdout
+    assert captured_arguments["listing_id"] == "2664846156"
+    assert captured_arguments["region"] is None
+    assert captured_arguments["scrape_run_id"] is None
+    assert captured_arguments["input_dir"] == Path("data/normalized")
+    assert captured_arguments["output_dir"] == Path("data/enriched")
+
+
+def test_enrich_command_reports_workflow_validation_errors(monkeypatch) -> None:
+    """Translate workflow validation failures into CLI parameter errors."""
+
+    def fake_run_filesystem_enrichment_workflow(**kwargs) -> int:
+        """Raise a workflow validation error for CLI coverage."""
+
+        del kwargs
+        raise EnrichmentWorkflowError(
+            "Exactly one enrichment selector must be provided.",
+        )
+
+    monkeypatch.setattr(
+        "scraperweb.cli.run_filesystem_enrichment_workflow",
+        fake_run_filesystem_enrichment_workflow,
+    )
+
+    result = runner.invoke(app, ["enrich"])
+
+    assert result.exit_code != 0
+    assert "Exactly one enrichment selector must be provided." in result.stdout

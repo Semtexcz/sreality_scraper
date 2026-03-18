@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.22.0] - 2026-03-18
+
+### Added
+
+- added a supported filesystem-backed enrichment replay workflow that reads
+  persisted normalized artifacts and emits canonical enriched JSON snapshots
+  under `data/enriched/<region>/<listing_id>/<captured_at_utc>.json`
+- added CLI support for `scraperweb enrich` with `--region`, `--listing-id`,
+  and `--scrape-run-id` selectors plus integration-style replay coverage for
+  representative normalized artifacts
+
+### Changed
+
+- updated operator and developer documentation so enrichment is now described as
+  a supported stage entrypoint with deterministic artifact layout and
+  normalized-to-enriched traceability guarantees
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-034` so the current
+  backlog is empty
+- completed `TASK-034` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.21.0] - 2026-03-18
 
 ### Added

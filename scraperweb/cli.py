@@ -17,6 +17,7 @@ from scraperweb.cli_runtime_options import (
     StorageBackend,
     build_runtime_cli_options,
 )
+from scraperweb.enrichment import EnrichmentWorkflowError, run_filesystem_enrichment_workflow
 from scraperweb.estate_scraper import run_scraper
 from scraperweb.normalization import NormalizationWorkflowError, run_filesystem_normalization_workflow
 from scraperweb.progress import TerminalScrapeProgressReporter
@@ -24,7 +25,7 @@ from scraperweb.progress import TerminalScrapeProgressReporter
 
 app = typer.Typer(
     help=(
-        "Run raw-data acquisition and filesystem normalization workflows."
+        "Run raw-data acquisition plus filesystem normalization and enrichment workflows."
     ),
     no_args_is_help=True,
     pretty_exceptions_enable=False,
@@ -243,6 +244,63 @@ def normalize_command(
     typer.echo(f"Normalized {normalized_records} records.")
 
 
+@app.command("enrich")
+def enrich_command(
+    region: Annotated[
+        str | None,
+        typer.Option(
+            "--region",
+            help="Enrich every normalized snapshot stored under one region directory.",
+            show_default=False,
+        ),
+    ] = None,
+    listing_id: Annotated[
+        str | None,
+        typer.Option(
+            "--listing-id",
+            help="Enrich every stored normalized snapshot for one listing id.",
+            show_default=False,
+        ),
+    ] = None,
+    scrape_run_id: Annotated[
+        str | None,
+        typer.Option(
+            "--scrape-run-id",
+            help="Enrich every stored normalized snapshot captured in one scrape run.",
+            show_default=False,
+        ),
+    ] = None,
+    input_dir: Annotated[
+        Path,
+        typer.Option(
+            "--input-dir",
+            help="Filesystem input directory that contains persisted normalized snapshots.",
+        ),
+    ] = Path("data/normalized"),
+    output_dir: Annotated[
+        Path,
+        typer.Option(
+            "--output-dir",
+            help="Filesystem output directory for enriched JSON artifacts.",
+        ),
+    ] = Path("data/enriched"),
+) -> None:
+    """Enrich persisted normalized filesystem snapshots into stable JSON artifacts."""
+
+    try:
+        enriched_records = run_filesystem_enrichment_workflow(
+            input_dir=input_dir,
+            output_dir=output_dir,
+            region=region,
+            listing_id=listing_id,
+            scrape_run_id=scrape_run_id,
+        )
+    except EnrichmentWorkflowError as error:
+        raise typer.BadParameter(str(error)) from error
+
+    typer.echo(f"Enriched {enriched_records} records.")
+
+
 def main() -> None:
     """Run the top-level Typer application."""
 
@@ -252,6 +310,7 @@ def main() -> None:
 __all__ = [
     "REGION_CHOICES",
     "app",
+    "enrich_command",
     "main",
     "normalize_command",
     "scrape_command",

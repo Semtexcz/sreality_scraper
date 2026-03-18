@@ -20,8 +20,9 @@ Planned ownership:
 
 The repository currently does not define a dedicated output directory for scraper runs.
 
-The intended generated outputs are raw data downloaded from `sreality.cz` and
-deterministic normalized artifacts derived from persisted raw snapshots.
+The intended generated outputs are raw data downloaded from `sreality.cz`,
+deterministic normalized artifacts derived from persisted raw snapshots, and
+deterministic enriched artifacts derived from persisted normalized snapshots.
 
 The persistence backend is configurable. Generated outputs are:
 
@@ -30,6 +31,8 @@ The persistence backend is configurable. Generated outputs are:
 - optional sibling HTML snapshots under `data/raw/<region>/<listing_id>/<captured_at_utc>.html`
 - normalized filesystem snapshots under
   `data/normalized/<region>/<listing_id>/<captured_at_utc>.json`
+- enriched filesystem snapshots under
+  `data/enriched/<region>/<listing_id>/<captured_at_utc>.json`
 
 The supported normalization workflow currently targets filesystem-backed raw
 snapshots only. Each normalized artifact preserves stable stage identity via
@@ -37,6 +40,13 @@ snapshots only. Each normalized artifact preserves stable stage identity via
 Recognized nearby-place and accessories values are promoted into the canonical
 typed paths `location.nearby_places` and `core_attributes.accessories` instead
 of remaining only inside `core_attributes.source_specific_attributes`.
+
+The supported enrichment workflow targets filesystem-backed normalized snapshots
+only. Each enriched artifact preserves deterministic lineage via
+`enrichment_version`, `enrichment_metadata.enriched_at_utc`,
+`enrichment_metadata.source_normalization_version`, and the embedded
+`normalized_record`. Operators can replay by `region`, `listing_id`, or
+`source_scrape_run_id` without going back through raw acquisition.
 
 Representative normalization replay validation should confirm:
 
@@ -48,6 +58,17 @@ Representative normalization replay validation should confirm:
   `core_attributes.source_specific_attributes`
 - ambiguous accessory fragments remain traceable in
   `core_attributes.accessories.unparsed_fragments`
+
+Representative enrichment replay validation should confirm:
+
+- stored enriched artifacts mirror the normalized snapshot layout and stay
+  idempotent for the same normalized input
+- `enrichment_metadata.enriched_at_utc` remains deterministic by reusing the
+  persisted `normalized_at_utc` timestamp
+- `normalized_record` is preserved inside the enriched artifact so later-stage
+  consumers can audit the exact normalized inputs used for derivation
+- location-intelligence, accessibility, building, accessory, and lifecycle
+  features remain reproducible when replayed from persisted normalized artifacts
 
 ## Backend Tradeoffs
 

@@ -1,6 +1,6 @@
 ---
 task: TASK-034
-status: "backlog"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Expose enrichment as an operator workflow
 
 Task: TASK-034
-Status: backlog
+Status: done
 Priority: P1
 Type: feature
 Author:
@@ -25,15 +25,15 @@ linear pipeline.
 
 ## Definition of Done
 
-- [ ] Add a supported CLI or workflow entrypoint that reads normalized filesystem
+- [x] Add a supported CLI or workflow entrypoint that reads normalized filesystem
       artifacts and emits enriched artifacts in a deterministic layout.
-- [ ] Keep the workflow scoped to enrichment-stage inputs and outputs only, without
+- [x] Keep the workflow scoped to enrichment-stage inputs and outputs only, without
       weakening the raw-only acquisition path.
-- [ ] Add integration-style coverage that validates representative normalized
+- [x] Add integration-style coverage that validates representative normalized
       snapshots are replayed into enriched artifacts successfully.
-- [ ] Document the workflow usage, artifact location, and traceability guarantees
+- [x] Document the workflow usage, artifact location, and traceability guarantees
       for operators.
-- [ ] Update roadmap or developer-facing documentation so enrichment is clearly
+- [x] Update roadmap or developer-facing documentation so enrichment is clearly
       described as a supported stage entrypoint.
 
 ## Notes
