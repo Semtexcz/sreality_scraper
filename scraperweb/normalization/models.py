@@ -10,7 +10,7 @@ traceability without depending on source-shaped payloads.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 
 from scraperweb.scraper.models import JsonValue
 
@@ -52,6 +52,42 @@ class NormalizedLocation:
 
 
 @dataclass(frozen=True)
+class NormalizedAreaDetails:
+    """Structured area fields parsed directly from the raw detail payload."""
+
+    source_text: str | None = None
+    usable_area_sqm: float | None = None
+    total_area_sqm: float | None = None
+    built_up_area_sqm: float | None = None
+    garden_area_sqm: float | None = None
+    unparsed_fragments: tuple[str, ...] = field(default_factory=tuple)
+
+
+@dataclass(frozen=True)
+class NormalizedOwnership:
+    """Ownership fields copied directly from the raw detail payload."""
+
+    ownership_type: str | None = None
+
+
+@dataclass(frozen=True)
+class NormalizedListingLifecycle:
+    """Listing lifecycle dates parsed directly from raw source text."""
+
+    listed_on: date | None = None
+    listed_on_text: str | None = None
+    updated_on: date | None = None
+    updated_on_text: str | None = None
+
+
+@dataclass(frozen=True)
+class NormalizedSourceIdentifiers:
+    """Source-side listing identifiers preserved from the raw detail payload."""
+
+    source_listing_reference: str | None = None
+
+
+@dataclass(frozen=True)
 class NormalizationMetadata:
     """Traceability metadata linking the normalized record back to its raw capture."""
 
@@ -76,3 +112,11 @@ class NormalizedListingRecord:
     core_attributes: NormalizedCoreAttributes
     location: NormalizedLocation
     normalization_metadata: NormalizationMetadata
+    area_details: NormalizedAreaDetails = field(default_factory=NormalizedAreaDetails)
+    ownership: NormalizedOwnership = field(default_factory=NormalizedOwnership)
+    listing_lifecycle: NormalizedListingLifecycle = field(
+        default_factory=NormalizedListingLifecycle,
+    )
+    source_identifiers: NormalizedSourceIdentifiers = field(
+        default_factory=NormalizedSourceIdentifiers,
+    )

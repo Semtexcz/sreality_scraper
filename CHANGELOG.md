@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.8.0] - 2026-03-18
+
+### Added
+
+- added grouped normalized fields for area details, ownership, listing
+  lifecycle dates, and source listing references derived directly from the
+  Sreality detail payload
+- added regression coverage for representative `data/raw/all-czechia`
+  snapshots and partial area parsing so mapped fields remain deterministic and
+  traceable
+
+### Changed
+
+- changed normalization to parse supported `Plocha:` fragments into explicit
+  typed area fields while preserving unsupported fragments in the normalized
+  contract instead of leaving the raw text only in source-specific overflow
+- changed normalization overflow handling so `Vlastnictví:`, `ID zakázky:`,
+  `Vloženo:`, and `Upraveno:` now map into dedicated typed sub-contracts
+  instead of remaining under `source_specific_attributes`
+
 ## [1.7.7] - 2026-03-18
 
 ### Added

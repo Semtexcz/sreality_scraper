@@ -1,6 +1,6 @@
 ---
 task: TASK-019
-status: "backlog"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Broaden normalized field coverage from the detail payload
 
 Task: TASK-019
-Status: backlog
+Status: done
 Priority: P1
 Type: feature
 Author:

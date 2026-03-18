@@ -14,7 +14,7 @@ from scraperweb.modeling import (
     MODELING_INPUT_VERSION,
     EnrichedListingModelingInputBuilder,
 )
-from scraperweb.normalization import RawListingNormalizer
+from scraperweb.normalization import NORMALIZATION_VERSION, RawListingNormalizer
 from scraperweb.scraper.models import RawListingRecord, RawSourceMetadata
 
 
@@ -116,7 +116,7 @@ def test_linear_pipeline_service_composes_full_stage_handoffs() -> None:
     assert modeling_record.modeling_metadata is not None
     assert modeling_record.modeling_metadata.dataset_lineage == (
         "raw-listing-record-v1",
-        "normalized-listing-v1",
+        NORMALIZATION_VERSION,
         "enriched-listing-v1",
         "modeling-input-v1",
     )

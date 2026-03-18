@@ -3,21 +3,44 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
+import re
 
 from scraperweb.normalization.models import (
+    NormalizedAreaDetails,
     NormalizationMetadata,
     NormalizedBuilding,
     NormalizedCoreAttributes,
     NormalizedListingRecord,
+    NormalizedListingLifecycle,
     NormalizedLocation,
+    NormalizedOwnership,
     NormalizedPrice,
+    NormalizedSourceIdentifiers,
 )
 from scraperweb.scraper.models import JsonValue, RawListingRecord
 
 
-NORMALIZATION_VERSION = "normalized-listing-v1"
+NORMALIZATION_VERSION = "normalized-listing-v2"
 RAW_CONTRACT_VERSION = "raw-listing-record-v1"
+_AREA_FRAGMENT_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
+    (
+        re.compile(r"^Užitná plocha (?P<value>\d+(?:[.,]\d+)?) m²$"),
+        "usable_area_sqm",
+    ),
+    (
+        re.compile(r"^Celková plocha (?P<value>\d+(?:[.,]\d+)?) m²$"),
+        "total_area_sqm",
+    ),
+    (
+        re.compile(r"^Zastavěná plocha (?P<value>\d+(?:[.,]\d+)?) m²$"),
+        "built_up_area_sqm",
+    ),
+    (
+        re.compile(r"^Zahrada o ploše (?P<value>\d+(?:[.,]\d+)?) m²$"),
+        "garden_area_sqm",
+    ),
+)
 
 
 class RawListingNormalizer:
@@ -40,6 +63,7 @@ class RawListingNormalizer:
 
         title = self._get_text_value(record.source_payload, "Název")
         building_text = self._get_text_value(record.source_payload, "Stavba:")
+        area_text = self._get_text_value(record.source_payload, "Plocha:")
         location_text, city, city_district = self._extract_location_fields(title)
 
         return NormalizedListingRecord(
@@ -72,6 +96,17 @@ class RawListingNormalizer:
                 source_scrape_run_id=record.source_metadata.scrape_run_id,
                 source_captured_from=record.source_metadata.captured_from,
                 source_http_status=record.source_metadata.http_status,
+            ),
+            area_details=self._build_area_details(area_text),
+            ownership=NormalizedOwnership(
+                ownership_type=self._get_text_value(record.source_payload, "Vlastnictví:"),
+            ),
+            listing_lifecycle=self._build_listing_lifecycle(record.source_payload),
+            source_identifiers=NormalizedSourceIdentifiers(
+                source_listing_reference=self._get_text_value(
+                    record.source_payload,
+                    "ID zakázky:",
+                ),
             ),
         )
 
@@ -123,6 +158,97 @@ class RawListingNormalizer:
         second = parts[1] or None if len(parts) > 1 else None
         return first, second
 
+    @classmethod
+    def _build_area_details(cls, area_text: str | None) -> NormalizedAreaDetails:
+        """Parse supported area fragments from the raw detail payload text."""
+
+        if area_text is None:
+            return NormalizedAreaDetails()
+
+        parsed_values: dict[str, float | None] = {
+            "usable_area_sqm": None,
+            "total_area_sqm": None,
+            "built_up_area_sqm": None,
+            "garden_area_sqm": None,
+        }
+        unparsed_fragments: list[str] = []
+
+        for fragment in cls._split_comma_delimited_value(area_text):
+            matched = False
+            for pattern, field_name in _AREA_FRAGMENT_PATTERNS:
+                match = pattern.fullmatch(fragment)
+                if match is None:
+                    continue
+
+                parsed_value = cls._parse_decimal_number(match.group("value"))
+                if parsed_value is None or parsed_values[field_name] is not None:
+                    unparsed_fragments.append(fragment)
+                else:
+                    parsed_values[field_name] = parsed_value
+                matched = True
+                break
+
+            if not matched:
+                unparsed_fragments.append(fragment)
+
+        return NormalizedAreaDetails(
+            source_text=area_text,
+            usable_area_sqm=parsed_values["usable_area_sqm"],
+            total_area_sqm=parsed_values["total_area_sqm"],
+            built_up_area_sqm=parsed_values["built_up_area_sqm"],
+            garden_area_sqm=parsed_values["garden_area_sqm"],
+            unparsed_fragments=tuple(unparsed_fragments),
+        )
+
+    @classmethod
+    def _build_listing_lifecycle(
+        cls,
+        payload: dict[str, JsonValue],
+    ) -> NormalizedListingLifecycle:
+        """Parse source lifecycle dates while preserving the original raw text."""
+
+        listed_on_text = cls._get_text_value(payload, "Vloženo:")
+        updated_on_text = cls._get_text_value(payload, "Upraveno:")
+        return NormalizedListingLifecycle(
+            listed_on=cls._parse_czech_date(listed_on_text),
+            listed_on_text=listed_on_text,
+            updated_on=cls._parse_czech_date(updated_on_text),
+            updated_on_text=updated_on_text,
+        )
+
+    @staticmethod
+    def _split_comma_delimited_value(value: str) -> tuple[str, ...]:
+        """Return stripped non-empty fragments from a comma-delimited source value."""
+
+        return tuple(fragment.strip() for fragment in value.split(",") if fragment.strip())
+
+    @staticmethod
+    def _parse_decimal_number(value: str) -> float | None:
+        """Parse one source decimal number with comma or dot decimal separators."""
+
+        normalized_value = value.replace(",", ".").strip()
+        try:
+            return float(normalized_value)
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _parse_czech_date(value: str | None) -> date | None:
+        """Parse one Czech day-month-year date copied from the detail payload."""
+
+        if value is None:
+            return None
+
+        match = re.fullmatch(r"(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})", value.strip())
+        if match is None:
+            return None
+
+        day, month, year = (int(part) for part in match.groups())
+        try:
+            return date(year, month, day)
+        except ValueError:
+            return None
+
     @staticmethod
     def _extract_location_fields(
         title: str | None,
@@ -160,6 +286,11 @@ class RawListingNormalizer:
             "Poznámka k ceně:",
             "Stavba:",
             "Energetická náročnost:",
+            "Plocha:",
+            "Vlastnictví:",
+            "Vloženo:",
+            "Upraveno:",
+            "ID zakázky:",
         }
         return {
             key: payload[key]
