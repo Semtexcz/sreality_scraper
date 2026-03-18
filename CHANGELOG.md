@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.10.1] - 2026-03-18
+
+### Added
+
+- added backlog tasks for designing and implementing normalized nearby-place
+  parsing and structured accessories parsing, including a follow-up replay and
+  documentation task for the resulting schema evolution
+
 ## [1.10.0] - 2026-03-18
 
 ### Added
