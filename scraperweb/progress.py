@@ -54,6 +54,16 @@ class ScrapeProgressReporter:
     ) -> None:
         """Report that one listing was skipped after a recoverable HTTP failure."""
 
+    def detail_markup_error_skipped(
+        self,
+        *,
+        region_slug: str,
+        page_number: int,
+        listing_url: str,
+        message: str,
+    ) -> None:
+        """Report that one listing was skipped after a recoverable markup failure."""
+
     def region_completed(self, *, region_slug: str, processed_estates: int) -> None:
         """Report the end of one region traversal."""
 
@@ -159,6 +169,23 @@ class TerminalScrapeProgressReporter(ScrapeProgressReporter):
         self._output(
             f"Region {region_slug}: skipped listing on page {page_number} "
             f"({listing_label}) after HTTP failure: {message}",
+        )
+
+    def detail_markup_error_skipped(
+        self,
+        *,
+        region_slug: str,
+        page_number: int,
+        listing_url: str,
+        message: str,
+    ) -> None:
+        """Show skipped-listing markup failures without requiring debug logs."""
+
+        if self._quiet:
+            return
+        self._output(
+            f"Region {region_slug}: skipped listing on page {page_number} "
+            f"({listing_url}) after markup failure: {message}",
         )
 
     def region_completed(self, *, region_slug: str, processed_estates: int) -> None:

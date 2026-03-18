@@ -29,6 +29,12 @@ def test_terminal_progress_reporter_emits_default_progress_messages() -> None:
         listing_url="https://detail/2",
         message="404",
     )
+    reporter.detail_markup_error_skipped(
+        region_slug="all-czechia",
+        page_number=1,
+        listing_url="https://detail/3",
+        message="missing non-empty listing title",
+    )
     reporter.region_completed(region_slug="all-czechia", processed_estates=1)
 
     assert messages == [
@@ -37,6 +43,7 @@ def test_terminal_progress_reporter_emits_default_progress_messages() -> None:
         "Region all-czechia: fetching page 1",
         "Processed 1/100 estates",
         "Region all-czechia: skipped listing on page 1 (https://detail/2) after HTTP failure: 404",
+        "Region all-czechia: skipped listing on page 1 (https://detail/3) after markup failure: missing non-empty listing title",
         "Region all-czechia: completed with 1 processed estates",
     ]
 
@@ -92,6 +99,12 @@ def test_terminal_progress_reporter_suppresses_output_in_quiet_mode() -> None:
         page_number=1,
         listing_url="https://detail/2",
         message="404",
+    )
+    reporter.detail_markup_error_skipped(
+        region_slug="all-czechia",
+        page_number=1,
+        listing_url="https://detail/3",
+        message="missing title",
     )
     reporter.region_completed(region_slug="all-czechia", processed_estates=1)
 

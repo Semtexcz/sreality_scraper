@@ -790,6 +790,7 @@ def test_raw_listing_collector_surfaces_detail_markup_validation_failures() -> N
         detail_page_parser=SrealityDetailPageParser(),
         region_slug="praha",
         scrape_run_id="run-detail-markup",
+        fail_on_detail_http_error=True,
     )
 
     with pytest.raises(ScraperResponseError) as exc_info:
@@ -805,6 +806,62 @@ def test_raw_listing_collector_surfaces_detail_markup_validation_failures() -> N
     assert exc_info.value.listing_url == "https://www.sreality.cz/detail/prodej/byt/praha/1"
     assert exc_info.value.request_url == "https://www.sreality.cz/detail/prodej/byt/praha/1"
     assert "missing non-empty listing title" in exc_info.value.message
+
+
+def test_raw_listing_collector_skips_detail_markup_failures_by_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Log and skip invalid detail markup so later listings still get collected."""
+
+    recording_logger = RecordingLogger()
+    monkeypatch.setattr("scraperweb.scraper.runtime.logger", recording_logger)
+
+    collector = RawListingCollector(
+        listing_page_client=FakeListingPageClient(
+            {
+                "https://example.test/praha?strana=1": (
+                    "pages:1\n"
+                    "https://www.sreality.cz/detail/prodej/byt/praha/1\n"
+                    "https://www.sreality.cz/detail/prodej/byt/praha/2"
+                ),
+            },
+        ),
+        detail_page_client=FakeDetailPageClient(
+            {
+                "https://www.sreality.cz/detail/prodej/byt/praha/1": (
+                    "<html><body><dl><dt>Celková cena:</dt></dl></body></html>"
+                ),
+                "https://www.sreality.cz/detail/prodej/byt/praha/2": (
+                    "<html><body><h1>Byt 2+kk</h1><dl><dt>Celková cena:</dt><dd>7 500 000 Kč</dd></dl></body></html>"
+                ),
+            },
+        ),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=SrealityDetailPageParser(),
+        region_slug="praha",
+        scrape_run_id="run-skip-detail-markup",
+    )
+
+    collected_records = list(
+        collector.collect_region_records(
+            district_link="https://example.test/praha?strana=",
+            max_pages=1,
+        ),
+    )
+
+    assert [record.listing_id for record in collected_records] == ["2"]
+    assert recording_logger.calls == [
+        (
+            "Skipping listing after scraper markup failure for region={} page={} listing_url={} request_url={}: {}",
+            (
+                "praha",
+                1,
+                "https://www.sreality.cz/detail/prodej/byt/praha/1",
+                "https://www.sreality.cz/detail/prodej/byt/praha/1",
+                "detail page validation failed: missing non-empty listing title",
+            ),
+        ),
+    ]
 
 
 def test_acquisition_service_logs_context_before_propagating_scraper_http_failures(

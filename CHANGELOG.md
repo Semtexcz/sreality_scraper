@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.7.4] - 2026-03-18
+
+### Changed
+
+- changed default scraper recovery so detail-page markup validation failures are
+  now logged and skipped per listing instead of terminating the whole region run
+- changed terminal progress reporting to show skipped listings caused by detail
+  markup failures in addition to skipped HTTP failures
+
 ## [1.7.3] - 2026-03-17
 
 ### Added

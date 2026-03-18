@@ -135,12 +135,29 @@ class RawListingCollector:
                 try:
                     raw_payload = self._detail_page_parser.parse_raw_payload(detail_html)
                 except ScraperMarkupError as error:
-                    raise self._build_markup_response_error(
+                    markup_error = self._build_markup_response_error(
                         error=error,
                         request_url=estate_url,
                         page_number=page_number,
                         listing_url=estate_url,
-                    ) from error
+                    )
+                    if self._fail_on_detail_http_error:
+                        raise markup_error from error
+                    logger.error(
+                        "Skipping listing after scraper markup failure for region={} page={} listing_url={} request_url={}: {}",
+                        markup_error.region_slug,
+                        markup_error.listing_page_number,
+                        markup_error.listing_url,
+                        markup_error.request_url,
+                        markup_error.message,
+                    )
+                    self._progress_reporter.detail_markup_error_skipped(
+                        region_slug=markup_error.region_slug or self._region_slug,
+                        page_number=markup_error.listing_page_number or page_number,
+                        listing_url=estate_url,
+                        message=markup_error.message,
+                    )
+                    continue
                 yield self._build_raw_listing_record(
                     estate_url=estate_url,
                     page_number=page_number,
