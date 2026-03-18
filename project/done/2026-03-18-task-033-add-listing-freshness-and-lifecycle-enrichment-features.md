@@ -1,6 +1,6 @@
 ---
 task: TASK-033
-status: "backlog"
+status: "done"
 priority: P2
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add listing freshness and lifecycle enrichment features
 
 Task: TASK-033
-Status: backlog
+Status: done
 Priority: P2
 Type: feature
 Author:
@@ -24,15 +24,15 @@ the canonical enriched boundary.
 
 ## Definition of Done
 
-- [ ] Extend enrichment with deterministic lifecycle-derived features computed from
+- [x] Extend enrichment with deterministic lifecycle-derived features computed from
       normalized listing dates only.
-- [ ] Add explicit numeric features for listing age and update recency using a
+- [x] Add explicit numeric features for listing age and update recency using a
       documented deterministic reference timestamp.
-- [ ] Add optional bucketed freshness flags only when their threshold rules are
+- [x] Add optional bucketed freshness flags only when their threshold rules are
       clearly documented and tested.
-- [ ] Keep lifecycle features optional when date inputs are missing or logically
+- [x] Keep lifecycle features optional when date inputs are missing or logically
       inconsistent.
-- [ ] Add regression coverage that proves enrichment stays deterministic for the
+- [x] Add regression coverage that proves enrichment stays deterministic for the
       same normalized snapshot.
 
 ## Notes

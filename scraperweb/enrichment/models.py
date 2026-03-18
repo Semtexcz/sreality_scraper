@@ -90,6 +90,16 @@ class EnrichedLocationFeatures:
 
 
 @dataclass(frozen=True)
+class EnrichedLifecycleFeatures:
+    """Listing freshness and lifecycle features derived from normalized dates."""
+
+    listing_age_days: int | None = None
+    updated_recency_days: int | None = None
+    is_fresh_listing_7d: bool | None = None
+    is_recently_updated_3d: bool | None = None
+
+
+@dataclass(frozen=True)
 class EnrichmentMetadata:
     """Traceability metadata for enrichment outputs."""
 
@@ -113,5 +123,8 @@ class EnrichedListingRecord:
     )
     location_features: EnrichedLocationFeatures = field(
         default_factory=EnrichedLocationFeatures,
+    )
+    lifecycle_features: EnrichedLifecycleFeatures = field(
+        default_factory=EnrichedLifecycleFeatures,
     )
     enrichment_metadata: EnrichmentMetadata | None = None

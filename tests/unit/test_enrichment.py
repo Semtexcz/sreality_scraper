@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import date
 from datetime import datetime, timezone
 
 import pytest
@@ -15,6 +16,7 @@ from scraperweb.normalization.models import (
     NormalizationMetadata,
     NormalizedBuilding,
     NormalizedCoreAttributes,
+    NormalizedListingLifecycle,
     NormalizedListingRecord,
     NormalizedLocation,
     NormalizedNearbyPlace,
@@ -181,6 +183,10 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.location_features.nearest_kindergarten_m == 290
     assert enriched_record.location_features.amenities_within_300m_count == 5
     assert enriched_record.location_features.amenities_within_1000m_count == 8
+    assert enriched_record.lifecycle_features.listing_age_days == 6
+    assert enriched_record.lifecycle_features.updated_recency_days == 1
+    assert enriched_record.lifecycle_features.is_fresh_listing_7d is True
+    assert enriched_record.lifecycle_features.is_recently_updated_3d is True
     assert enriched_record.enrichment_metadata is not None
     assert enriched_record.enrichment_metadata.enriched_at_utc == (
         normalized_record.normalized_at_utc
@@ -188,7 +194,7 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.enrichment_metadata.source_normalization_version == (
         normalized_record.normalization_version
     )
-    assert len(enriched_record.enrichment_metadata.derivation_notes) == 16
+    assert len(enriched_record.enrichment_metadata.derivation_notes) == 19
 
 
 def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic() -> None:
@@ -208,6 +214,8 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
         floor_position=None,
         total_floor_count=None,
         accessories=NormalizedAccessories(),
+        listed_on=None,
+        updated_on=None,
     )
     enricher = NormalizedListingEnricher()
 
@@ -267,6 +275,66 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
     assert first_record.location_features.nearest_kindergarten_m is None
     assert first_record.location_features.amenities_within_300m_count == 0
     assert first_record.location_features.amenities_within_1000m_count == 0
+    assert first_record.lifecycle_features.listing_age_days is None
+    assert first_record.lifecycle_features.updated_recency_days is None
+    assert first_record.lifecycle_features.is_fresh_listing_7d is None
+    assert first_record.lifecycle_features.is_recently_updated_3d is None
+
+
+def test_enricher_keeps_inconsistent_lifecycle_dates_optional() -> None:
+    """Keep lifecycle features empty when normalized dates are logically inconsistent."""
+
+    normalized_record = _build_normalized_record(
+        title="Byt 2+kk, Brno",
+        amount_text="6 100 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Brno",
+        city_district=None,
+        usable_area_sqm=58.0,
+        total_area_sqm=60.0,
+        building_material="Cihla",
+        physical_condition=None,
+        floor_position=3,
+        total_floor_count=6,
+        listed_on=date(2026, 3, 16),
+        updated_on=date(2026, 3, 15),
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.lifecycle_features.listing_age_days is None
+    assert enriched_record.lifecycle_features.updated_recency_days is None
+    assert enriched_record.lifecycle_features.is_fresh_listing_7d is None
+    assert enriched_record.lifecycle_features.is_recently_updated_3d is None
+
+
+def test_enricher_keeps_future_lifecycle_dates_optional() -> None:
+    """Ignore normalized lifecycle dates that would create negative elapsed durations."""
+
+    normalized_record = _build_normalized_record(
+        title="Byt 2+kk, Brno",
+        amount_text="6 100 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Brno",
+        city_district=None,
+        usable_area_sqm=58.0,
+        total_area_sqm=60.0,
+        building_material="Cihla",
+        physical_condition=None,
+        floor_position=3,
+        total_floor_count=6,
+        listed_on=date(2026, 3, 18),
+        updated_on=date(2026, 3, 20),
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.lifecycle_features.listing_age_days is None
+    assert enriched_record.lifecycle_features.updated_recency_days is None
+    assert enriched_record.lifecycle_features.is_fresh_listing_7d is None
+    assert enriched_record.lifecycle_features.is_recently_updated_3d is None
 
 
 def test_enricher_derives_nearby_place_accessibility_for_partial_non_prague_data() -> None:
@@ -758,6 +826,8 @@ def _build_normalized_record(
     total_floor_count: int | None,
     accessories: NormalizedAccessories | None = None,
     nearby_places: tuple[NormalizedNearbyPlace, ...] = (),
+    listed_on: date | None = date(2026, 3, 11),
+    updated_on: date | None = date(2026, 3, 16),
 ) -> NormalizedListingRecord:
     """Build a normalized record fixture for enrichment tests."""
 
@@ -814,6 +884,12 @@ def _build_normalized_record(
         ),
         energy_details=NormalizedEnergyDetails(
             efficiency_class=energy_efficiency_class,
+        ),
+        listing_lifecycle=NormalizedListingLifecycle(
+            listed_on=listed_on,
+            listed_on_text=listed_on.isoformat() if listed_on is not None else None,
+            updated_on=updated_on,
+            updated_on_text=updated_on.isoformat() if updated_on is not None else None,
         ),
     )
 

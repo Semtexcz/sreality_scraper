@@ -6,6 +6,7 @@ derives explicit features from normalized records only.
 
 from scraperweb.enrichment.models import (
     EnrichedListingRecord,
+    EnrichedLifecycleFeatures,
     EnrichedLocationFeatures,
     EnrichedPriceFeatures,
     EnrichedPropertyFeatures,
@@ -16,6 +17,7 @@ from scraperweb.enrichment.runtime import ENRICHMENT_VERSION, NormalizedListingE
 __all__ = [
     "ENRICHMENT_VERSION",
     "EnrichedListingRecord",
+    "EnrichedLifecycleFeatures",
     "EnrichedLocationFeatures",
     "EnrichedPriceFeatures",
     "EnrichedPropertyFeatures",

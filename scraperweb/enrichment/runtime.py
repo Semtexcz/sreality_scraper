@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
+from datetime import date
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -11,6 +12,7 @@ from scraperweb.config import DATA_DIR
 from scraperweb.enrichment.location_intelligence import LocationReferenceIndex
 from scraperweb.enrichment.models import (
     EnrichedListingRecord,
+    EnrichedLifecycleFeatures,
     EnrichedLocationFeatures,
     EnrichedPriceFeatures,
     EnrichedPropertyFeatures,
@@ -20,7 +22,7 @@ from scraperweb.normalization.models import NormalizedNearbyPlace
 from scraperweb.normalization.models import NormalizedListingRecord
 
 
-ENRICHMENT_VERSION = "enriched-listing-v8"
+ENRICHMENT_VERSION = "enriched-listing-v9"
 _DERIVATION_NOTES = (
     "asking_price_czk is derived from normalized typed price amounts only",
     "disposition is parsed from normalized title text only",
@@ -69,6 +71,19 @@ _DERIVATION_NOTES = (
         "nearest_public_transport_m groups metro, tram, bus_mhd, and vlak; "
         "nearest_shop_m groups obchod and vecerka; amenity counts evaluate each "
         "normalized nearby-place record once against fixed thresholds"
+    ),
+    (
+        "lifecycle features use the deterministic enriched_at_utc date as their "
+        "reference point instead of the system clock"
+    ),
+    (
+        "listing_age_days and updated_recency_days stay optional when lifecycle "
+        "dates are missing, fall after the reference date, or updated_on predates "
+        "listed_on"
+    ),
+    (
+        "is_fresh_listing_7d is true when listing_age_days is at most 7 days and "
+        "is_recently_updated_3d is true when updated_recency_days is at most 3 days"
     ),
 )
 _ENERGY_EFFICIENCY_BUCKETS = {
@@ -132,6 +147,7 @@ class NormalizedListingEnricher:
             raise TypeError("NormalizedListingEnricher accepts NormalizedListingRecord only.")
 
         asking_price_czk = self._resolve_asking_price_czk(record)
+        enriched_at_utc = self._ensure_utc(self._enriched_at_provider(record))
         usable_area_sqm = self._normalize_area_value(record.area_details.usable_area_sqm)
         total_area_sqm = self._normalize_area_value(record.area_details.total_area_sqm)
         canonical_area_sqm = self._resolve_canonical_area_sqm(record)
@@ -258,8 +274,12 @@ class NormalizedListingEnricher:
                     threshold_m=1000,
                 ),
             ),
+            lifecycle_features=self._derive_lifecycle_features(
+                record,
+                enriched_at_utc=enriched_at_utc,
+            ),
             enrichment_metadata=EnrichmentMetadata(
-                enriched_at_utc=self._ensure_utc(self._enriched_at_provider(record)),
+                enriched_at_utc=enriched_at_utc,
                 source_normalization_version=record.normalization_version,
                 derivation_notes=_DERIVATION_NOTES,
             ),
@@ -278,6 +298,75 @@ class NormalizedListingEnricher:
         if value.tzinfo is None:
             return value.replace(tzinfo=timezone.utc)
         return value.astimezone(timezone.utc)
+
+    @staticmethod
+    def _derive_lifecycle_features(
+        record: NormalizedListingRecord,
+        *,
+        enriched_at_utc: datetime,
+    ) -> EnrichedLifecycleFeatures:
+        """Return lifecycle features derived from normalized listing dates."""
+
+        listed_on = record.listing_lifecycle.listed_on
+        updated_on = record.listing_lifecycle.updated_on
+        reference_date = enriched_at_utc.date()
+
+        if (
+            listed_on is not None
+            and updated_on is not None
+            and updated_on < listed_on
+        ):
+            return EnrichedLifecycleFeatures()
+
+        listing_age_days = NormalizedListingEnricher._compute_elapsed_days(
+            event_date=listed_on,
+            reference_date=reference_date,
+        )
+        updated_recency_days = NormalizedListingEnricher._compute_elapsed_days(
+            event_date=updated_on,
+            reference_date=reference_date,
+        )
+
+        return EnrichedLifecycleFeatures(
+            listing_age_days=listing_age_days,
+            updated_recency_days=updated_recency_days,
+            is_fresh_listing_7d=NormalizedListingEnricher._bucket_max_days(
+                elapsed_days=listing_age_days,
+                threshold_days=7,
+            ),
+            is_recently_updated_3d=NormalizedListingEnricher._bucket_max_days(
+                elapsed_days=updated_recency_days,
+                threshold_days=3,
+            ),
+        )
+
+    @staticmethod
+    def _compute_elapsed_days(
+        *,
+        event_date: date | None,
+        reference_date: date,
+    ) -> int | None:
+        """Return elapsed whole days when the event date is not in the future."""
+
+        if event_date is None:
+            return None
+
+        elapsed_days = (reference_date - event_date).days
+        if elapsed_days < 0:
+            return None
+        return elapsed_days
+
+    @staticmethod
+    def _bucket_max_days(
+        *,
+        elapsed_days: int | None,
+        threshold_days: int,
+    ) -> bool | None:
+        """Return a deterministic freshness flag for one elapsed-day metric."""
+
+        if elapsed_days is None:
+            return None
+        return elapsed_days <= threshold_days
 
     @staticmethod
     def _parse_disposition(title: str | None) -> str | None:

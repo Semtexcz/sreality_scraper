@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.19.0] - 2026-03-18
+
+### Added
+
+- added deterministic lifecycle enrichment fields under
+  `lifecycle_features`, including `listing_age_days`,
+  `updated_recency_days`, `is_fresh_listing_7d`, and
+  `is_recently_updated_3d`, all derived only from
+  `normalized_record.listing_lifecycle`
+- added focused enrichment regression coverage for stable lifecycle snapshots,
+  inconsistent source date ordering, and future-dated lifecycle inputs that
+  must remain optional
+
+### Changed
+
+- changed enrichment outputs to version `enriched-listing-v9` so the canonical
+  contract now exposes lifecycle freshness semantics using
+  `enrichment_metadata.enriched_at_utc` as the deterministic reference point
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-033` so the
+  remaining backlog order now starts with `TASK-038`
+
 ## [1.18.0] - 2026-03-18
 
 ### Added
