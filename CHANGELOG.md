@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.7.7] - 2026-03-18
+
+### Added
+
+- added backlog tasks `TASK-019` through `TASK-021` to break the remaining
+  normalization-stage roadmap work into explicit deliverables grounded in the
+  current `data/raw/all-czechia` payload coverage
+
 ## [1.7.6] - 2026-03-18
 
 ### Fixed
