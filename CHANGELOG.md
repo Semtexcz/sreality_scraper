@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.20.0] - 2026-03-18
+
+### Added
+
+- added optional metropolitan location enrichment fields for Prague under
+  `location_features`, including `metropolitan_area`,
+  `metropolitan_district`, `spatial_cell_id`, and
+  `distance_to_prague_center_km`
+- added Prague-specific district reference mapping for both numbered municipal
+  inputs and supported named districts, plus regression coverage for Prague and
+  non-metropolitan listings
+
+### Changed
+
+- changed enrichment outputs to version `enriched-listing-v10` so the canonical
+  location contract now includes deterministic metropolitan district bucketing
+  and Prague center-distance semantics
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-038` so the
+  remaining backlog order now starts with `TASK-039`
+
 ## [1.19.0] - 2026-03-18
 
 ### Added

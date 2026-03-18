@@ -164,6 +164,10 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.location_features.municipality_longitude == 14.4379
     assert enriched_record.location_features.distance_to_okresni_mesto_km == 0.0
     assert enriched_record.location_features.distance_to_orp_center_km == 0.0
+    assert enriched_record.location_features.metropolitan_area == "Praha"
+    assert enriched_record.location_features.metropolitan_district == "Praha 8"
+    assert enriched_record.location_features.spatial_cell_id == "praha-cell-5010-1447"
+    assert enriched_record.location_features.distance_to_prague_center_km == 4.338
     assert enriched_record.location_features.is_district_city is True
     assert enriched_record.location_features.is_orp_center is True
     assert enriched_record.location_features.orp_code == "1000"
@@ -194,7 +198,7 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.enrichment_metadata.source_normalization_version == (
         normalized_record.normalization_version
     )
-    assert len(enriched_record.enrichment_metadata.derivation_notes) == 19
+    assert len(enriched_record.enrichment_metadata.derivation_notes) == 22
 
 
 def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic() -> None:
@@ -260,6 +264,10 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
     assert first_record.location_features.municipality_longitude == 16.606937
     assert first_record.location_features.distance_to_okresni_mesto_km == 0.0
     assert first_record.location_features.distance_to_orp_center_km == 0.0
+    assert first_record.location_features.metropolitan_area is None
+    assert first_record.location_features.metropolitan_district is None
+    assert first_record.location_features.spatial_cell_id is None
+    assert first_record.location_features.distance_to_prague_center_km is None
     assert first_record.location_features.is_district_city is True
     assert first_record.location_features.is_orp_center is True
     assert first_record.location_features.city_district_normalized is None
@@ -688,6 +696,34 @@ def test_enricher_uses_location_text_district_hint_to_resolve_duplicate_municipa
     assert enriched_record.location_features.municipality_match_method == (
         "city_and_location_text_district"
     )
+
+
+def test_enricher_maps_prague_named_districts_into_metropolitan_features() -> None:
+    """Resolve supported Prague named districts into district and spatial features."""
+
+    normalized_record = _build_normalized_record(
+        title="Byt 2+kk, Praha - Nusle",
+        amount_text="7 250 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Praha",
+        city_district="Nusle",
+        usable_area_sqm=54.0,
+        total_area_sqm=57.0,
+        building_material="Cihla",
+        physical_condition=None,
+        floor_position=3,
+        total_floor_count=6,
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.location_features.municipality_name == "Praha"
+    assert enriched_record.location_features.city_district_normalized == "Nusle"
+    assert enriched_record.location_features.metropolitan_area == "Praha"
+    assert enriched_record.location_features.metropolitan_district == "Praha 4"
+    assert enriched_record.location_features.spatial_cell_id == "praha-cell-5005-1443"
+    assert enriched_record.location_features.distance_to_prague_center_km == 3.753
 
 
 def test_enricher_keeps_non_matching_locations_explicitly_unresolved() -> None:

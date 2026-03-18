@@ -22,7 +22,7 @@ from scraperweb.normalization.models import NormalizedNearbyPlace
 from scraperweb.normalization.models import NormalizedListingRecord
 
 
-ENRICHMENT_VERSION = "enriched-listing-v9"
+ENRICHMENT_VERSION = "enriched-listing-v10"
 _DERIVATION_NOTES = (
     "asking_price_czk is derived from normalized typed price amounts only",
     "disposition is parsed from normalized title text only",
@@ -62,6 +62,20 @@ _DERIVATION_NOTES = (
     (
         "macro distances use deterministic haversine calculations between municipality "
         "centroids and district-city or district-local ORP-center centroids"
+    ),
+    (
+        "metropolitan_area is currently populated only for Prague and "
+        "metropolitan_district resolves only when Prague district text is either "
+        "numbered directly or mapped from a documented named-district alias"
+    ),
+    (
+        "distance_to_prague_center_km uses fixed Prague district reference points "
+        "and a documented historical-center anchor rather than municipality centroids"
+    ),
+    (
+        "spatial_cell_id uses a deterministic 0.01-degree grid keyed from the "
+        "resolved Prague district reference point and stays optional outside "
+        "supported metropolitan districts"
     ),
     (
         "nearby-place accessibility features use normalized location.nearby_places "
@@ -224,6 +238,12 @@ class NormalizedListingEnricher:
                     resolved_location.distance_to_okresni_mesto_km
                 ),
                 distance_to_orp_center_km=resolved_location.distance_to_orp_center_km,
+                metropolitan_area=resolved_location.metropolitan_area,
+                metropolitan_district=resolved_location.metropolitan_district,
+                spatial_cell_id=resolved_location.spatial_cell_id,
+                distance_to_prague_center_km=(
+                    resolved_location.distance_to_prague_center_km
+                ),
                 is_district_city=resolved_location.is_district_city,
                 is_orp_center=resolved_location.is_orp_center,
                 city_district_normalized=resolved_location.city_district_normalized,

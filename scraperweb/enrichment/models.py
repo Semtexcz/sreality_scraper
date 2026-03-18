@@ -70,6 +70,10 @@ class EnrichedLocationFeatures:
     municipality_longitude: float | None = None
     distance_to_okresni_mesto_km: float | None = None
     distance_to_orp_center_km: float | None = None
+    metropolitan_area: str | None = None
+    metropolitan_district: str | None = None
+    spatial_cell_id: str | None = None
+    distance_to_prague_center_km: float | None = None
     is_district_city: bool | None = None
     is_orp_center: bool | None = None
     city_district_normalized: str | None = None

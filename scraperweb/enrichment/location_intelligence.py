@@ -13,6 +13,19 @@ from scraperweb.normalization.models import NormalizedLocation
 
 _WHITESPACE_PATTERN = re.compile(r"\s+")
 _PRAGUE_NUMBERED_PATTERN = re.compile(r"^Praha\s+\d{1,2}$", re.IGNORECASE)
+_PRAGUE_CENTER_LATITUDE = 50.087451
+_PRAGUE_CENTER_LONGITUDE = 14.420671
+_PRAGUE_SPATIAL_CELL_SIZE_DEGREES = 0.01
+
+
+@dataclass(frozen=True)
+class MetropolitanDistrictReference:
+    """One supported metropolitan district reference point."""
+
+    metropolitan_area: str
+    metropolitan_district: str
+    latitude: float
+    longitude: float
 
 
 @dataclass(frozen=True)
@@ -56,6 +69,10 @@ class LocationResolution:
     municipality_longitude: float | None = None
     distance_to_okresni_mesto_km: float | None = None
     distance_to_orp_center_km: float | None = None
+    metropolitan_area: str | None = None
+    metropolitan_district: str | None = None
+    spatial_cell_id: str | None = None
+    distance_to_prague_center_km: float | None = None
     is_district_city: bool | None = None
     is_orp_center: bool | None = None
     city_district_normalized: str | None = None
@@ -302,6 +319,22 @@ class LocationReferenceIndex:
             municipality_longitude=row.longitude,
             distance_to_okresni_mesto_km=distance_to_okresni_mesto_km,
             distance_to_orp_center_km=distance_to_orp_center_km,
+            metropolitan_area=_resolve_metropolitan_area_name(
+                location_city=row.municipality_name,
+                normalized_location_city=municipality_match_input,
+            ),
+            metropolitan_district=_resolve_metropolitan_district(
+                location_city=municipality_match_input,
+                city_district_normalized=city_district_normalized,
+            ),
+            spatial_cell_id=_resolve_spatial_cell_id(
+                location_city=municipality_match_input,
+                city_district_normalized=city_district_normalized,
+            ),
+            distance_to_prague_center_km=_resolve_prague_center_distance_km(
+                location_city=municipality_match_input,
+                city_district_normalized=city_district_normalized,
+            ),
             is_district_city=is_district_city,
             is_orp_center=is_orp_center,
             city_district_normalized=city_district_normalized,
@@ -431,6 +464,111 @@ def _normalize_city_district(location: NormalizedLocation) -> str | None:
     return _clean_text(location.city_district)
 
 
+def _resolve_metropolitan_area_name(
+    *,
+    location_city: str | None,
+    normalized_location_city: str | None,
+) -> str | None:
+    """Return the supported metropolitan area label for one resolved location."""
+
+    if _is_prague_city_value(location_city) or _is_prague_city_value(normalized_location_city):
+        return "Praha"
+    return None
+
+
+def _resolve_metropolitan_district(
+    *,
+    location_city: str | None,
+    city_district_normalized: str | None,
+) -> str | None:
+    """Return a supported metropolitan district label when one is unambiguous."""
+
+    district_reference = _resolve_prague_district_reference(
+        location_city=location_city,
+        city_district_normalized=city_district_normalized,
+    )
+    if district_reference is None:
+        return None
+    return district_reference.metropolitan_district
+
+
+def _resolve_spatial_cell_id(
+    *,
+    location_city: str | None,
+    city_district_normalized: str | None,
+) -> str | None:
+    """Return a deterministic metropolitan grid cell identifier."""
+
+    district_reference = _resolve_prague_district_reference(
+        location_city=location_city,
+        city_district_normalized=city_district_normalized,
+    )
+    if district_reference is None:
+        return None
+
+    latitude_index = math.floor(
+        district_reference.latitude / _PRAGUE_SPATIAL_CELL_SIZE_DEGREES,
+    )
+    longitude_index = math.floor(
+        district_reference.longitude / _PRAGUE_SPATIAL_CELL_SIZE_DEGREES,
+    )
+    return f"praha-cell-{latitude_index}-{longitude_index}"
+
+
+def _resolve_prague_center_distance_km(
+    *,
+    location_city: str | None,
+    city_district_normalized: str | None,
+) -> float | None:
+    """Return district-reference distance to the documented Prague center point."""
+
+    district_reference = _resolve_prague_district_reference(
+        location_city=location_city,
+        city_district_normalized=city_district_normalized,
+    )
+    if district_reference is None:
+        return None
+    return _compute_distance_km(
+        source_latitude=district_reference.latitude,
+        source_longitude=district_reference.longitude,
+        target_latitude=_PRAGUE_CENTER_LATITUDE,
+        target_longitude=_PRAGUE_CENTER_LONGITUDE,
+    )
+
+
+def _resolve_prague_district_reference(
+    *,
+    location_city: str | None,
+    city_district_normalized: str | None,
+) -> MetropolitanDistrictReference | None:
+    """Resolve the Prague district reference point used for metropolitan features."""
+
+    if not _is_prague_city_value(location_city):
+        return None
+
+    district_key = _normalize_key(city_district_normalized)
+    if district_key is not None:
+        alias_target = _PRAGUE_DISTRICT_ALIASES.get(district_key, district_key)
+        district_reference = _PRAGUE_DISTRICT_REFERENCES.get(alias_target)
+        if district_reference is not None:
+            return district_reference
+
+    city_key = _normalize_key(location_city)
+    if city_key is None:
+        return None
+    return _PRAGUE_DISTRICT_REFERENCES.get(city_key)
+
+
+def _is_prague_city_value(value: str | None) -> bool:
+    """Return whether one city-like value belongs to Prague."""
+
+    cleaned = _clean_text(value)
+    if cleaned is None:
+        return False
+    cleaned_key = cleaned.casefold()
+    return cleaned_key == "praha" or _PRAGUE_NUMBERED_PATTERN.fullmatch(cleaned) is not None
+
+
 def _format_candidate(candidate: MunicipalityReference) -> str:
     """Format one ambiguous municipality candidate for traceability output."""
 
@@ -482,3 +620,89 @@ def _normalize_key(value: str | None) -> str | None:
     if cleaned is None:
         return None
     return cleaned.casefold()
+
+
+_PRAGUE_DISTRICT_REFERENCES = {
+    "praha 1": MetropolitanDistrictReference(
+        metropolitan_area="Praha",
+        metropolitan_district="Praha 1",
+        latitude=50.087451,
+        longitude=14.420671,
+    ),
+    "praha 2": MetropolitanDistrictReference(
+        metropolitan_area="Praha",
+        metropolitan_district="Praha 2",
+        latitude=50.075514,
+        longitude=14.4378,
+    ),
+    "praha 3": MetropolitanDistrictReference(
+        metropolitan_area="Praha",
+        metropolitan_district="Praha 3",
+        latitude=50.08367,
+        longitude=14.46598,
+    ),
+    "praha 4": MetropolitanDistrictReference(
+        metropolitan_area="Praha",
+        metropolitan_district="Praha 4",
+        latitude=50.056051,
+        longitude=14.439944,
+    ),
+    "praha 5": MetropolitanDistrictReference(
+        metropolitan_area="Praha",
+        metropolitan_district="Praha 5",
+        latitude=50.068504,
+        longitude=14.404237,
+    ),
+    "praha 6": MetropolitanDistrictReference(
+        metropolitan_area="Praha",
+        metropolitan_district="Praha 6",
+        latitude=50.100702,
+        longitude=14.392124,
+    ),
+    "praha 7": MetropolitanDistrictReference(
+        metropolitan_area="Praha",
+        metropolitan_district="Praha 7",
+        latitude=50.105981,
+        longitude=14.447356,
+    ),
+    "praha 8": MetropolitanDistrictReference(
+        metropolitan_area="Praha",
+        metropolitan_district="Praha 8",
+        latitude=50.106109,
+        longitude=14.474073,
+    ),
+    "praha 9": MetropolitanDistrictReference(
+        metropolitan_area="Praha",
+        metropolitan_district="Praha 9",
+        latitude=50.111836,
+        longitude=14.503557,
+    ),
+    "praha 10": MetropolitanDistrictReference(
+        metropolitan_area="Praha",
+        metropolitan_district="Praha 10",
+        latitude=50.073978,
+        longitude=14.491639,
+    ),
+}
+
+_PRAGUE_DISTRICT_ALIASES = {
+    "stare mesto": "praha 1",
+    "staré město": "praha 1",
+    "nove mesto": "praha 2",
+    "nové město": "praha 2",
+    "vinohrady": "praha 2",
+    "zizkov": "praha 3",
+    "žižkov": "praha 3",
+    "nusle": "praha 4",
+    "smichov": "praha 5",
+    "smíchov": "praha 5",
+    "dejvice": "praha 6",
+    "holesovice": "praha 7",
+    "holešovice": "praha 7",
+    "karlin": "praha 8",
+    "karlín": "praha 8",
+    "vysocany": "praha 9",
+    "vysočany": "praha 9",
+    "hostivar": "praha 10",
+    "hostivař": "praha 10",
+}
