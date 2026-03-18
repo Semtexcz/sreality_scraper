@@ -46,6 +46,9 @@ class RawAcquisitionService:
             capture_raw_page_snapshots=capture_raw_page_snapshots,
             fail_on_detail_http_error=fail_on_http_error,
             progress_reporter=self._progress_reporter,
+            markup_failure_artifact_handler=(
+                self._raw_record_repository.save_markup_failure_artifact
+            ),
         )
 
     def collect_for_region(

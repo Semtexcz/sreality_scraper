@@ -42,3 +42,24 @@ class RawListingRecord:
             timezone.utc,
         ).isoformat()
         return serialized
+
+
+@dataclass(frozen=True)
+class DetailMarkupFailureArtifact:
+    """Persistable snapshot captured when detail-page markup validation fails."""
+
+    listing_id: str
+    source_url: str
+    captured_at_utc: datetime
+    raw_page_snapshot: str
+    failure_message: str
+    source_metadata: RawSourceMetadata
+
+    def to_serializable_dict(self) -> dict[str, JsonValue]:
+        """Return a JSON-serializable representation of the failure artifact."""
+
+        serialized = asdict(self)
+        serialized["captured_at_utc"] = self.captured_at_utc.astimezone(
+            timezone.utc,
+        ).isoformat()
+        return serialized

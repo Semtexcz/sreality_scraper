@@ -6,6 +6,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from itertools import count
+from typing import Callable
 
 from loguru import logger
 
@@ -17,7 +18,12 @@ from scraperweb.scraper.exceptions import (
     ScraperResponseError,
     ScraperTransportError,
 )
-from scraperweb.scraper.models import JsonValue, RawListingRecord, RawSourceMetadata
+from scraperweb.scraper.models import (
+    DetailMarkupFailureArtifact,
+    JsonValue,
+    RawListingRecord,
+    RawSourceMetadata,
+)
 from scraperweb.scraper.parsers import SrealityDetailPageParser, SrealityListingPageParser
 
 DETAIL_PAGE_PARSER_VERSION = "sreality-detail-v1"
@@ -53,6 +59,9 @@ class RawListingCollector:
         capture_raw_page_snapshots: bool = False,
         fail_on_detail_http_error: bool = False,
         progress_reporter: ScrapeProgressReporter | None = None,
+        markup_failure_artifact_handler: (
+            Callable[[DetailMarkupFailureArtifact], None] | None
+        ) = None,
     ) -> None:
         """Store collaborators used to build scraper-owned raw contracts."""
 
@@ -65,6 +74,7 @@ class RawListingCollector:
         self._capture_raw_page_snapshots = capture_raw_page_snapshots
         self._fail_on_detail_http_error = fail_on_detail_http_error
         self._progress_reporter = progress_reporter or ScrapeProgressReporter()
+        self._markup_failure_artifact_handler = markup_failure_artifact_handler
 
     def collect_region_records(
         self,
@@ -140,6 +150,12 @@ class RawListingCollector:
                         request_url=estate_url,
                         page_number=page_number,
                         listing_url=estate_url,
+                    )
+                    self._persist_markup_failure_artifact(
+                        estate_url=estate_url,
+                        page_number=page_number,
+                        detail_html=detail_html,
+                        failure_message=error.message,
                     )
                     if self._fail_on_detail_http_error:
                         raise markup_error from error
@@ -275,6 +291,36 @@ class RawListingCollector:
                 captured_from=DETAIL_PAGE_CAPTURED_FROM,
             ),
             raw_page_snapshot=detail_html if self._capture_raw_page_snapshots else None,
+        )
+
+    def _persist_markup_failure_artifact(
+        self,
+        estate_url: str,
+        page_number: int,
+        detail_html: str,
+        failure_message: str,
+    ) -> None:
+        """Persist raw detail HTML for one listing skipped after markup validation."""
+
+        if self._markup_failure_artifact_handler is None:
+            return
+
+        self._markup_failure_artifact_handler(
+            DetailMarkupFailureArtifact(
+                listing_id=self._extract_listing_id(estate_url),
+                source_url=estate_url,
+                captured_at_utc=datetime.now(timezone.utc),
+                raw_page_snapshot=detail_html,
+                failure_message=failure_message,
+                source_metadata=RawSourceMetadata(
+                    region=self._region_slug,
+                    listing_page_number=page_number,
+                    scrape_run_id=self._scrape_run_id,
+                    http_status=DETAIL_PAGE_HTTP_STATUS,
+                    parser_version=DETAIL_PAGE_PARSER_VERSION,
+                    captured_from=DETAIL_PAGE_CAPTURED_FROM,
+                ),
+            ),
         )
 
     @staticmethod

@@ -14,7 +14,11 @@ from scraperweb.cli_runtime_options import RuntimeCliOptions, StorageBackend
 from scraperweb.estate_scraper import build_raw_record_repository
 from scraperweb.persistence.repositories import FilesystemRawRecordRepository, MongoRawRecordRepository
 from scraperweb.scraper.exceptions import ScraperResponseError, ScraperTransportError
-from scraperweb.scraper.models import RawListingRecord, RawSourceMetadata
+from scraperweb.scraper.models import (
+    DetailMarkupFailureArtifact,
+    RawListingRecord,
+    RawSourceMetadata,
+)
 from scraperweb.scraper.parsers import SrealityDetailPageParser, SrealityListingPageParser
 from scraperweb.scraper.runtime import RawListingCollector
 
@@ -80,11 +84,20 @@ class RecordingRepository:
         """Initialize empty in-memory storage."""
 
         self.records: list[RawListingRecord] = []
+        self.markup_failure_artifacts: list[DetailMarkupFailureArtifact] = []
 
     def save_record(self, record: RawListingRecord) -> None:
         """Record each stored raw listing snapshot."""
 
         self.records.append(record)
+
+    def save_markup_failure_artifact(
+        self,
+        artifact: DetailMarkupFailureArtifact,
+    ) -> None:
+        """Record each stored detail-page markup failure artifact."""
+
+        self.markup_failure_artifacts.append(artifact)
 
 
 class RecordingLogger:
@@ -313,7 +326,7 @@ def test_mongo_repository_creates_expected_indexes_and_inserts_document(
     )
     repository.save_record(sample_record)
 
-    assert len(fake_collection.created_indexes) == 3
+    assert len(fake_collection.created_indexes) == 6
     assert fake_collection.inserted_documents[0]["listing_id"] == "1234567890"
     assert fake_collection.inserted_documents[0]["captured_at_utc"] == "2026-03-17T11:22:33+00:00"
 
@@ -862,6 +875,59 @@ def test_raw_listing_collector_skips_detail_markup_failures_by_default(
             ),
         ),
     ]
+
+
+def test_filesystem_repository_persists_detail_markup_failure_artifacts(
+    tmp_path: Path,
+) -> None:
+    """Persist failed detail HTML snapshots and metadata for later inspection."""
+
+    repository = FilesystemRawRecordRepository(tmp_path)
+    service = RawAcquisitionService(
+        listing_page_client=FakeListingPageClient(
+            {
+                "https://example.test/praha?strana=1": (
+                    "pages:1\n"
+                    "https://www.sreality.cz/detail/prodej/byt/praha/1"
+                ),
+            },
+        ),
+        detail_page_client=FakeDetailPageClient(
+            {
+                "https://www.sreality.cz/detail/prodej/byt/praha/1": (
+                    "<html><body><h1>Byt 2+kk</h1><dl><dt>Celková cena:</dt><dd></dd></dl></body></html>"
+                ),
+            },
+        ),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=SrealityDetailPageParser(),
+        raw_record_repository=repository,
+        region_slug="praha",
+        scrape_run_id="run-store-markup-failure",
+        fail_on_http_error=False,
+    )
+
+    tracked_estates = service.collect_for_region(
+        district_link="https://example.test/praha?strana=",
+        max_pages=1,
+        max_estates=10,
+        tracked_estates=0,
+    )
+
+    assert tracked_estates == 0
+    listing_directory = tmp_path / "praha" / "1"
+    failure_snapshot_paths = sorted(listing_directory.glob("*.markup-failure.html"))
+    failure_metadata_paths = sorted(listing_directory.glob("*.markup-failure.json"))
+    assert len(failure_snapshot_paths) == 1
+    assert len(failure_metadata_paths) == 1
+    assert "Byt 2+kk" in failure_snapshot_paths[0].read_text(encoding="utf-8")
+
+    stored_metadata = json.loads(failure_metadata_paths[0].read_text(encoding="utf-8"))
+    assert stored_metadata["listing_id"] == "1"
+    assert stored_metadata["failure_message"] == (
+        "detail page validation failed: encountered empty attribute name or value"
+    )
+    assert stored_metadata["source_metadata"]["region"] == "praha"
 
 
 def test_acquisition_service_logs_context_before_propagating_scraper_http_failures(

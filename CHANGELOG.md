@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.7.5] - 2026-03-18
+
+### Added
+
+- added persisted detail-page markup failure artifacts so skipped listings now
+  store the raw failed HTML snapshot and serialized failure metadata for later
+  diagnostics in both filesystem and MongoDB backends
+
 ## [1.7.4] - 2026-03-18
 
 ### Changed
