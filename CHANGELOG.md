@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.12.5] - 2026-03-18
+
+### Changed
+
+- simplified `docs/ENRICHMENT_TASK_SEQUENCE.md` into a short overview with a
+  single ordering table and compact delivery batches
+
 ## [1.12.4] - 2026-03-18
 
 ### Added
