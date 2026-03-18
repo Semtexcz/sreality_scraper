@@ -67,11 +67,16 @@ repository. Unchecked items represent the next supported milestones.
 - [x] Implement an internal synchronous linear pipeline service from raw collection
   to modeling inputs.
 - [x] Keep the public runtime intentionally centered on raw acquisition while
-  allowing deliberate later-stage entrypoints where explicitly documented.
+  allowing the documented normalization replay workflow as a deliberate
+  later-stage entrypoint.
 - [ ] Expose the internal linear pipeline behind a deliberate user-facing
   entrypoint without weakening the raw-only workflow.
-- [ ] Decide which stage outputs, if any, should gain first-class persistence
-  adapters beyond raw records.
+- [x] Add a first-class persistence adapter for normalized filesystem artifacts
+  alongside raw record persistence.
+- [ ] Decide whether enrichment and modeling outputs should gain first-class
+  persistence adapters beyond the current raw and normalized record support.
+- [ ] Decide whether the normalization workflow should expand beyond
+  filesystem-backed raw snapshots to additional persistence backends.
 - [ ] Expand integration coverage so full stage handoffs are verified against
   representative real-world payloads, not only fixture-driven unit tests.
 - [ ] Refresh developer-facing documentation once the supported runtime surface for

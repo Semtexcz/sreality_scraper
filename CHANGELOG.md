@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.8.3] - 2026-03-18
+
+### Changed
+
+- updated `docs/ROADMAP.md` so the pipeline and operations checklist now reflects
+  the shipped normalization replay workflow and normalized filesystem artifact
+  persistence as completed work, while narrowing the remaining persistence
+  decisions to enrichment, modeling, and possible backend expansion
+
 ## [1.8.2] - 2026-03-18
 
 ### Added
