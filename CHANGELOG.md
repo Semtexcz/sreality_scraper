@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.12.7] - 2026-03-18
+
+### Changed
+
+- updated `AGENTS.md` so agents must refresh `docs/TASK_SEQUENCE.md` whenever
+  the number of backlog tasks changes
+
 ## [1.12.6] - 2026-03-18
 
 ### Changed

@@ -66,6 +66,9 @@ After **every code change**, the agent must:
 ## 5. Task Workflow (project/backlog)
 
 - Tasks are stored in `project/backlog/`.
+- When the number of backlog tasks changes, the agent must update
+  `docs/TASK_SEQUENCE.md` so the documented ordering stays aligned with the
+  current backlog.
 - When implementing a task:
   1. Read the task file carefully.
   2. Implement exactly what is requested.
