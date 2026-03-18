@@ -84,7 +84,10 @@ enriched record contract. The current feature set stays explicit and determinist
 while preserving the full normalized input record for traceability. Enrichment
 now derives canonical area and area-based price-density features from
 `normalized_record.area_details` only, keeping `floor_area_sqm` as a
-compatibility alias of the canonical area value. It also owns a dedicated
+compatibility alias of the canonical area value. It also derives conservative
+building semantics from `normalized_record.core_attributes.building`, including
+ground-floor and upper-floor flags, a relative floor-position bucket, and coarse
+material and condition buckets. Enrichment also owns a dedicated
 `location_features` sub-contract that joins bundled reference datasets from
 `data/` and exposes explicit match status, administrative identifiers,
 municipality centroid coordinates, macro distances to district cities and

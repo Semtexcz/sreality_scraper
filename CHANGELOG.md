@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.16.0] - 2026-03-18
+
+### Added
+
+- added deterministic building semantics in enrichment and modeling outputs,
+  including `is_ground_floor`, `is_upper_floor`,
+  `relative_floor_position`, `building_material_bucket`, and
+  `building_condition_bucket`, derived only from
+  `normalized_record.core_attributes.building`
+- added focused regression coverage for high-rise top-floor semantics, middle
+  floor interpretation, and explicit ground-floor handling in low-rise
+  buildings
+
+### Changed
+
+- changed enrichment outputs to version `enriched-listing-v6` so the canonical
+  contract now includes conservative floor-position, building-material, and
+  building-condition semantics derived from normalized building fields only
+- changed modeling inputs to version `modeling-input-v3` so the new stable
+  building semantics now cross the enrichment-to-modeling boundary
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-030` so the
+  remaining backlog order now starts with `TASK-031`
+- updated enrichment module documentation to record that building layout and
+  condition features now ship from the enrichment stage with conservative
+  nullable bucket mappings
+
 ## [1.15.0] - 2026-03-18
 
 ### Added

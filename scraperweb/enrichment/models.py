@@ -33,8 +33,13 @@ class EnrichedPropertyFeatures:
     usable_area_sqm: float | None = None
     total_area_sqm: float | None = None
     floor_area_sqm: float | None = None
+    is_ground_floor: bool | None = None
+    is_upper_floor: bool | None = None
+    relative_floor_position: str | None = None
     is_top_floor: bool | None = None
     is_new_build: bool | None = None
+    building_material_bucket: str | None = None
+    building_condition_bucket: str | None = None
     energy_efficiency_bucket: str | None = None
     has_energy_efficiency_rating: bool = False
     has_city_district: bool = False

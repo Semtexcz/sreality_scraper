@@ -32,6 +32,7 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
         city_district="Karlín",
         usable_area_sqm=58.0,
         total_area_sqm=62.0,
+        building_material="Cihla",
         physical_condition="Novostavba",
         floor_position=7,
         total_floor_count=7,
@@ -55,8 +56,13 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.property_features.usable_area_sqm == 58.0
     assert enriched_record.property_features.total_area_sqm == 62.0
     assert enriched_record.property_features.floor_area_sqm == 58.0
+    assert enriched_record.property_features.is_ground_floor is False
+    assert enriched_record.property_features.is_upper_floor is True
+    assert enriched_record.property_features.relative_floor_position == "top"
     assert enriched_record.property_features.is_top_floor is True
     assert enriched_record.property_features.is_new_build is True
+    assert enriched_record.property_features.building_material_bucket == "masonry"
+    assert enriched_record.property_features.building_condition_bucket == "new_build"
     assert enriched_record.property_features.energy_efficiency_bucket == "efficient"
     assert enriched_record.property_features.has_energy_efficiency_rating is True
     assert enriched_record.property_features.has_city_district is True
@@ -85,7 +91,7 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.enrichment_metadata.source_normalization_version == (
         normalized_record.normalization_version
     )
-    assert len(enriched_record.enrichment_metadata.derivation_notes) == 10
+    assert len(enriched_record.enrichment_metadata.derivation_notes) == 12
 
 
 def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic() -> None:
@@ -100,6 +106,7 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
         city_district=None,
         usable_area_sqm=None,
         total_area_sqm=None,
+        building_material="Cihla",
         physical_condition=None,
         floor_position=None,
         total_floor_count=None,
@@ -120,8 +127,13 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
     assert first_record.property_features.usable_area_sqm is None
     assert first_record.property_features.total_area_sqm is None
     assert first_record.property_features.floor_area_sqm is None
+    assert first_record.property_features.is_ground_floor is None
+    assert first_record.property_features.is_upper_floor is None
+    assert first_record.property_features.relative_floor_position is None
     assert first_record.property_features.is_top_floor is None
     assert first_record.property_features.is_new_build is None
+    assert first_record.property_features.building_material_bucket == "masonry"
+    assert first_record.property_features.building_condition_bucket is None
     assert first_record.property_features.energy_efficiency_bucket is None
     assert first_record.property_features.has_energy_efficiency_rating is False
     assert first_record.property_features.has_city_district is False
@@ -153,6 +165,7 @@ def test_enricher_derives_building_and_energy_features_from_normalized_fields() 
         city_district="Žabovřesky",
         usable_area_sqm=81.0,
         total_area_sqm=None,
+        building_material="Panelová",
         physical_condition="Před rekonstrukcí",
         floor_position=3,
         total_floor_count=5,
@@ -163,10 +176,44 @@ def test_enricher_derives_building_and_energy_features_from_normalized_fields() 
 
     assert enriched_record.price_features.asking_price_czk == 11_340_000
     assert enriched_record.price_features.price_per_square_meter_czk == 140_000.0
+    assert enriched_record.property_features.is_ground_floor is False
+    assert enriched_record.property_features.is_upper_floor is True
+    assert enriched_record.property_features.relative_floor_position == "middle"
     assert enriched_record.property_features.is_top_floor is False
     assert enriched_record.property_features.is_new_build is False
+    assert enriched_record.property_features.building_material_bucket == "panel"
+    assert enriched_record.property_features.building_condition_bucket == "needs_work"
     assert enriched_record.property_features.energy_efficiency_bucket == "average"
     assert enriched_record.property_features.has_energy_efficiency_rating is True
+
+
+def test_enricher_derives_ground_floor_and_low_rise_building_buckets() -> None:
+    """Derive conservative low-rise semantics when building values are explicit."""
+
+    normalized_record = _build_normalized_record(
+        title="Byt 1+kk, Pardubice - Centrum",
+        amount_text="3 950 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Pardubice",
+        city_district="Centrum",
+        usable_area_sqm=39.0,
+        total_area_sqm=None,
+        building_material="Skeletová",
+        physical_condition="Ve výstavbě",
+        floor_position=0,
+        total_floor_count=3,
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.property_features.is_ground_floor is True
+    assert enriched_record.property_features.is_upper_floor is False
+    assert enriched_record.property_features.relative_floor_position == "ground"
+    assert enriched_record.property_features.is_top_floor is False
+    assert enriched_record.property_features.is_new_build is False
+    assert enriched_record.property_features.building_material_bucket == "skeleton"
+    assert enriched_record.property_features.building_condition_bucket == "new_build"
 
 
 def test_enricher_keeps_unknown_energy_bucket_optional() -> None:
@@ -181,6 +228,7 @@ def test_enricher_keeps_unknown_energy_bucket_optional() -> None:
         city_district="Poruba",
         usable_area_sqm=64.0,
         total_area_sqm=None,
+        building_material="Cihla",
         physical_condition="Velmi dobrý",
         floor_position=4,
         total_floor_count=8,
@@ -203,6 +251,7 @@ def test_enricher_marks_duplicate_municipality_names_as_ambiguous_without_distri
         city_district=None,
         usable_area_sqm=50.0,
         total_area_sqm=None,
+        building_material="Cihla",
         physical_condition=None,
         floor_position=None,
         total_floor_count=None,
@@ -234,6 +283,7 @@ def test_enricher_uses_location_text_district_hint_to_resolve_duplicate_municipa
         city_district="Blansko",
         usable_area_sqm=50.0,
         total_area_sqm=None,
+        building_material="Cihla",
         physical_condition=None,
         floor_position=None,
         total_floor_count=None,
@@ -270,6 +320,7 @@ def test_enricher_keeps_non_matching_locations_explicitly_unresolved() -> None:
         city_district=None,
         usable_area_sqm=50.0,
         total_area_sqm=None,
+        building_material="Cihla",
         physical_condition=None,
         floor_position=None,
         total_floor_count=None,
@@ -331,6 +382,7 @@ def test_enricher_falls_back_to_total_area_for_canonical_area_metrics() -> None:
         city_district="Centrum",
         usable_area_sqm=None,
         total_area_sqm=75.0,
+        building_material="Cihla",
         physical_condition=None,
         floor_position=None,
         total_floor_count=None,
@@ -359,6 +411,7 @@ def test_enricher_keeps_zero_area_values_optional() -> None:
         city_district=None,
         usable_area_sqm=0.0,
         total_area_sqm=0.0,
+        building_material="Cihla",
         physical_condition=None,
         floor_position=None,
         total_floor_count=None,
@@ -385,6 +438,7 @@ def _build_normalized_record(
     city_district: str | None,
     usable_area_sqm: float | None,
     total_area_sqm: float | None,
+    building_material: str | None,
     physical_condition: str | None,
     floor_position: int | None,
     total_floor_count: int | None,
@@ -407,7 +461,7 @@ def _build_normalized_record(
                 note=price_note,
             ),
             building=NormalizedBuilding(
-                material="Cihla",
+                material=building_material,
                 physical_condition=physical_condition,
                 floor_position=floor_position,
                 total_floor_count=total_floor_count,

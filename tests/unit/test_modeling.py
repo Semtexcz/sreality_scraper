@@ -57,8 +57,13 @@ def test_modeling_builder_maps_enriched_record_into_model_ready_contract() -> No
     assert modeling_record.features.floor_area_sqm == 58.0
     assert modeling_record.features.asking_price_czk == 8_490_000
     assert modeling_record.features.price_per_square_meter_czk == 146_379.31
+    assert modeling_record.features.is_ground_floor is None
+    assert modeling_record.features.is_upper_floor is None
+    assert modeling_record.features.relative_floor_position is None
     assert modeling_record.features.is_top_floor is None
     assert modeling_record.features.is_new_build is None
+    assert modeling_record.features.building_material_bucket == "masonry"
+    assert modeling_record.features.building_condition_bucket is None
     assert modeling_record.features.energy_efficiency_bucket == "efficient"
     assert modeling_record.features.has_price_note is True
     assert modeling_record.features.has_energy_efficiency_rating is True
@@ -122,8 +127,8 @@ def test_linear_pipeline_service_composes_full_stage_handoffs() -> None:
     assert modeling_record.modeling_metadata.dataset_lineage == (
         "raw-listing-record-v1",
         NORMALIZATION_VERSION,
-        "enriched-listing-v5",
-        "modeling-input-v2",
+        "enriched-listing-v6",
+        "modeling-input-v3",
     )
     assert modeling_record.enriched_record is not None
     assert modeling_record.enriched_record.normalized_record.listing_id == raw_record.listing_id

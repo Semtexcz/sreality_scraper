@@ -1,6 +1,6 @@
 ---
 task: TASK-030
-status: "backlog"
+status: "done"
 priority: P2
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add building layout and condition enrichment features
 
 Task: TASK-030
-Status: backlog
+Status: done
 Priority: P2
 Type: feature
 Author:

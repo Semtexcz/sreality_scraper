@@ -19,7 +19,7 @@ from scraperweb.enrichment.models import (
 from scraperweb.normalization.models import NormalizedListingRecord
 
 
-ENRICHMENT_VERSION = "enriched-listing-v5"
+ENRICHMENT_VERSION = "enriched-listing-v6"
 _DERIVATION_NOTES = (
     "asking_price_czk is derived from normalized typed price amounts only",
     "disposition is parsed from normalized title text only",
@@ -36,7 +36,15 @@ _DERIVATION_NOTES = (
         "price_per_usable_sqm_czk and price_per_total_sqm_czk use their matching "
         "normalized area fields only"
     ),
-    "is_top_floor and is_new_build are derived from normalized building fields only",
+    (
+        "ground-floor, upper-floor, top-floor, and relative floor-position "
+        "semantics are derived from normalized building floor fields only"
+    ),
+    (
+        "building material and condition buckets use conservative mappings from "
+        "normalized building labels only"
+    ),
+    "is_new_build is derived from normalized building fields only",
     "energy_efficiency_bucket is derived from normalized energy efficiency classes only",
     "location_features use conservative reference joins against bundled municipality datasets",
     "municipality coordinates use souradnice.csv centroids rather than parcel-level geometry",
@@ -60,6 +68,21 @@ _ENERGY_EFFICIENCY_BUCKETS = {
     "Nehospodárná": "inefficient",
     "Velmi nehospodárná": "inefficient",
     "Mimořádně nehospodárná": "inefficient",
+}
+_BUILDING_MATERIAL_BUCKETS = {
+    "Cihla": "masonry",
+    "Cihlová": "masonry",
+    "Panelová": "panel",
+    "Skeletová": "skeleton",
+}
+_BUILDING_CONDITION_BUCKETS = {
+    "Novostavba": "new_build",
+    "Ve výstavbě": "new_build",
+    "Projekt": "new_build",
+    "Po rekonstrukci": "good",
+    "V dobrém stavu": "good",
+    "Ve velmi dobrém stavu": "good",
+    "Před rekonstrukcí": "needs_work",
 }
 
 
@@ -125,8 +148,13 @@ class NormalizedListingEnricher:
                 usable_area_sqm=usable_area_sqm,
                 total_area_sqm=total_area_sqm,
                 floor_area_sqm=canonical_area_sqm,
+                is_ground_floor=self._derive_is_ground_floor(record),
+                is_upper_floor=self._derive_is_upper_floor(record),
+                relative_floor_position=self._derive_relative_floor_position(record),
                 is_top_floor=self._derive_is_top_floor(record),
                 is_new_build=self._derive_is_new_build(record),
+                building_material_bucket=self._derive_building_material_bucket(record),
+                building_condition_bucket=self._derive_building_condition_bucket(record),
                 energy_efficiency_bucket=self._derive_energy_efficiency_bucket(record),
                 has_energy_efficiency_rating=(
                     record.energy_details.efficiency_class is not None
@@ -242,6 +270,47 @@ class NormalizedListingEnricher:
         return city is not None and city.startswith("Praha")
 
     @staticmethod
+    def _derive_is_ground_floor(record: NormalizedListingRecord) -> bool | None:
+        """Return whether the normalized building position denotes ground floor."""
+
+        floor_position = record.core_attributes.building.floor_position
+        if floor_position is None or floor_position < 0:
+            return None
+        return floor_position == 0
+
+    @staticmethod
+    def _derive_is_upper_floor(record: NormalizedListingRecord) -> bool | None:
+        """Return whether the normalized building position is above ground floor."""
+
+        floor_position = record.core_attributes.building.floor_position
+        if floor_position is None or floor_position < 0:
+            return None
+        return floor_position >= 1
+
+    @staticmethod
+    def _derive_relative_floor_position(
+        record: NormalizedListingRecord,
+    ) -> str | None:
+        """Map floor position into a coarse relative bucket when both counts exist."""
+
+        building = record.core_attributes.building
+        if building.floor_position is None or building.total_floor_count is None:
+            return None
+        if building.floor_position < 0 or building.total_floor_count <= 0:
+            return None
+        if building.floor_position > building.total_floor_count:
+            return None
+        if building.floor_position == 0:
+            return "ground"
+        if building.floor_position == building.total_floor_count:
+            return "top"
+        if building.floor_position == 1:
+            return "lower"
+        if building.floor_position >= building.total_floor_count - 1:
+            return "upper"
+        return "middle"
+
+    @staticmethod
     def _derive_is_top_floor(record: NormalizedListingRecord) -> bool | None:
         """Return whether the normalized building position is on the top floor."""
 
@@ -260,6 +329,28 @@ class NormalizedListingEnricher:
         if physical_condition is None:
             return None
         return physical_condition == "Novostavba"
+
+    @staticmethod
+    def _derive_building_material_bucket(
+        record: NormalizedListingRecord,
+    ) -> str | None:
+        """Map the normalized building material into a coarse stable bucket."""
+
+        material = record.core_attributes.building.material
+        if material is None:
+            return None
+        return _BUILDING_MATERIAL_BUCKETS.get(material)
+
+    @staticmethod
+    def _derive_building_condition_bucket(
+        record: NormalizedListingRecord,
+    ) -> str | None:
+        """Map the normalized building condition into a coarse stable bucket."""
+
+        physical_condition = record.core_attributes.building.physical_condition
+        if physical_condition is None:
+            return None
+        return _BUILDING_CONDITION_BUCKETS.get(physical_condition)
 
     @staticmethod
     def _derive_energy_efficiency_bucket(

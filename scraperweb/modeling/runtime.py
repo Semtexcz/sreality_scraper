@@ -14,7 +14,7 @@ from scraperweb.modeling.models import (
 )
 
 
-MODELING_INPUT_VERSION = "modeling-input-v2"
+MODELING_INPUT_VERSION = "modeling-input-v3"
 MODEL_VERSION = "listing-baseline-v1"
 
 
@@ -50,8 +50,13 @@ class EnrichedListingModelingInputBuilder:
                 floor_area_sqm=record.property_features.floor_area_sqm,
                 asking_price_czk=record.price_features.asking_price_czk,
                 price_per_square_meter_czk=record.price_features.price_per_square_meter_czk,
+                is_ground_floor=record.property_features.is_ground_floor,
+                is_upper_floor=record.property_features.is_upper_floor,
+                relative_floor_position=record.property_features.relative_floor_position,
                 is_top_floor=record.property_features.is_top_floor,
                 is_new_build=record.property_features.is_new_build,
+                building_material_bucket=record.property_features.building_material_bucket,
+                building_condition_bucket=record.property_features.building_condition_bucket,
                 energy_efficiency_bucket=record.property_features.energy_efficiency_bucket,
                 has_price_note=record.price_features.has_price_note,
                 has_energy_efficiency_rating=(
