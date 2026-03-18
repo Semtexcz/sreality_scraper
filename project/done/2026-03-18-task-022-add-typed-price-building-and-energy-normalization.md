@@ -1,6 +1,6 @@
 ---
 task: TASK-022
-status: "todo"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add typed price, building, and energy normalization
 
 Task: TASK-022
-Status: todo
+Status: done
 Priority: P1
 Type: feature
 Author:
@@ -27,22 +27,22 @@ stages to re-parse already normalized data.
 
 ## Definition of Done
 
-- [ ] Expand the normalized price contract to preserve raw source text and expose
+- [x] Expand the normalized price contract to preserve raw source text and expose
       typed monetary fields suitable for Czech listing prices.
-- [ ] Parse price text deterministically from the raw payload without using floating
+- [x] Parse price text deterministically from the raw payload without using floating
       point representation for whole-currency amounts.
-- [ ] Replace the overloaded `building.condition` storage with explicit typed fields
+- [x] Replace the overloaded `building.condition` storage with explicit typed fields
       for source-backed building facts such as physical condition, floor position,
       floor count, and other directly stated structural attributes where parsing is
       reliable.
-- [ ] Preserve the original building source text or unmapped fragments whenever a
+- [x] Preserve the original building source text or unmapped fragments whenever a
       source value cannot be decomposed fully.
-- [ ] Expand the normalized energy-efficiency contract to expose structured fields
+- [x] Expand the normalized energy-efficiency contract to expose structured fields
       such as the efficiency grade and consumption value when present in the raw
       payload.
-- [ ] Keep every new normalized field deterministic and sourced only from raw
+- [x] Keep every new normalized field deterministic and sourced only from raw
       scraper output rather than inferred business semantics.
-- [ ] Add focused tests covering representative real snapshots from
+- [x] Add focused tests covering representative real snapshots from
       `data/raw/all-czechia`, including missing optional values and partially
       parseable source strings.
 

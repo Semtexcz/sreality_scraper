@@ -8,6 +8,7 @@ import re
 
 from scraperweb.normalization.models import (
     NormalizedAreaDetails,
+    NormalizedEnergyDetails,
     NormalizationMetadata,
     NormalizedBuilding,
     NormalizedCoreAttributes,
@@ -21,7 +22,7 @@ from scraperweb.normalization.models import (
 from scraperweb.scraper.models import JsonValue, RawListingRecord
 
 
-NORMALIZATION_VERSION = "normalized-listing-v3"
+NORMALIZATION_VERSION = "normalized-listing-v4"
 RAW_CONTRACT_VERSION = "raw-listing-record-v1"
 TITLE_FALLBACK_SOURCE = "title_fallback"
 SOURCE_PAYLOAD_PREFIX = "source_payload:"
@@ -50,6 +51,42 @@ _TITLE_LOCATION_CANDIDATE_PATTERN = re.compile(
     r"^(?P<city>[A-ZÁ-Ž][A-Za-zÀ-ž0-9./'’-]*(?: [A-ZÁ-Ž0-9][A-Za-zÀ-ž0-9./'’-]*)*)(?: - (?P<district>[A-ZÁ-Ž0-9][A-Za-zÀ-ž0-9./'’-]*(?: [A-ZÁ-Ž0-9][A-Za-zÀ-ž0-9./'’-]*)*))?$",
 )
 _PRAGUE_NUMBERED_DISTRICT_PATTERN = re.compile(r"^Praha \d+$")
+_BUILDING_FLOOR_PATTERN = re.compile(
+    r"^(?P<position>\d+)\.\s*podlaží(?:\s+z\s+(?P<total>\d+))?$",
+)
+_BUILDING_UNDERGROUND_FLOOR_PATTERN = re.compile(
+    r"^(?:(?P<count>\d+)\s+)?podzemní podlaží$",
+    re.IGNORECASE,
+)
+_ENERGY_REGULATION_PATTERN = re.compile(r"^č\.\s*\d+/\d{4}\s*Sb\.$")
+_ENERGY_CONSUMPTION_PATTERN = re.compile(
+    r"^(?P<value>\d+(?:[.,]\d+)?)\s*kWh/m²\s*rok$",
+)
+_PRICE_AMOUNT_PATTERN = re.compile(r"^(?P<amount>\d[\d\s]*)\s*Kč$")
+_PRICE_ON_REQUEST_TEXTS = frozenset(
+    {
+        "cena na vyžádání",
+        "cenanavyžádání",
+    },
+)
+_BUILDING_PHYSICAL_CONDITIONS = frozenset(
+    {
+        "Po rekonstrukci",
+        "Před rekonstrukcí",
+        "Projekt",
+        "V dobrém stavu",
+        "Ve velmi dobrém stavu",
+        "Ve výstavbě",
+        "Novostavba",
+    },
+)
+_BUILDING_STRUCTURAL_ATTRIBUTES = frozenset(
+    {
+        "Jednopodlažní",
+        "Mezonet",
+        "Podkrovní",
+    },
+)
 
 
 class RawListingNormalizer:
@@ -71,8 +108,10 @@ class RawListingNormalizer:
         """Return the canonical normalized representation for one raw listing."""
 
         title = self._get_text_value(record.source_payload, "Název")
+        price_text = self._get_text_value(record.source_payload, "Celková cena:")
         building_text = self._get_text_value(record.source_payload, "Stavba:")
         area_text = self._get_text_value(record.source_payload, "Plocha:")
+        energy_text = self._get_text_value(record.source_payload, "Energetická náročnost:")
         location = self._build_location(title, record.source_payload)
 
         return NormalizedListingRecord(
@@ -83,11 +122,8 @@ class RawListingNormalizer:
             normalization_version=NORMALIZATION_VERSION,
             core_attributes=NormalizedCoreAttributes(
                 title=title,
-                price=NormalizedPrice(
-                    amount_text=self._get_text_value(record.source_payload, "Celková cena:"),
-                    note=self._get_text_value(record.source_payload, "Poznámka k ceně:"),
-                ),
-                building=self._build_building(building_text, record.source_payload),
+                price=self._build_price(price_text, record.source_payload),
+                building=self._build_building(building_text),
                 source_specific_attributes=self._build_source_specific_attributes(
                     record.source_payload,
                 ),
@@ -103,6 +139,7 @@ class RawListingNormalizer:
                 source_http_status=record.source_metadata.http_status,
             ),
             area_details=self._build_area_details(area_text),
+            energy_details=self._build_energy_details(energy_text),
             ownership=NormalizedOwnership(
                 ownership_type=self._get_text_value(record.source_payload, "Vlastnictví:"),
             ),
@@ -137,31 +174,132 @@ class RawListingNormalizer:
         return value if isinstance(value, str) else None
 
     @classmethod
+    def _build_price(
+        cls,
+        price_text: str | None,
+        payload: dict[str, JsonValue],
+    ) -> NormalizedPrice:
+        """Split price source text into stable typed Czech listing price fields."""
+
+        amount_czk, currency_code, pricing_mode = cls._parse_price_fields(price_text)
+        return NormalizedPrice(
+            amount_text=price_text,
+            amount_czk=amount_czk,
+            currency_code=currency_code,
+            pricing_mode=pricing_mode,
+            note=cls._get_text_value(payload, "Poznámka k ceně:"),
+        )
+
+    @classmethod
     def _build_building(
         cls,
         building_text: str | None,
-        payload: dict[str, JsonValue],
     ) -> NormalizedBuilding:
         """Split raw building text into stable typed sub-fields."""
 
-        material, condition = cls._split_pair(building_text)
+        if building_text is None:
+            return NormalizedBuilding()
+
+        fragments = cls._split_comma_delimited_value(building_text)
+        material = fragments[0] if fragments else None
+        structural_attributes: list[str] = []
+        physical_condition: str | None = None
+        floor_position: int | None = None
+        total_floor_count: int | None = None
+        underground_floor_count: int | None = None
+        unparsed_fragments: list[str] = []
+
+        for fragment in fragments[1:]:
+            floor_match = _BUILDING_FLOOR_PATTERN.fullmatch(fragment)
+            if floor_match is not None:
+                parsed_position = int(floor_match.group("position"))
+                parsed_total = floor_match.group("total")
+                if floor_position is None:
+                    floor_position = parsed_position
+                    total_floor_count = (
+                        int(parsed_total) if parsed_total is not None else None
+                    )
+                else:
+                    unparsed_fragments.append(fragment)
+                continue
+
+            underground_match = _BUILDING_UNDERGROUND_FLOOR_PATTERN.fullmatch(fragment)
+            if underground_match is not None:
+                parsed_count = underground_match.group("count")
+                if underground_floor_count is None:
+                    underground_floor_count = (
+                        int(parsed_count) if parsed_count is not None else 1
+                    )
+                else:
+                    unparsed_fragments.append(fragment)
+                continue
+
+            if fragment in _BUILDING_PHYSICAL_CONDITIONS:
+                if physical_condition is None:
+                    physical_condition = fragment
+                else:
+                    unparsed_fragments.append(fragment)
+                continue
+
+            if fragment in _BUILDING_STRUCTURAL_ATTRIBUTES:
+                structural_attributes.append(fragment)
+            else:
+                unparsed_fragments.append(fragment)
+
         return NormalizedBuilding(
+            source_text=building_text,
             material=material,
-            condition=condition,
-            energy_efficiency_class=cls._get_text_value(payload, "Energetická náročnost:"),
+            structural_attributes=tuple(structural_attributes),
+            physical_condition=physical_condition,
+            floor_position=floor_position,
+            total_floor_count=total_floor_count,
+            underground_floor_count=underground_floor_count,
+            unparsed_fragments=tuple(unparsed_fragments),
         )
 
-    @staticmethod
-    def _split_pair(value: str | None) -> tuple[str | None, str | None]:
-        """Split a two-part comma-delimited raw value into stable positions."""
+    @classmethod
+    def _build_energy_details(cls, energy_text: str | None) -> NormalizedEnergyDetails:
+        """Parse energy-efficiency source text into stable typed sub-fields."""
 
-        if value is None:
-            return None, None
+        if energy_text is None:
+            return NormalizedEnergyDetails()
 
-        parts = [part.strip() for part in value.split(",", maxsplit=1)]
-        first = parts[0] or None
-        second = parts[1] or None if len(parts) > 1 else None
-        return first, second
+        fragments = cls._split_comma_delimited_value(energy_text)
+        efficiency_class = fragments[0] if fragments else None
+        regulation_reference: str | None = None
+        consumption_kwh_per_sqm_year: float | None = None
+        additional_descriptors: list[str] = []
+        unparsed_fragments: list[str] = []
+
+        for fragment in fragments[1:]:
+            if _ENERGY_REGULATION_PATTERN.fullmatch(fragment) is not None:
+                if regulation_reference is None:
+                    regulation_reference = fragment
+                else:
+                    unparsed_fragments.append(fragment)
+                continue
+
+            consumption_match = _ENERGY_CONSUMPTION_PATTERN.fullmatch(fragment)
+            if consumption_match is not None:
+                parsed_value = cls._parse_decimal_number(
+                    consumption_match.group("value"),
+                )
+                if parsed_value is not None and consumption_kwh_per_sqm_year is None:
+                    consumption_kwh_per_sqm_year = parsed_value
+                else:
+                    unparsed_fragments.append(fragment)
+                continue
+
+            additional_descriptors.append(fragment)
+
+        return NormalizedEnergyDetails(
+            source_text=energy_text,
+            efficiency_class=efficiency_class,
+            regulation_reference=regulation_reference,
+            consumption_kwh_per_sqm_year=consumption_kwh_per_sqm_year,
+            additional_descriptors=tuple(additional_descriptors),
+            unparsed_fragments=tuple(unparsed_fragments),
+        )
 
     @classmethod
     def _build_area_details(cls, area_text: str | None) -> NormalizedAreaDetails:
@@ -236,6 +374,29 @@ class RawListingNormalizer:
             return float(normalized_value)
         except ValueError:
             return None
+
+    @classmethod
+    def _parse_price_fields(
+        cls,
+        value: str | None,
+    ) -> tuple[int | None, str | None, str | None]:
+        """Parse one Czech listing price string into stable typed monetary fields."""
+
+        if value is None:
+            return None, None, None
+
+        normalized_value = re.sub(r"\s+", " ", value.strip())
+        if normalized_value.casefold() in _PRICE_ON_REQUEST_TEXTS:
+            return None, None, "on_request"
+
+        match = _PRICE_AMOUNT_PATTERN.fullmatch(normalized_value)
+        if match is None:
+            return None, None, None
+
+        amount_text = match.group("amount").replace(" ", "")
+        if not amount_text.isdigit():
+            return None, None, None
+        return int(amount_text), "CZK", "fixed_amount"
 
     @staticmethod
     def _parse_czech_date(value: str | None) -> date | None:

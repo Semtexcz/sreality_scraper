@@ -48,7 +48,7 @@ def test_normalization_workflow_normalizes_all_snapshots_for_one_listing(
     )
     latest_record = json.loads(output_paths[-1].read_text(encoding="utf-8"))
     assert latest_record["listing_id"] == "2664846156"
-    assert latest_record["normalization_version"] == "normalized-listing-v3"
+    assert latest_record["normalization_version"] == "normalized-listing-v4"
     assert latest_record["normalization_metadata"]["source_contract_version"] == (
         "raw-listing-record-v1"
     )

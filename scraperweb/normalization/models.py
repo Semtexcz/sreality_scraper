@@ -18,9 +18,12 @@ from scraperweb.scraper.models import JsonValue
 
 @dataclass(frozen=True)
 class NormalizedPrice:
-    """Stable price fields copied from raw source text without numeric derivation."""
+    """Stable price fields copied from raw source text without business derivation."""
 
     amount_text: str | None = None
+    amount_czk: int | None = None
+    currency_code: str | None = None
+    pricing_mode: str | None = None
     note: str | None = None
 
 
@@ -28,9 +31,26 @@ class NormalizedPrice:
 class NormalizedBuilding:
     """Stable building fields extracted from raw source facts only."""
 
+    source_text: str | None = None
     material: str | None = None
-    condition: str | None = None
-    energy_efficiency_class: str | None = None
+    structural_attributes: tuple[str, ...] = field(default_factory=tuple)
+    physical_condition: str | None = None
+    floor_position: int | None = None
+    total_floor_count: int | None = None
+    underground_floor_count: int | None = None
+    unparsed_fragments: tuple[str, ...] = field(default_factory=tuple)
+
+
+@dataclass(frozen=True)
+class NormalizedEnergyDetails:
+    """Structured energy-efficiency fields parsed directly from raw source text."""
+
+    source_text: str | None = None
+    efficiency_class: str | None = None
+    regulation_reference: str | None = None
+    consumption_kwh_per_sqm_year: float | None = None
+    additional_descriptors: tuple[str, ...] = field(default_factory=tuple)
+    unparsed_fragments: tuple[str, ...] = field(default_factory=tuple)
 
 
 @dataclass(frozen=True)
@@ -119,6 +139,9 @@ class NormalizedListingRecord:
     location: NormalizedLocation
     normalization_metadata: NormalizationMetadata
     area_details: NormalizedAreaDetails = field(default_factory=NormalizedAreaDetails)
+    energy_details: NormalizedEnergyDetails = field(
+        default_factory=NormalizedEnergyDetails,
+    )
     ownership: NormalizedOwnership = field(default_factory=NormalizedOwnership)
     listing_lifecycle: NormalizedListingLifecycle = field(
         default_factory=NormalizedListingLifecycle,

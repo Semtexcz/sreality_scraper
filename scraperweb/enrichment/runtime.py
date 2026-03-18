@@ -17,7 +17,7 @@ from scraperweb.normalization.models import NormalizedListingRecord
 
 ENRICHMENT_VERSION = "enriched-listing-v1"
 _DERIVATION_NOTES = (
-    "asking_price_czk is parsed from normalized price text by stripping non-digits",
+    "asking_price_czk prefers normalized typed price fields and falls back to price text parsing",
     "floor_area_sqm and disposition are parsed from normalized title text",
     "price_per_square_meter_czk is computed only when both price and floor area exist",
 )
@@ -45,9 +45,7 @@ class NormalizedListingEnricher:
             raise TypeError("NormalizedListingEnricher accepts NormalizedListingRecord only.")
 
         floor_area_sqm = self._parse_floor_area_sqm(record.core_attributes.title)
-        asking_price_czk = self._parse_asking_price_czk(
-            record.core_attributes.price.amount_text,
-        )
+        asking_price_czk = self._resolve_asking_price_czk(record)
         price_per_square_meter_czk = self._compute_price_per_square_meter(
             asking_price_czk=asking_price_czk,
             floor_area_sqm=floor_area_sqm,
@@ -68,7 +66,7 @@ class NormalizedListingEnricher:
                 disposition=self._parse_disposition(record.core_attributes.title),
                 floor_area_sqm=floor_area_sqm,
                 has_energy_efficiency_rating=(
-                    record.core_attributes.building.energy_efficiency_class is not None
+                    record.energy_details.efficiency_class is not None
                 ),
                 has_city_district=record.location.city_district is not None,
                 is_prague_listing=self._is_prague_listing(record),
@@ -118,6 +116,17 @@ class NormalizedListingEnricher:
             return None
 
         return float(match.group(1).replace(",", "."))
+
+    @staticmethod
+    def _resolve_asking_price_czk(record: NormalizedListingRecord) -> int | None:
+        """Resolve the asking price from normalized typed fields or legacy text."""
+
+        amount_czk = record.core_attributes.price.amount_czk
+        if amount_czk is not None:
+            return amount_czk
+        return NormalizedListingEnricher._parse_asking_price_czk(
+            record.core_attributes.price.amount_text,
+        )
 
     @staticmethod
     def _parse_asking_price_czk(amount_text: str | None) -> int | None:

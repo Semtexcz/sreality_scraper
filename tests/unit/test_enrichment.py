@@ -8,6 +8,7 @@ import pytest
 
 from scraperweb.enrichment import ENRICHMENT_VERSION, NormalizedListingEnricher
 from scraperweb.normalization.models import (
+    NormalizedEnergyDetails,
     NormalizationMetadata,
     NormalizedBuilding,
     NormalizedCoreAttributes,
@@ -25,7 +26,7 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
         title="Byt 2+kk 58 m², Praha 8 - Karlín",
         amount_text="8 490 000 Kč",
         price_note="včetně provize",
-        energy_efficiency_class="B",
+        energy_efficiency_class="Velmi úsporná",
         city="Praha 8",
         city_district="Karlín",
     )
@@ -131,12 +132,14 @@ def _build_normalized_record(
             title=title,
             price=NormalizedPrice(
                 amount_text=amount_text,
+                amount_czk=8_490_000 if amount_text == "8 490 000 Kč" else None,
+                currency_code="CZK" if amount_text == "8 490 000 Kč" else None,
+                pricing_mode="fixed_amount" if amount_text == "8 490 000 Kč" else None,
                 note=price_note,
             ),
             building=NormalizedBuilding(
                 material="Cihla",
-                condition="Velmi dobrý",
-                energy_efficiency_class=energy_efficiency_class,
+                physical_condition="Ve velmi dobrém stavu",
             ),
             source_specific_attributes={
                 "Vybavení:": ["Sklep", "Balkon"],
@@ -159,5 +162,8 @@ def _build_normalized_record(
             source_scrape_run_id="run-123",
             source_captured_from="detail_page",
             source_http_status=200,
+        ),
+        energy_details=NormalizedEnergyDetails(
+            efficiency_class=energy_efficiency_class,
         ),
     )

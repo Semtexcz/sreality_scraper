@@ -45,22 +45,36 @@ def test_normalizer_maps_real_snapshot_into_broader_stable_contract() -> None:
         "Prodej bytu 3+1 77m²Cihlářská, Blansko"
     )
     assert normalized_record.core_attributes.price.amount_text == "6400000Kč"
+    assert normalized_record.core_attributes.price.amount_czk == 6_400_000
+    assert normalized_record.core_attributes.price.currency_code == "CZK"
+    assert normalized_record.core_attributes.price.pricing_mode == "fixed_amount"
     assert normalized_record.core_attributes.price.note == (
         "Cena včetně provize a kompletního právního servisu"
     )
+    assert normalized_record.core_attributes.building.source_text == (
+        "Cihlová, Ve velmi dobrém stavu, 5. podlaží"
+    )
     assert normalized_record.core_attributes.building.material == "Cihlová"
-    assert normalized_record.core_attributes.building.condition == (
-        "Ve velmi dobrém stavu, 5. podlaží"
+    assert normalized_record.core_attributes.building.structural_attributes == ()
+    assert normalized_record.core_attributes.building.physical_condition == (
+        "Ve velmi dobrém stavu"
     )
-    assert normalized_record.core_attributes.building.energy_efficiency_class == (
-        "Mimořádně nehospodárná"
-    )
+    assert normalized_record.core_attributes.building.floor_position == 5
+    assert normalized_record.core_attributes.building.total_floor_count is None
+    assert normalized_record.core_attributes.building.underground_floor_count is None
+    assert normalized_record.core_attributes.building.unparsed_fragments == ()
     assert normalized_record.area_details.source_text == "Užitná plocha 77 m²"
     assert normalized_record.area_details.usable_area_sqm == 77.0
     assert normalized_record.area_details.total_area_sqm is None
     assert normalized_record.area_details.built_up_area_sqm is None
     assert normalized_record.area_details.garden_area_sqm is None
     assert normalized_record.area_details.unparsed_fragments == ()
+    assert normalized_record.energy_details.source_text == "Mimořádně nehospodárná"
+    assert normalized_record.energy_details.efficiency_class == "Mimořádně nehospodárná"
+    assert normalized_record.energy_details.regulation_reference is None
+    assert normalized_record.energy_details.consumption_kwh_per_sqm_year is None
+    assert normalized_record.energy_details.additional_descriptors == ()
+    assert normalized_record.energy_details.unparsed_fragments == ()
     assert normalized_record.ownership.ownership_type == "Osobní"
     assert normalized_record.listing_lifecycle.listed_on == date(2026, 3, 16)
     assert normalized_record.listing_lifecycle.listed_on_text == "16. 3. 2026"
@@ -142,6 +156,22 @@ def test_normalizer_keeps_missing_optional_typed_values_explicit_for_real_snapsh
 
     normalized_record = normalizer.normalize(raw_record)
 
+    assert normalized_record.core_attributes.price.amount_text == "6750000Kč"
+    assert normalized_record.core_attributes.price.amount_czk == 6_750_000
+    assert normalized_record.core_attributes.price.currency_code == "CZK"
+    assert normalized_record.core_attributes.price.pricing_mode == "fixed_amount"
+    assert normalized_record.core_attributes.price.note is None
+    assert normalized_record.core_attributes.building.material == "Panelová"
+    assert normalized_record.core_attributes.building.structural_attributes == (
+        "Jednopodlažní",
+    )
+    assert normalized_record.core_attributes.building.physical_condition == (
+        "Ve velmi dobrém stavu"
+    )
+    assert normalized_record.core_attributes.building.floor_position == 4
+    assert normalized_record.core_attributes.building.total_floor_count == 5
+    assert normalized_record.core_attributes.building.underground_floor_count is None
+    assert normalized_record.core_attributes.building.unparsed_fragments == ()
     assert normalized_record.area_details.source_text == (
         "Užitná plocha 56 m², Celková plocha 58 m²"
     )
@@ -150,6 +180,12 @@ def test_normalizer_keeps_missing_optional_typed_values_explicit_for_real_snapsh
     assert normalized_record.area_details.built_up_area_sqm is None
     assert normalized_record.area_details.garden_area_sqm is None
     assert normalized_record.area_details.unparsed_fragments == ()
+    assert normalized_record.energy_details.source_text == "Mimořádně nehospodárná"
+    assert normalized_record.energy_details.efficiency_class == "Mimořádně nehospodárná"
+    assert normalized_record.energy_details.regulation_reference is None
+    assert normalized_record.energy_details.consumption_kwh_per_sqm_year is None
+    assert normalized_record.energy_details.additional_descriptors == ()
+    assert normalized_record.energy_details.unparsed_fragments == ()
     assert normalized_record.ownership.ownership_type == "Osobní"
     assert normalized_record.listing_lifecycle.listed_on == date(2026, 3, 11)
     assert normalized_record.listing_lifecycle.updated_on == date(2026, 3, 18)
@@ -161,10 +197,74 @@ def test_normalizer_keeps_missing_optional_typed_values_explicit_for_real_snapsh
     assert normalized_record.location.city_source == "title_fallback"
     assert normalized_record.location.city_district == "Židenice"
     assert normalized_record.location.city_district_source == "title_fallback"
-    assert normalized_record.location.location_descriptor == "Klidná část obce, Bydlení a kanceláře"
+    assert normalized_record.location.location_descriptor == (
+        "Klidná část obce, Bydlení a kanceláře"
+    )
     assert normalized_record.location.location_descriptor_source == (
         "source_payload:Lokalita:"
     )
+
+
+def test_normalizer_parses_on_request_price_and_richer_building_energy_fields() -> None:
+    """Parse deterministic typed fields from richer real-world price and energy strings."""
+
+    raw_record = _load_raw_record_from_snapshot(
+        "data/raw/all-czechia/297751372/2026-03-17T18-30-39.745363+00-00.json",
+    )
+    normalizer = RawListingNormalizer()
+
+    normalized_record = normalizer.normalize(raw_record)
+
+    assert normalized_record.core_attributes.price.amount_text == "Cenanavyžádání"
+    assert normalized_record.core_attributes.price.amount_czk is None
+    assert normalized_record.core_attributes.price.currency_code is None
+    assert normalized_record.core_attributes.price.pricing_mode == "on_request"
+    assert normalized_record.core_attributes.building.source_text == (
+        "Panelová, Ve velmi dobrém stavu, 1. podlaží z 8, Podzemní podlaží"
+    )
+    assert normalized_record.core_attributes.building.material == "Panelová"
+    assert normalized_record.core_attributes.building.structural_attributes == ()
+    assert normalized_record.core_attributes.building.physical_condition == (
+        "Ve velmi dobrém stavu"
+    )
+    assert normalized_record.core_attributes.building.floor_position == 1
+    assert normalized_record.core_attributes.building.total_floor_count == 8
+    assert normalized_record.core_attributes.building.underground_floor_count == 1
+    assert normalized_record.core_attributes.building.unparsed_fragments == ()
+    assert normalized_record.energy_details.source_text == (
+        "Úsporná, č. 264/2020 Sb., 99kWh/m² rok"
+    )
+    assert normalized_record.energy_details.efficiency_class == "Úsporná"
+    assert normalized_record.energy_details.regulation_reference == "č. 264/2020 Sb."
+    assert normalized_record.energy_details.consumption_kwh_per_sqm_year == 99.0
+    assert normalized_record.energy_details.additional_descriptors == ()
+    assert normalized_record.energy_details.unparsed_fragments == ()
+
+
+def test_normalizer_parses_additional_building_and_energy_descriptors_from_real_snapshot() -> None:
+    """Keep structured direct source descriptors that are neither floor counts nor amounts."""
+
+    raw_record = _load_raw_record_from_snapshot(
+        "data/raw/all-czechia/3218928460/2026-03-18T08-57-14.026076+00-00.json",
+    )
+    normalizer = RawListingNormalizer()
+
+    normalized_record = normalizer.normalize(raw_record)
+
+    assert normalized_record.core_attributes.price.amount_czk == 65_055_620
+    assert normalized_record.core_attributes.building.material == "Skeletová"
+    assert normalized_record.core_attributes.building.structural_attributes == ()
+    assert normalized_record.core_attributes.building.physical_condition == "Novostavba"
+    assert normalized_record.core_attributes.building.floor_position == 7
+    assert normalized_record.core_attributes.building.total_floor_count == 7
+    assert normalized_record.core_attributes.building.underground_floor_count == 3
+    assert normalized_record.energy_details.efficiency_class == "Velmi úsporná"
+    assert normalized_record.energy_details.regulation_reference == "č. 264/2020 Sb."
+    assert normalized_record.energy_details.consumption_kwh_per_sqm_year == 50.0
+    assert normalized_record.energy_details.additional_descriptors == (
+        "Nízkoenergetická budova",
+    )
+    assert normalized_record.energy_details.unparsed_fragments == ()
 
 
 def test_normalizer_preserves_unparsed_area_fragments_for_traceability() -> None:
@@ -220,6 +320,61 @@ def test_normalizer_preserves_unparsed_area_fragments_for_traceability() -> None
     assert normalized_record.location.city_district_source == "title_fallback"
     assert normalized_record.location.location_descriptor is None
     assert normalized_record.location.location_descriptor_source is None
+
+
+def test_normalizer_preserves_partially_parseable_building_and_energy_fragments() -> None:
+    """Preserve direct source fragments that the building or energy parser cannot map."""
+
+    raw_record = RawListingRecord(
+        listing_id="partial-building-energy-1",
+        source_url=(
+            "https://www.sreality.cz/detail/prodej/byt/praha/partial-building-energy-1"
+        ),
+        captured_at_utc=datetime(2026, 3, 18, 12, 0, 0, tzinfo=timezone.utc),
+        source_payload={
+            "Název": "Prodej bytu 2+kk 70m²Praha 4 - Nusle",
+            "Celková cena:": "7 500 000 Kč",
+            "Stavba:": (
+                "Panelová, Loft, Před rekonstrukcí, 2. podlaží z 6, Střešní terasa"
+            ),
+            "Energetická náročnost:": (
+                "Úsporná, č. 264/2020 Sb., 99kWh/m² rok, Mimo standard"
+            ),
+            "Vloženo:": "18. 3. 2026",
+        },
+        source_metadata=RawSourceMetadata(
+            region="all-czechia",
+            listing_page_number=1,
+            scrape_run_id="run-partial-building-energy",
+            http_status=200,
+            parser_version="sreality-detail-v1",
+            captured_from="detail_page",
+        ),
+        raw_page_snapshot=None,
+    )
+    normalizer = RawListingNormalizer()
+
+    normalized_record = normalizer.normalize(raw_record)
+
+    assert normalized_record.core_attributes.building.material == "Panelová"
+    assert normalized_record.core_attributes.building.structural_attributes == ()
+    assert normalized_record.core_attributes.building.physical_condition == (
+        "Před rekonstrukcí"
+    )
+    assert normalized_record.core_attributes.building.floor_position == 2
+    assert normalized_record.core_attributes.building.total_floor_count == 6
+    assert normalized_record.core_attributes.building.underground_floor_count is None
+    assert normalized_record.core_attributes.building.unparsed_fragments == (
+        "Loft",
+        "Střešní terasa",
+    )
+    assert normalized_record.energy_details.efficiency_class == "Úsporná"
+    assert normalized_record.energy_details.regulation_reference == "č. 264/2020 Sb."
+    assert normalized_record.energy_details.consumption_kwh_per_sqm_year == 99.0
+    assert normalized_record.energy_details.additional_descriptors == (
+        "Mimo standard",
+    )
+    assert normalized_record.energy_details.unparsed_fragments == ()
 
 
 def test_normalizer_is_idempotent_for_identical_raw_input() -> None:

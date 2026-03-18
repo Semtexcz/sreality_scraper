@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.9.0] - 2026-03-18
+
+### Added
+
+- added typed normalized price fields for Czech listing prices, including parsed
+  integer `amount_czk`, explicit `currency_code`, and deterministic
+  `pricing_mode` while preserving the original source text
+- added structured normalized building and energy contracts with source text,
+  floor position metadata, physical condition, underground floor counts, energy
+  regulation references, and consumption values parsed directly from raw detail
+  payloads
+- added focused normalization regression coverage for representative
+  `data/raw/all-czechia` snapshots covering fixed-price listings, on-request
+  pricing, richer building layouts, energy descriptors, and partially parsed
+  building fragments
+
+### Changed
+
+- changed normalization outputs to version `normalized-listing-v4` so explicit
+  typed price, building, and energy fields are now emitted in the canonical
+  contract instead of overloading `building.condition` or leaving price and
+  energy mostly as raw text
+- changed enrichment price resolution to prefer normalized typed price amounts
+  and to fall back to legacy text parsing only when typed price data is missing
+
 ## [1.8.3] - 2026-03-18
 
 ### Changed
@@ -30,6 +55,7 @@ The format is based on Keep a Changelog and the project uses Semantic Versioning
   outputs and their traceability guarantees
 - changed roadmap and module documentation so normalization is now documented as
   a supported operator-facing workflow instead of an internal-only stage
+
 ## [1.8.1] - 2026-03-18
 
 ### Added
