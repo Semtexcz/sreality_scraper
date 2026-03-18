@@ -156,8 +156,9 @@ Replay and validation notes:
   serialized JSON artifacts, including the absence of successfully mapped source
   keys from `core_attributes.source_specific_attributes`
 - downstream enrichment and modeling stages currently preserve these typed
-  normalization outputs for traceability, but they do not consume the new
-  nearby-place or accessories fields directly yet
+  normalization outputs for traceability; enrichment derives nearby-place
+  accessibility metrics from them and modeling now consumes the approved stable
+  flattened location feature subset from enrichment
 - upcoming location-intelligence work is intentionally scoped to enrichment
   rather than normalization, so municipality codes, ORP mappings, coordinates,
   and spatial buckets remain derived features with explicit match provenance

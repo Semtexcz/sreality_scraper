@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.21.0] - 2026-03-18
+
+### Added
+
+- added the approved stable location-intelligence subset to
+  `ModelingFeatureSet`, including administrative identifiers, metropolitan
+  buckets, coordinate and macro-distance metrics, district-center flags, and
+  nearby-place accessibility aggregates
+- added focused modeling regression coverage for the enrichment-to-modeling
+  location handoff, including Prague administrative, spatial, and amenity
+  features
+
+### Changed
+
+- changed modeling inputs to version `modeling-input-v4` and model metadata to
+  `listing-baseline-v2` so the canonical modeling contract now includes
+  explicit location-derived features from enrichment
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-039` so the
+  remaining backlog now contains only `TASK-034`
+
 ## [1.20.0] - 2026-03-18
 
 ### Added

@@ -102,9 +102,12 @@ model-ready input builders.
 
 Status: active package boundary with `EnrichedListingModelingInputBuilder` and a
 stable modeling input contract that depends on enrichment outputs only.
-Location-intelligence propagation is intentionally deferred until the enrichment
-contract settles; only the approved stable subset should cross into
-`ModelingFeatureSet`.
+The current contract now promotes the approved stable location subset from
+enrichment into `ModelingFeatureSet`, including administrative identifiers,
+metropolitan buckets, coordinates, macro-distance metrics, district-center
+flags, and nearby-place accessibility aggregates. Match candidates and other
+traceability-only metadata remain enrichment-only and are available through the
+preserved `enriched_record`.
 
 ### `scraperweb.persistence`
 

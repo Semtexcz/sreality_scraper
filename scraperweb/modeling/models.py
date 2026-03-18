@@ -28,6 +28,30 @@ class ModelingFeatureSet:
     has_energy_efficiency_rating: bool = False
     has_city_district: bool = False
     is_prague_listing: bool = False
+    municipality_code: str | None = None
+    district_code: str | None = None
+    region_code: str | None = None
+    orp_code: str | None = None
+    metropolitan_area: str | None = None
+    metropolitan_district: str | None = None
+    spatial_cell_id: str | None = None
+    municipality_latitude: float | None = None
+    municipality_longitude: float | None = None
+    distance_to_okresni_mesto_km: float | None = None
+    distance_to_orp_center_km: float | None = None
+    distance_to_prague_center_km: float | None = None
+    is_district_city: bool | None = None
+    is_orp_center: bool | None = None
+    nearest_public_transport_m: int | None = None
+    nearest_metro_m: int | None = None
+    nearest_tram_m: int | None = None
+    nearest_bus_m: int | None = None
+    nearest_train_m: int | None = None
+    nearest_shop_m: int | None = None
+    nearest_school_m: int | None = None
+    nearest_kindergarten_m: int | None = None
+    amenities_within_300m_count: int = 0
+    amenities_within_1000m_count: int = 0
 
 
 @dataclass(frozen=True)

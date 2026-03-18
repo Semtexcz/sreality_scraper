@@ -69,6 +69,30 @@ def test_modeling_builder_maps_enriched_record_into_model_ready_contract() -> No
     assert modeling_record.features.has_energy_efficiency_rating is True
     assert modeling_record.features.has_city_district is True
     assert modeling_record.features.is_prague_listing is True
+    assert modeling_record.features.municipality_code == "554782"
+    assert modeling_record.features.district_code == "CZ0100"
+    assert modeling_record.features.region_code == "CZ010"
+    assert modeling_record.features.orp_code == "1000"
+    assert modeling_record.features.metropolitan_area == "Praha"
+    assert modeling_record.features.metropolitan_district == "Praha 8"
+    assert modeling_record.features.spatial_cell_id == "praha-cell-5010-1447"
+    assert modeling_record.features.municipality_latitude == 50.075638
+    assert modeling_record.features.municipality_longitude == 14.4379
+    assert modeling_record.features.distance_to_okresni_mesto_km == 0.0
+    assert modeling_record.features.distance_to_orp_center_km == 0.0
+    assert modeling_record.features.distance_to_prague_center_km == 4.338
+    assert modeling_record.features.is_district_city is True
+    assert modeling_record.features.is_orp_center is True
+    assert modeling_record.features.nearest_public_transport_m == 130
+    assert modeling_record.features.nearest_metro_m == 450
+    assert modeling_record.features.nearest_tram_m == 210
+    assert modeling_record.features.nearest_bus_m == 130
+    assert modeling_record.features.nearest_train_m == 1900
+    assert modeling_record.features.nearest_shop_m == 180
+    assert modeling_record.features.nearest_school_m == 650
+    assert modeling_record.features.nearest_kindergarten_m == 290
+    assert modeling_record.features.amenities_within_300m_count == 6
+    assert modeling_record.features.amenities_within_1000m_count == 9
     assert modeling_record.targets.asking_price_czk == 8_490_000
     assert modeling_record.modeling_metadata is not None
     assert modeling_record.modeling_metadata.modeled_at_utc == (
@@ -128,7 +152,7 @@ def test_linear_pipeline_service_composes_full_stage_handoffs() -> None:
         "raw-listing-record-v1",
         NORMALIZATION_VERSION,
         ENRICHMENT_VERSION,
-        "modeling-input-v3",
+        "modeling-input-v4",
     )
     assert modeling_record.enriched_record is not None
     assert modeling_record.enriched_record.normalized_record.listing_id == raw_record.listing_id
@@ -171,6 +195,17 @@ def _build_raw_record() -> RawListingRecord:
             "Plocha:": "Užitná plocha 58 m², Celková plocha 62 m²",
             "Stavba:": "Cihla, Velmi dobrý",
             "Energetická náročnost:": "B",
+            "Lokalita:": "Praha 8 - Karlín",
+            "Bus MHD:": "Křižíkova (130 m)",
+            "Metro:": "Křižíkova (450 m)",
+            "Tram:": "Karlínské náměstí (210 m)",
+            "Vlak:": "Praha Masarykovo nádraží (1900 m)",
+            "Obchod:": "Billa (180 m)",
+            "Večerka:": "Žabka (240 m)",
+            "Lékárna:": "Lékárna Křižíkova (280 m)",
+            "Pošta:": "Praha 8 (720 m)",
+            "Školka:": "MŠ Lyčkovo náměstí (290 m)",
+            "Škola:": "ZŠ Karlín (650 m)",
         },
         source_metadata=RawSourceMetadata(
             region="praha",

@@ -1,6 +1,6 @@
 ---
 task: TASK-039
-status: "backlog"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Propagate location intelligence into modeling inputs
 
 Task: TASK-039
-Status: backlog
+Status: done
 Priority: P1
 Type: feature
 Author:
@@ -24,18 +24,18 @@ is far too weak for the expected importance of geography in apartment pricing.
 
 ## Definition of Done
 
-- [ ] Extend `ModelingFeatureSet` with the approved location intelligence features
+- [x] Extend `ModelingFeatureSet` with the approved location intelligence features
       from enrichment, including administrative identifiers, coordinates,
       macro-distance metrics, and nearby-place aggregates that are stable enough
       for direct model consumption.
-- [ ] Decide which fields remain categorical, which stay numeric, and which should
+- [x] Decide which fields remain categorical, which stay numeric, and which should
       be omitted from the canonical modeling contract despite being available in
       enrichment.
-- [ ] Keep the modeling boundary explicit about provenance so each model-facing
+- [x] Keep the modeling boundary explicit about provenance so each model-facing
       location feature can be traced back to the enriched and normalized inputs.
-- [ ] Add focused regression coverage for the new location feature handoff from
+- [x] Add focused regression coverage for the new location feature handoff from
       enrichment into modeling inputs.
-- [ ] Update any modeling version metadata and lineage expectations affected by the
+- [x] Update any modeling version metadata and lineage expectations affected by the
       expanded location feature set.
 
 ## Notes

@@ -14,8 +14,8 @@ from scraperweb.modeling.models import (
 )
 
 
-MODELING_INPUT_VERSION = "modeling-input-v3"
-MODEL_VERSION = "listing-baseline-v1"
+MODELING_INPUT_VERSION = "modeling-input-v4"
+MODEL_VERSION = "listing-baseline-v2"
 
 
 class EnrichedListingModelingInputBuilder:
@@ -64,6 +64,44 @@ class EnrichedListingModelingInputBuilder:
                 ),
                 has_city_district=record.property_features.has_city_district,
                 is_prague_listing=record.property_features.is_prague_listing,
+                municipality_code=record.location_features.municipality_code,
+                district_code=record.location_features.district_code,
+                region_code=record.location_features.region_code,
+                orp_code=record.location_features.orp_code,
+                metropolitan_area=record.location_features.metropolitan_area,
+                metropolitan_district=record.location_features.metropolitan_district,
+                spatial_cell_id=record.location_features.spatial_cell_id,
+                municipality_latitude=record.location_features.municipality_latitude,
+                municipality_longitude=record.location_features.municipality_longitude,
+                distance_to_okresni_mesto_km=(
+                    record.location_features.distance_to_okresni_mesto_km
+                ),
+                distance_to_orp_center_km=(
+                    record.location_features.distance_to_orp_center_km
+                ),
+                distance_to_prague_center_km=(
+                    record.location_features.distance_to_prague_center_km
+                ),
+                is_district_city=record.location_features.is_district_city,
+                is_orp_center=record.location_features.is_orp_center,
+                nearest_public_transport_m=(
+                    record.location_features.nearest_public_transport_m
+                ),
+                nearest_metro_m=record.location_features.nearest_metro_m,
+                nearest_tram_m=record.location_features.nearest_tram_m,
+                nearest_bus_m=record.location_features.nearest_bus_m,
+                nearest_train_m=record.location_features.nearest_train_m,
+                nearest_shop_m=record.location_features.nearest_shop_m,
+                nearest_school_m=record.location_features.nearest_school_m,
+                nearest_kindergarten_m=(
+                    record.location_features.nearest_kindergarten_m
+                ),
+                amenities_within_300m_count=(
+                    record.location_features.amenities_within_300m_count
+                ),
+                amenities_within_1000m_count=(
+                    record.location_features.amenities_within_1000m_count
+                ),
             ),
             targets=ModelingTargetSet(
                 asking_price_czk=record.price_features.asking_price_czk,
