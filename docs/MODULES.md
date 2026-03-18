@@ -69,9 +69,10 @@ instead of treating them as direct source facts. Core attribute normalization al
 maps supported `Příslušenství:` fragments into `core_attributes.accessories`,
 including elevator, accessibility, furnishing, balcony/loggia/terrace/cellar, and
 parking-capacity semantics while preserving unsupported fragments explicitly.
-Downstream enrichment and modeling currently keep these typed normalized values
-available for traceability, but they do not consume `location.nearby_places` or
-`core_attributes.accessories` as dedicated feature inputs yet.
+This boundary intentionally stops before any reference-data join. Municipality
+codes, region codes, ORP codes, coordinates, district-center membership, and
+spatial buckets are approved as enrichment-owned derived features, not
+normalization output fields.
 
 ### `scraperweb.enrichment`
 
@@ -80,7 +81,10 @@ derived-feature services built on normalized records only.
 
 Status: active package boundary with `NormalizedListingEnricher` and a stable
 enriched record contract. The initial feature set stays explicit and deterministic,
-while preserving the full normalized input record for traceability.
+while preserving the full normalized input record for traceability. The approved
+next extension is a dedicated enrichment-owned location-intelligence sub-contract
+that will join bundled reference datasets from `data/` and expose explicit match
+status, provenance, administrative identifiers, coordinates, and spatial buckets.
 
 ### `scraperweb.modeling`
 
@@ -89,6 +93,9 @@ model-ready input builders.
 
 Status: active package boundary with `EnrichedListingModelingInputBuilder` and a
 stable modeling input contract that depends on enrichment outputs only.
+Location-intelligence propagation is intentionally deferred until the enrichment
+contract settles; only the approved stable subset should cross into
+`ModelingFeatureSet`.
 
 ### `scraperweb.persistence`
 

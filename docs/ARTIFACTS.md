@@ -8,6 +8,14 @@
 
 These files are treated as input datasets for reference-data loading.
 
+Planned ownership:
+
+- normalization may read them only for offline inspection during development, not
+  for emitted contract fields
+- enrichment is the approved runtime boundary for deterministic joins against
+  these datasets when deriving location intelligence
+- modeling consumes only the approved flattened outputs of those enrichment joins
+
 ## Generated Outputs
 
 The repository currently does not define a dedicated output directory for scraper runs.

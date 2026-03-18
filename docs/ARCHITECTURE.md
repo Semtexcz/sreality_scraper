@@ -110,6 +110,9 @@ Rules:
 
 - normalization may reshape and clean source data
 - normalization must not add external facts or computed business features
+- normalization must not perform reference-data joins for municipality codes,
+  coordinates, or spatial buckets; those remain enrichment concerns even when the
+  reference datasets are bundled inside the repository
 
 ### 3) Enrichment stage
 
@@ -139,8 +142,19 @@ Required contract fields:
 Rules:
 
 - enrichment computes derived values only
+- enrichment may join deterministic bundled reference datasets that ship in
+  `data/` when those joins are documented as part of the canonical enrichment
+  contract
 - enrichment must not fetch new external source systems in this design step
 - enrichment must preserve traceability back to normalized input
+
+Approved location-intelligence ownership:
+
+- municipality, district, region, and ORP identifiers belong here
+- coordinates and coordinate provenance belong here
+- district-center flags and metropolitan district interpretation belong here
+- spatial bucket identifiers belong here
+- ambiguity must stay explicit through match-status and provenance metadata
 
 ### 4) Modeling stage
 
@@ -170,6 +184,9 @@ Rules:
 - modeling consumes enriched data only
 - modeling must not read `RawListingRecord` or `NormalizedListingRecord` directly
 - modeling-specific reshaping must remain separate from enrichment logic
+- modeling should flatten only approved stable location fields from enrichment;
+  match candidates and other traceability-only metadata remain outside the
+  modeling contract
 
 ## Target Application Layers
 

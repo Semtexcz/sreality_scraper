@@ -158,3 +158,6 @@ Replay and validation notes:
 - downstream enrichment and modeling stages currently preserve these typed
   normalization outputs for traceability, but they do not consume the new
   nearby-place or accessories fields directly yet
+- upcoming location-intelligence work is intentionally scoped to enrichment
+  rather than normalization, so municipality codes, ORP mappings, coordinates,
+  and spatial buckets remain derived features with explicit match provenance

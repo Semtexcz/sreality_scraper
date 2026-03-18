@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.12.8] - 2026-03-18
+
+### Added
+
+- added the approved `TASK-035` design for location intelligence, including
+  stage ownership, canonical administrative and spatial fields, explicit
+  ambiguity handling, and bundled-reference matching provenance rules
+
+### Changed
+
+- updated architecture, module, artifact, and operator documentation so
+  reference-backed municipality mapping, coordinates, district-center flags, and
+  spatial buckets are now documented as enrichment-owned derived features rather
+  than normalization outputs
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-035` so the remaining
+  backlog order starts with `TASK-036`
+
 ## [1.12.7] - 2026-03-18
 
 ### Changed
