@@ -122,7 +122,7 @@ def test_linear_pipeline_service_composes_full_stage_handoffs() -> None:
     assert modeling_record.modeling_metadata.dataset_lineage == (
         "raw-listing-record-v1",
         NORMALIZATION_VERSION,
-        "enriched-listing-v4",
+        "enriched-listing-v5",
         "modeling-input-v2",
     )
     assert modeling_record.enriched_record is not None
@@ -160,9 +160,10 @@ def _build_raw_record() -> RawListingRecord:
         source_url="https://www.sreality.cz/detail/prodej/byt/praha-karlin/2222222222",
         captured_at_utc=datetime(2026, 3, 17, 11, 22, 33, tzinfo=timezone.utc),
         source_payload={
-            "Název": "Byt 2+kk 58 m², Praha 8 - Karlín",
+            "Název": "Byt 2+kk, Praha 8 - Karlín",
             "Celková cena:": "8 490 000 Kč",
             "Poznámka k ceně:": "včetně provize",
+            "Plocha:": "Užitná plocha 58 m², Celková plocha 62 m²",
             "Stavba:": "Cihla, Velmi dobrý",
             "Energetická náročnost:": "B",
         },

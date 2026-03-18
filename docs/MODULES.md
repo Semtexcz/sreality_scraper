@@ -82,12 +82,15 @@ derived-feature services built on normalized records only.
 Status: active package boundary with `NormalizedListingEnricher` and a stable
 enriched record contract. The current feature set stays explicit and deterministic,
 while preserving the full normalized input record for traceability. Enrichment
-now owns a dedicated `location_features` sub-contract that joins bundled
-reference datasets from `data/` and exposes explicit match status,
-administrative identifiers, municipality centroid coordinates, macro distances
-to district cities and district-local ORP centers, district-city and ORP-center
-flags, and conservative district normalization. Metropolitan district overrides
-and spatial buckets remain deferred to later follow-up tasks.
+now derives canonical area and area-based price-density features from
+`normalized_record.area_details` only, keeping `floor_area_sqm` as a
+compatibility alias of the canonical area value. It also owns a dedicated
+`location_features` sub-contract that joins bundled reference datasets from
+`data/` and exposes explicit match status, administrative identifiers,
+municipality centroid coordinates, macro distances to district cities and
+district-local ORP centers, district-city and ORP-center flags, and
+conservative district normalization. Metropolitan district overrides and spatial
+buckets remain deferred to later follow-up tasks.
 
 ### `scraperweb.modeling`
 

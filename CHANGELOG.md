@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.15.0] - 2026-03-18
+
+### Added
+
+- added explicit area-derived enrichment fields sourced from
+  `normalized_record.area_details`, including `canonical_area_sqm`,
+  `usable_area_sqm`, `total_area_sqm`, `price_per_usable_sqm_czk`, and
+  `price_per_total_sqm_czk`
+- added focused enrichment regression coverage for canonical-area fallback from
+  usable to total area and for zero-valued normalized areas that must stay
+  optional
+
+### Changed
+
+- changed enrichment outputs to version `enriched-listing-v5` so floor-area and
+  price-density metrics now depend on normalized typed area fields instead of
+  title regex parsing while preserving `floor_area_sqm` as a compatibility alias
+  of the canonical area feature
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-029` so the remaining
+  backlog order now starts with `TASK-030`
+- updated enrichment module documentation to record that canonical area and
+  area-based price-density features are now derived strictly from normalized
+  area fields
+
 ## [1.14.0] - 2026-03-18
 
 ### Added

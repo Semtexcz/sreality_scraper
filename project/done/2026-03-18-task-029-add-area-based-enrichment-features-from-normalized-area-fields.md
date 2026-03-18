@@ -1,6 +1,6 @@
 ---
 task: TASK-029
-status: "backlog"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add area-based enrichment features from normalized area fields
 
 Task: TASK-029
-Status: backlog
+Status: done
 Priority: P1
 Type: feature
 Author:

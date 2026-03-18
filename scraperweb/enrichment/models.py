@@ -19,6 +19,8 @@ class EnrichedPriceFeatures:
 
     asking_price_czk: int | None = None
     price_per_square_meter_czk: float | None = None
+    price_per_usable_sqm_czk: float | None = None
+    price_per_total_sqm_czk: float | None = None
     has_price_note: bool = False
 
 
@@ -27,6 +29,9 @@ class EnrichedPropertyFeatures:
     """Derived listing features computed from normalized listing fields."""
 
     disposition: str | None = None
+    canonical_area_sqm: float | None = None
+    usable_area_sqm: float | None = None
+    total_area_sqm: float | None = None
     floor_area_sqm: float | None = None
     is_top_floor: bool | None = None
     is_new_build: bool | None = None

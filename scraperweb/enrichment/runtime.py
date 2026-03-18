@@ -19,11 +19,23 @@ from scraperweb.enrichment.models import (
 from scraperweb.normalization.models import NormalizedListingRecord
 
 
-ENRICHMENT_VERSION = "enriched-listing-v4"
+ENRICHMENT_VERSION = "enriched-listing-v5"
 _DERIVATION_NOTES = (
     "asking_price_czk is derived from normalized typed price amounts only",
-    "floor_area_sqm and disposition are parsed from normalized title text",
-    "price_per_square_meter_czk is computed only when both price and floor area exist",
+    "disposition is parsed from normalized title text only",
+    (
+        "canonical_area_sqm prefers normalized usable_area_sqm and falls back to "
+        "normalized total_area_sqm when usable_area_sqm is missing"
+    ),
+    (
+        "floor_area_sqm is kept as a compatibility alias of canonical_area_sqm and "
+        "never parsed from title text"
+    ),
+    (
+        "price_per_square_meter_czk uses canonical_area_sqm while "
+        "price_per_usable_sqm_czk and price_per_total_sqm_czk use their matching "
+        "normalized area fields only"
+    ),
     "is_top_floor and is_new_build are derived from normalized building fields only",
     "energy_efficiency_bucket is derived from normalized energy efficiency classes only",
     "location_features use conservative reference joins against bundled municipality datasets",
@@ -76,11 +88,21 @@ class NormalizedListingEnricher:
         if not isinstance(record, NormalizedListingRecord):
             raise TypeError("NormalizedListingEnricher accepts NormalizedListingRecord only.")
 
-        floor_area_sqm = self._parse_floor_area_sqm(record.core_attributes.title)
         asking_price_czk = self._resolve_asking_price_czk(record)
+        usable_area_sqm = self._normalize_area_value(record.area_details.usable_area_sqm)
+        total_area_sqm = self._normalize_area_value(record.area_details.total_area_sqm)
+        canonical_area_sqm = self._resolve_canonical_area_sqm(record)
         price_per_square_meter_czk = self._compute_price_per_square_meter(
             asking_price_czk=asking_price_czk,
-            floor_area_sqm=floor_area_sqm,
+            floor_area_sqm=canonical_area_sqm,
+        )
+        price_per_usable_sqm_czk = self._compute_price_per_square_meter(
+            asking_price_czk=asking_price_czk,
+            floor_area_sqm=usable_area_sqm,
+        )
+        price_per_total_sqm_czk = self._compute_price_per_square_meter(
+            asking_price_czk=asking_price_czk,
+            floor_area_sqm=total_area_sqm,
         )
         resolved_location = self._location_reference_index.resolve(record.location)
 
@@ -93,11 +115,16 @@ class NormalizedListingEnricher:
             price_features=EnrichedPriceFeatures(
                 asking_price_czk=asking_price_czk,
                 price_per_square_meter_czk=price_per_square_meter_czk,
+                price_per_usable_sqm_czk=price_per_usable_sqm_czk,
+                price_per_total_sqm_czk=price_per_total_sqm_czk,
                 has_price_note=record.core_attributes.price.note is not None,
             ),
             property_features=EnrichedPropertyFeatures(
                 disposition=self._parse_disposition(record.core_attributes.title),
-                floor_area_sqm=floor_area_sqm,
+                canonical_area_sqm=canonical_area_sqm,
+                usable_area_sqm=usable_area_sqm,
+                total_area_sqm=total_area_sqm,
+                floor_area_sqm=canonical_area_sqm,
                 is_top_floor=self._derive_is_top_floor(record),
                 is_new_build=self._derive_is_new_build(record),
                 energy_efficiency_bucket=self._derive_energy_efficiency_bucket(record),
@@ -166,17 +193,28 @@ class NormalizedListingEnricher:
         return match.group(1)
 
     @staticmethod
-    def _parse_floor_area_sqm(title: str | None) -> float | None:
-        """Extract floor area in square meters from normalized title text."""
+    def _resolve_canonical_area_sqm(record: NormalizedListingRecord) -> float | None:
+        """Return the preferred canonical area for downstream price-density features."""
 
-        if title is None:
+        usable_area_sqm = NormalizedListingEnricher._normalize_area_value(
+            record.area_details.usable_area_sqm,
+        )
+        if usable_area_sqm is not None:
+            return usable_area_sqm
+
+        return NormalizedListingEnricher._normalize_area_value(
+            record.area_details.total_area_sqm,
+        )
+
+    @staticmethod
+    def _normalize_area_value(value: float | None) -> float | None:
+        """Keep only positive area values so zero-like inputs remain optional."""
+
+        if value in (None, 0):
             return None
-
-        match = re.search(r"(\d+(?:[.,]\d+)?)\s*m²", title)
-        if match is None:
+        if value < 0:
             return None
-
-        return float(match.group(1).replace(",", "."))
+        return value
 
     @staticmethod
     def _resolve_asking_price_czk(record: NormalizedListingRecord) -> int | None:

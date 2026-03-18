@@ -8,6 +8,7 @@ import pytest
 
 from scraperweb.enrichment import ENRICHMENT_VERSION, NormalizedListingEnricher
 from scraperweb.normalization.models import (
+    NormalizedAreaDetails,
     NormalizedEnergyDetails,
     NormalizationMetadata,
     NormalizedBuilding,
@@ -23,12 +24,14 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     """Compute the current enrichment feature set from normalized inputs only."""
 
     normalized_record = _build_normalized_record(
-        title="Byt 2+kk 58 m², Praha 8 - Karlín",
+        title="Byt 2+kk, Praha 8 - Karlín",
         amount_text="8 490 000 Kč",
         price_note="včetně provize",
         energy_efficiency_class="Velmi úsporná",
         city="Praha 8",
         city_district="Karlín",
+        usable_area_sqm=58.0,
+        total_area_sqm=62.0,
         physical_condition="Novostavba",
         floor_position=7,
         total_floor_count=7,
@@ -44,8 +47,13 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.normalized_record == normalized_record
     assert enriched_record.price_features.asking_price_czk == 8_490_000
     assert enriched_record.price_features.price_per_square_meter_czk == 146_379.31
+    assert enriched_record.price_features.price_per_usable_sqm_czk == 146_379.31
+    assert enriched_record.price_features.price_per_total_sqm_czk == 136_935.48
     assert enriched_record.price_features.has_price_note is True
     assert enriched_record.property_features.disposition == "2+kk"
+    assert enriched_record.property_features.canonical_area_sqm == 58.0
+    assert enriched_record.property_features.usable_area_sqm == 58.0
+    assert enriched_record.property_features.total_area_sqm == 62.0
     assert enriched_record.property_features.floor_area_sqm == 58.0
     assert enriched_record.property_features.is_top_floor is True
     assert enriched_record.property_features.is_new_build is True
@@ -77,7 +85,7 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.enrichment_metadata.source_normalization_version == (
         normalized_record.normalization_version
     )
-    assert len(enriched_record.enrichment_metadata.derivation_notes) == 8
+    assert len(enriched_record.enrichment_metadata.derivation_notes) == 10
 
 
 def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic() -> None:
@@ -90,6 +98,8 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
         energy_efficiency_class=None,
         city="Brno",
         city_district=None,
+        usable_area_sqm=None,
+        total_area_sqm=None,
         physical_condition=None,
         floor_position=None,
         total_floor_count=None,
@@ -102,8 +112,13 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
     assert first_record == second_record
     assert first_record.price_features.asking_price_czk is None
     assert first_record.price_features.price_per_square_meter_czk is None
+    assert first_record.price_features.price_per_usable_sqm_czk is None
+    assert first_record.price_features.price_per_total_sqm_czk is None
     assert first_record.price_features.has_price_note is False
     assert first_record.property_features.disposition == "1+kk"
+    assert first_record.property_features.canonical_area_sqm is None
+    assert first_record.property_features.usable_area_sqm is None
+    assert first_record.property_features.total_area_sqm is None
     assert first_record.property_features.floor_area_sqm is None
     assert first_record.property_features.is_top_floor is None
     assert first_record.property_features.is_new_build is None
@@ -130,12 +145,14 @@ def test_enricher_derives_building_and_energy_features_from_normalized_fields() 
     """Derive building and energy semantics from explicit normalized sub-fields."""
 
     normalized_record = _build_normalized_record(
-        title="Byt 3+kk 81 m², Brno - Žabovřesky",
+        title="Byt 3+kk, Brno - Žabovřesky",
         amount_text="11 340 000 Kč",
         price_note=None,
         energy_efficiency_class="Méně úsporná",
         city="Brno",
         city_district="Žabovřesky",
+        usable_area_sqm=81.0,
+        total_area_sqm=None,
         physical_condition="Před rekonstrukcí",
         floor_position=3,
         total_floor_count=5,
@@ -156,12 +173,14 @@ def test_enricher_keeps_unknown_energy_bucket_optional() -> None:
     """Keep ambiguous energy bucketing unset when the normalized class is unsupported."""
 
     normalized_record = _build_normalized_record(
-        title="Byt 2+1 64 m², Ostrava - Poruba",
+        title="Byt 2+1, Ostrava - Poruba",
         amount_text="4 800 000 Kč",
         price_note=None,
         energy_efficiency_class="Neznámá třída",
         city="Ostrava",
         city_district="Poruba",
+        usable_area_sqm=64.0,
+        total_area_sqm=None,
         physical_condition="Velmi dobrý",
         floor_position=4,
         total_floor_count=8,
@@ -176,12 +195,14 @@ def test_enricher_marks_duplicate_municipality_names_as_ambiguous_without_distri
     """Keep duplicate municipality names unresolved when no safe hint exists."""
 
     normalized_record = _build_normalized_record(
-        title="Byt 2+kk 50 m², Adamov",
+        title="Byt 2+kk, Adamov",
         amount_text="5 500 000 Kč",
         price_note=None,
         energy_efficiency_class=None,
         city="Adamov",
         city_district=None,
+        usable_area_sqm=50.0,
+        total_area_sqm=None,
         physical_condition=None,
         floor_position=None,
         total_floor_count=None,
@@ -205,12 +226,14 @@ def test_enricher_uses_location_text_district_hint_to_resolve_duplicate_municipa
     """Resolve duplicate municipality names only when location text names one district."""
 
     normalized_record = _build_normalized_record(
-        title="Byt 2+kk 50 m², Adamov - Blansko",
+        title="Byt 2+kk, Adamov - Blansko",
         amount_text="5 500 000 Kč",
         price_note=None,
         energy_efficiency_class=None,
         city="Adamov",
         city_district="Blansko",
+        usable_area_sqm=50.0,
+        total_area_sqm=None,
         physical_condition=None,
         floor_position=None,
         total_floor_count=None,
@@ -239,12 +262,14 @@ def test_enricher_keeps_non_matching_locations_explicitly_unresolved() -> None:
     """Leave unmatched municipality joins empty instead of guessing a reference row."""
 
     normalized_record = _build_normalized_record(
-        title="Byt 2+kk 50 m², Atlantis",
+        title="Byt 2+kk, Atlantis",
         amount_text="5 500 000 Kč",
         price_note=None,
         energy_efficiency_class=None,
         city="Atlantis",
         city_district=None,
+        usable_area_sqm=50.0,
+        total_area_sqm=None,
         physical_condition=None,
         floor_position=None,
         total_floor_count=None,
@@ -294,6 +319,62 @@ def test_enricher_rejects_non_normalized_inputs() -> None:
         enricher.enrich(raw_record)  # type: ignore[arg-type]
 
 
+def test_enricher_falls_back_to_total_area_for_canonical_area_metrics() -> None:
+    """Use total area only when usable area is missing from normalized fields."""
+
+    normalized_record = _build_normalized_record(
+        title="Byt 2+kk, Brno - Centrum",
+        amount_text="6 000 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Brno",
+        city_district="Centrum",
+        usable_area_sqm=None,
+        total_area_sqm=75.0,
+        physical_condition=None,
+        floor_position=None,
+        total_floor_count=None,
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.property_features.canonical_area_sqm == 75.0
+    assert enriched_record.property_features.usable_area_sqm is None
+    assert enriched_record.property_features.total_area_sqm == 75.0
+    assert enriched_record.property_features.floor_area_sqm == 75.0
+    assert enriched_record.price_features.price_per_square_meter_czk == 80_000.0
+    assert enriched_record.price_features.price_per_usable_sqm_czk is None
+    assert enriched_record.price_features.price_per_total_sqm_czk == 80_000.0
+
+
+def test_enricher_keeps_zero_area_values_optional() -> None:
+    """Treat zero-valued normalized area fields as missing derived inputs."""
+
+    normalized_record = _build_normalized_record(
+        title="Byt 1+kk, Brno",
+        amount_text="3 000 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Brno",
+        city_district=None,
+        usable_area_sqm=0.0,
+        total_area_sqm=0.0,
+        physical_condition=None,
+        floor_position=None,
+        total_floor_count=None,
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.property_features.canonical_area_sqm is None
+    assert enriched_record.property_features.usable_area_sqm is None
+    assert enriched_record.property_features.total_area_sqm is None
+    assert enriched_record.property_features.floor_area_sqm is None
+    assert enriched_record.price_features.price_per_square_meter_czk is None
+    assert enriched_record.price_features.price_per_usable_sqm_czk is None
+    assert enriched_record.price_features.price_per_total_sqm_czk is None
+
+
 def _build_normalized_record(
     *,
     title: str | None,
@@ -302,6 +383,8 @@ def _build_normalized_record(
     energy_efficiency_class: str | None,
     city: str | None,
     city_district: str | None,
+    usable_area_sqm: float | None,
+    total_area_sqm: float | None,
     physical_condition: str | None,
     floor_position: int | None,
     total_floor_count: int | None,
@@ -350,6 +433,11 @@ def _build_normalized_record(
             source_scrape_run_id="run-123",
             source_captured_from="detail_page",
             source_http_status=200,
+        ),
+        area_details=NormalizedAreaDetails(
+            source_text=None,
+            usable_area_sqm=usable_area_sqm,
+            total_area_sqm=total_area_sqm,
         ),
         energy_details=NormalizedEnergyDetails(
             efficiency_class=energy_efficiency_class,
