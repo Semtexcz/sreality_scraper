@@ -77,6 +77,16 @@ class EnrichedLocationFeatures:
     municipality_match_method: str | None = None
     municipality_match_input: str | None = None
     municipality_match_candidates: tuple[str, ...] = field(default_factory=tuple)
+    nearest_public_transport_m: int | None = None
+    nearest_metro_m: int | None = None
+    nearest_tram_m: int | None = None
+    nearest_bus_m: int | None = None
+    nearest_train_m: int | None = None
+    nearest_shop_m: int | None = None
+    nearest_school_m: int | None = None
+    nearest_kindergarten_m: int | None = None
+    amenities_within_300m_count: int = 0
+    amenities_within_1000m_count: int = 0
 
 
 @dataclass(frozen=True)

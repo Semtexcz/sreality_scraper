@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.18.0] - 2026-03-18
+
+### Added
+
+- added deterministic nearby-place accessibility enrichment fields, including
+  grouped nearest-distance metrics for public transport and shops plus explicit
+  minima for metro, tram, bus, train, school, and kindergarten access
+- added amenity-density counts for normalized nearby places within `300 m` and
+  `1000 m`, with regression coverage for Prague and non-Prague listings,
+  malformed nearby-place parsing, and missing distance values
+
+### Changed
+
+- changed enrichment outputs to version `enriched-listing-v8` so
+  `location_features` now expose canonical nearby-place accessibility signals
+  derived only from `normalized_record.location.nearby_places`
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-032` so the
+  remaining backlog order now starts with `TASK-033`
+
 ## [1.17.0] - 2026-03-18
 
 ### Added

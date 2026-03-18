@@ -17,6 +17,7 @@ from scraperweb.normalization.models import (
     NormalizedCoreAttributes,
     NormalizedListingRecord,
     NormalizedLocation,
+    NormalizedNearbyPlace,
     NormalizedPrice,
 )
 from scraperweb.scraper.models import RawListingRecord, RawSourceMetadata
@@ -46,6 +47,71 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
             loggia=NormalizedAccessoryAreaFeature(is_present=True, area_sqm=3.5),
             terrace=NormalizedAccessoryAreaFeature(is_present=True, area_sqm=8.0),
             cellar=NormalizedAccessoryAreaFeature(is_present=True, area_sqm=2.0),
+        ),
+        nearby_places=(
+            NormalizedNearbyPlace(
+                category="bus_mhd",
+                source_key="Bus MHD:",
+                source_text="Invalid bus stop",
+                name="Florenc",
+                distance_m=130,
+            ),
+            NormalizedNearbyPlace(
+                category="metro",
+                source_key="Metro:",
+                source_text="Křižíkova (450 m)",
+                name="Křižíkova",
+                distance_m=450,
+            ),
+            NormalizedNearbyPlace(
+                category="tram",
+                source_key="Tram:",
+                source_text="Karlínské náměstí (210 m)",
+                name="Karlínské náměstí",
+                distance_m=210,
+            ),
+            NormalizedNearbyPlace(
+                category="vlak",
+                source_key="Vlak:",
+                source_text="Praha hlavní nádraží (1900 m)",
+                name="Praha hlavní nádraží",
+                distance_m=1900,
+            ),
+            NormalizedNearbyPlace(
+                category="obchod",
+                source_key="Obchod:",
+                source_text="Billa (320 m)",
+                name="Billa",
+                distance_m=320,
+            ),
+            NormalizedNearbyPlace(
+                category="vecerka",
+                source_key="Večerka:",
+                source_text="Večerka Karlín (180 m)",
+                name="Večerka Karlín",
+                distance_m=180,
+            ),
+            NormalizedNearbyPlace(
+                category="skola",
+                source_key="Škola:",
+                source_text="ZŠ Lyčkovo náměstí (650 m)",
+                name="ZŠ Lyčkovo náměstí",
+                distance_m=650,
+            ),
+            NormalizedNearbyPlace(
+                category="skolka",
+                source_key="Školka:",
+                source_text="MŠ Pernerova (290 m)",
+                name="MŠ Pernerova",
+                distance_m=290,
+            ),
+            NormalizedNearbyPlace(
+                category="bankomat",
+                source_key="Bankomat:",
+                source_text="ČSOB (90 m)",
+                name="ČSOB",
+                distance_m=90,
+            ),
         ),
     )
     enricher = NormalizedListingEnricher()
@@ -105,6 +171,16 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
         "city_prague_numbered"
     )
     assert enriched_record.location_features.municipality_match_input == "Praha 8"
+    assert enriched_record.location_features.nearest_public_transport_m == 130
+    assert enriched_record.location_features.nearest_metro_m == 450
+    assert enriched_record.location_features.nearest_tram_m == 210
+    assert enriched_record.location_features.nearest_bus_m == 130
+    assert enriched_record.location_features.nearest_train_m == 1900
+    assert enriched_record.location_features.nearest_shop_m == 180
+    assert enriched_record.location_features.nearest_school_m == 650
+    assert enriched_record.location_features.nearest_kindergarten_m == 290
+    assert enriched_record.location_features.amenities_within_300m_count == 5
+    assert enriched_record.location_features.amenities_within_1000m_count == 8
     assert enriched_record.enrichment_metadata is not None
     assert enriched_record.enrichment_metadata.enriched_at_utc == (
         normalized_record.normalized_at_utc
@@ -112,7 +188,7 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.enrichment_metadata.source_normalization_version == (
         normalized_record.normalization_version
     )
-    assert len(enriched_record.enrichment_metadata.derivation_notes) == 14
+    assert len(enriched_record.enrichment_metadata.derivation_notes) == 16
 
 
 def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic() -> None:
@@ -181,6 +257,100 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
     assert first_record.location_features.city_district_normalized is None
     assert first_record.location_features.municipality_match_status == "matched"
     assert first_record.location_features.municipality_match_method == "city"
+    assert first_record.location_features.nearest_public_transport_m is None
+    assert first_record.location_features.nearest_metro_m is None
+    assert first_record.location_features.nearest_tram_m is None
+    assert first_record.location_features.nearest_bus_m is None
+    assert first_record.location_features.nearest_train_m is None
+    assert first_record.location_features.nearest_shop_m is None
+    assert first_record.location_features.nearest_school_m is None
+    assert first_record.location_features.nearest_kindergarten_m is None
+    assert first_record.location_features.amenities_within_300m_count == 0
+    assert first_record.location_features.amenities_within_1000m_count == 0
+
+
+def test_enricher_derives_nearby_place_accessibility_for_partial_non_prague_data() -> None:
+    """Derive stable nearby-place features while ignoring malformed distance values."""
+
+    normalized_record = _build_normalized_record(
+        title="Byt 3+kk, Adamov - Blansko",
+        amount_text="6 700 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Adamov",
+        city_district="Blansko",
+        usable_area_sqm=73.0,
+        total_area_sqm=78.0,
+        building_material="Cihla",
+        physical_condition=None,
+        floor_position=2,
+        total_floor_count=4,
+        nearby_places=(
+            NormalizedNearbyPlace(
+                category="bus_mhd",
+                source_key="Bus MHD:",
+                source_text="Náměstí práce",
+                name=None,
+                distance_m=None,
+            ),
+            NormalizedNearbyPlace(
+                category="metro",
+                source_key="Metro:",
+                source_text="Vyšehrad",
+                name="Vyšehrad",
+                distance_m=None,
+            ),
+            NormalizedNearbyPlace(
+                category="tram",
+                source_key="Tram:",
+                source_text="Blansko centrum",
+                name="Blansko centrum",
+                distance_m=None,
+            ),
+            NormalizedNearbyPlace(
+                category="vlak",
+                source_key="Vlak:",
+                source_text="Adamov zastávka (780 m)",
+                name="Adamov zastávka",
+                distance_m=780,
+            ),
+            NormalizedNearbyPlace(
+                category="vecerka",
+                source_key="Večerka:",
+                source_text="Potraviny (220 m)",
+                name="Potraviny",
+                distance_m=220,
+            ),
+            NormalizedNearbyPlace(
+                category="skola",
+                source_key="Škola:",
+                source_text="ZŠ Ronovská",
+                name="ZŠ Ronovská",
+                distance_m=None,
+            ),
+            NormalizedNearbyPlace(
+                category="skolka",
+                source_key="Školka:",
+                source_text="MŠ Jilemnického (410 m)",
+                name="MŠ Jilemnického",
+                distance_m=410,
+            ),
+        ),
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.location_features.municipality_name == "Adamov"
+    assert enriched_record.location_features.nearest_public_transport_m == 780
+    assert enriched_record.location_features.nearest_metro_m is None
+    assert enriched_record.location_features.nearest_tram_m is None
+    assert enriched_record.location_features.nearest_bus_m is None
+    assert enriched_record.location_features.nearest_train_m == 780
+    assert enriched_record.location_features.nearest_shop_m == 220
+    assert enriched_record.location_features.nearest_school_m is None
+    assert enriched_record.location_features.nearest_kindergarten_m == 410
+    assert enriched_record.location_features.amenities_within_300m_count == 1
+    assert enriched_record.location_features.amenities_within_1000m_count == 3
 
 
 def test_enricher_derives_building_and_energy_features_from_normalized_fields() -> None:
@@ -587,6 +757,7 @@ def _build_normalized_record(
     floor_position: int | None,
     total_floor_count: int | None,
     accessories: NormalizedAccessories | None = None,
+    nearby_places: tuple[NormalizedNearbyPlace, ...] = (),
 ) -> NormalizedListingRecord:
     """Build a normalized record fixture for enrichment tests."""
 
@@ -625,6 +796,7 @@ def _build_normalized_record(
             ),
             city=city,
             city_district=city_district,
+            nearby_places=nearby_places,
         ),
         normalization_metadata=NormalizationMetadata(
             source_contract_version="raw-listing-record-v1",

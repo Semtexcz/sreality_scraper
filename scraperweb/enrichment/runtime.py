@@ -16,10 +16,11 @@ from scraperweb.enrichment.models import (
     EnrichedPropertyFeatures,
     EnrichmentMetadata,
 )
+from scraperweb.normalization.models import NormalizedNearbyPlace
 from scraperweb.normalization.models import NormalizedListingRecord
 
 
-ENRICHMENT_VERSION = "enriched-listing-v7"
+ENRICHMENT_VERSION = "enriched-listing-v8"
 _DERIVATION_NOTES = (
     "asking_price_czk is derived from normalized typed price amounts only",
     "disposition is parsed from normalized title text only",
@@ -60,6 +61,15 @@ _DERIVATION_NOTES = (
         "macro distances use deterministic haversine calculations between municipality "
         "centroids and district-city or district-local ORP-center centroids"
     ),
+    (
+        "nearby-place accessibility features use normalized location.nearby_places "
+        "only and ignore entries without parsed distance_m values"
+    ),
+    (
+        "nearest_public_transport_m groups metro, tram, bus_mhd, and vlak; "
+        "nearest_shop_m groups obchod and vecerka; amenity counts evaluate each "
+        "normalized nearby-place record once against fixed thresholds"
+    ),
 )
 _ENERGY_EFFICIENCY_BUCKETS = {
     "A": "efficient",
@@ -92,6 +102,8 @@ _BUILDING_CONDITION_BUCKETS = {
     "Ve velmi dobrém stavu": "good",
     "Před rekonstrukcí": "needs_work",
 }
+_PUBLIC_TRANSPORT_CATEGORIES = frozenset({"metro", "tram", "bus_mhd", "vlak"})
+_SHOP_CATEGORIES = frozenset({"obchod", "vecerka"})
 
 
 class NormalizedListingEnricher:
@@ -136,6 +148,7 @@ class NormalizedListingEnricher:
             floor_area_sqm=total_area_sqm,
         )
         resolved_location = self._location_reference_index.resolve(record.location)
+        nearby_places = record.location.nearby_places
 
         return EnrichedListingRecord(
             listing_id=record.listing_id,
@@ -203,6 +216,46 @@ class NormalizedListingEnricher:
                 municipality_match_input=resolved_location.municipality_match_input,
                 municipality_match_candidates=(
                     resolved_location.municipality_match_candidates
+                ),
+                nearest_public_transport_m=self._derive_nearest_distance(
+                    nearby_places,
+                    _PUBLIC_TRANSPORT_CATEGORIES,
+                ),
+                nearest_metro_m=self._derive_nearest_distance(
+                    nearby_places,
+                    {"metro"},
+                ),
+                nearest_tram_m=self._derive_nearest_distance(
+                    nearby_places,
+                    {"tram"},
+                ),
+                nearest_bus_m=self._derive_nearest_distance(
+                    nearby_places,
+                    {"bus_mhd"},
+                ),
+                nearest_train_m=self._derive_nearest_distance(
+                    nearby_places,
+                    {"vlak"},
+                ),
+                nearest_shop_m=self._derive_nearest_distance(
+                    nearby_places,
+                    _SHOP_CATEGORIES,
+                ),
+                nearest_school_m=self._derive_nearest_distance(
+                    nearby_places,
+                    {"skola"},
+                ),
+                nearest_kindergarten_m=self._derive_nearest_distance(
+                    nearby_places,
+                    {"skolka"},
+                ),
+                amenities_within_300m_count=self._count_amenities_within_distance(
+                    nearby_places,
+                    threshold_m=300,
+                ),
+                amenities_within_1000m_count=self._count_amenities_within_distance(
+                    nearby_places,
+                    threshold_m=1000,
                 ),
             ),
             enrichment_metadata=EnrichmentMetadata(
@@ -410,3 +463,34 @@ class NormalizedListingEnricher:
         """Return the normalized furnishing state as a stable derived category."""
 
         return record.core_attributes.accessories.furnishing_state
+
+    @staticmethod
+    def _derive_nearest_distance(
+        nearby_places: tuple[NormalizedNearbyPlace, ...],
+        categories: set[str] | frozenset[str],
+    ) -> int | None:
+        """Return the minimum parsed distance for the requested nearby-place categories."""
+
+        matching_distances = [
+            nearby_place.distance_m
+            for nearby_place in nearby_places
+            if nearby_place.category in categories and nearby_place.distance_m is not None
+        ]
+        if not matching_distances:
+            return None
+        return min(matching_distances)
+
+    @staticmethod
+    def _count_amenities_within_distance(
+        nearby_places: tuple[NormalizedNearbyPlace, ...],
+        *,
+        threshold_m: int,
+    ) -> int:
+        """Count nearby-place records with parsed distances at or below one threshold."""
+
+        return sum(
+            1
+            for nearby_place in nearby_places
+            if nearby_place.distance_m is not None
+            and nearby_place.distance_m <= threshold_m
+        )

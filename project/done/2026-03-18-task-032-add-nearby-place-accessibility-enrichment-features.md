@@ -1,6 +1,6 @@
 ---
 task: TASK-032
-status: "backlog"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add nearby-place accessibility enrichment features
 
 Task: TASK-032
-Status: backlog
+Status: done
 Priority: P1
 Type: feature
 Author:
