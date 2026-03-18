@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.12.4] - 2026-03-18
+
+### Added
+
+- added `docs/ENRICHMENT_TASK_SEQUENCE.md` to document the recommended
+  implementation order, dependency rationale, and delivery batches for
+  `TASK-029` through `TASK-039`
+
+### Changed
+
+- updated `docs/README.md` so the new enrichment task sequence document is listed
+  alongside the other technical documentation files
+
 ## [1.12.3] - 2026-03-18
 
 ### Added
