@@ -19,7 +19,7 @@ from scraperweb.enrichment.models import (
 from scraperweb.normalization.models import NormalizedListingRecord
 
 
-ENRICHMENT_VERSION = "enriched-listing-v3"
+ENRICHMENT_VERSION = "enriched-listing-v4"
 _DERIVATION_NOTES = (
     "asking_price_czk is derived from normalized typed price amounts only",
     "floor_area_sqm and disposition are parsed from normalized title text",
@@ -27,6 +27,11 @@ _DERIVATION_NOTES = (
     "is_top_floor and is_new_build are derived from normalized building fields only",
     "energy_efficiency_bucket is derived from normalized energy efficiency classes only",
     "location_features use conservative reference joins against bundled municipality datasets",
+    "municipality coordinates use souradnice.csv centroids rather than parcel-level geometry",
+    (
+        "macro distances use deterministic haversine calculations between municipality "
+        "centroids and district-city or district-local ORP-center centroids"
+    ),
 )
 _ENERGY_EFFICIENCY_BUCKETS = {
     "A": "efficient",
@@ -111,6 +116,12 @@ class NormalizedListingEnricher:
                 region_code=resolved_location.region_code,
                 orp_name=resolved_location.orp_name,
                 orp_code=resolved_location.orp_code,
+                municipality_latitude=resolved_location.municipality_latitude,
+                municipality_longitude=resolved_location.municipality_longitude,
+                distance_to_okresni_mesto_km=(
+                    resolved_location.distance_to_okresni_mesto_km
+                ),
+                distance_to_orp_center_km=resolved_location.distance_to_orp_center_km,
                 is_district_city=resolved_location.is_district_city,
                 is_orp_center=resolved_location.is_orp_center,
                 city_district_normalized=resolved_location.city_district_normalized,

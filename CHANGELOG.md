@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.14.0] - 2026-03-18
+
+### Added
+
+- added municipality centroid coordinates and deterministic macro-distance
+  features to `location_features`, including
+  `municipality_latitude`, `municipality_longitude`,
+  `distance_to_okresni_mesto_km`, and `distance_to_orp_center_km`
+- added focused enrichment regression coverage for municipality coordinates,
+  district-city zero-distance handling, ordinary municipality distance
+  calculations, and unresolved location matches that keep spatial fields empty
+
+### Changed
+
+- changed enrichment outputs to version `enriched-listing-v4` so the canonical
+  contract now includes the first coordinate and macro-distance location
+  features
+- documented that enrichment now computes great-circle distances from
+  municipality centroids to district-city centroids and district-local ORP
+  centers, while metropolitan overrides and spatial cells remain deferred
+
 ## [1.13.0] - 2026-03-18
 
 ### Added

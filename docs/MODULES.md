@@ -84,9 +84,10 @@ enriched record contract. The current feature set stays explicit and determinist
 while preserving the full normalized input record for traceability. Enrichment
 now owns a dedicated `location_features` sub-contract that joins bundled
 reference datasets from `data/` and exposes explicit match status,
-administrative identifiers, district-city and ORP-center flags, and conservative
-district normalization. Coordinates and spatial buckets remain deferred to later
-follow-up tasks.
+administrative identifiers, municipality centroid coordinates, macro distances
+to district cities and district-local ORP centers, district-city and ORP-center
+flags, and conservative district normalization. Metropolitan district overrides
+and spatial buckets remain deferred to later follow-up tasks.
 
 ### `scraperweb.modeling`
 

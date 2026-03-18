@@ -1,6 +1,6 @@
 ---
 task: TASK-037
-status: "backlog"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add coordinate and macro-distance location enrichment
 
 Task: TASK-037
-Status: backlog
+Status: done
 Priority: P1
 Type: feature
 Author:
@@ -24,16 +24,16 @@ contract exposes no latitude, longitude, or distance-based geographic features.
 
 ## Definition of Done
 
-- [ ] Extend enrichment with reference-backed coordinate features, including at
+- [x] Extend enrichment with reference-backed coordinate features, including at
       least `municipality_latitude` and `municipality_longitude`.
-- [ ] Add deterministic macro-distance features such as
+- [x] Add deterministic macro-distance features such as
       `distance_to_okresni_mesto_km` and `distance_to_orp_center_km`.
-- [ ] Decide and implement the canonical source point used for each distance
+- [x] Decide and implement the canonical source point used for each distance
       computation, including how municipality centroids and ORP or district-city
       reference points are resolved.
-- [ ] Keep coordinate and distance features optional when no trustworthy reference
+- [x] Keep coordinate and distance features optional when no trustworthy reference
       mapping exists.
-- [ ] Add focused tests that validate distances for ordinary municipalities,
+- [x] Add focused tests that validate distances for ordinary municipalities,
       district cities, and unresolved reference matches.
 
 ## Notes

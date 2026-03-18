@@ -57,6 +57,10 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.location_features.municipality_code == "554782"
     assert enriched_record.location_features.district_code == "CZ0100"
     assert enriched_record.location_features.region_code == "CZ010"
+    assert enriched_record.location_features.municipality_latitude == 50.075638
+    assert enriched_record.location_features.municipality_longitude == 14.4379
+    assert enriched_record.location_features.distance_to_okresni_mesto_km == 0.0
+    assert enriched_record.location_features.distance_to_orp_center_km == 0.0
     assert enriched_record.location_features.is_district_city is True
     assert enriched_record.location_features.is_orp_center is True
     assert enriched_record.location_features.orp_code == "1000"
@@ -73,7 +77,7 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.enrichment_metadata.source_normalization_version == (
         normalized_record.normalization_version
     )
-    assert len(enriched_record.enrichment_metadata.derivation_notes) == 6
+    assert len(enriched_record.enrichment_metadata.derivation_notes) == 8
 
 
 def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic() -> None:
@@ -111,6 +115,10 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
     assert first_record.location_features.municipality_code == "582786"
     assert first_record.location_features.district_code == "CZ0642"
     assert first_record.location_features.region_code == "CZ064"
+    assert first_record.location_features.municipality_latitude == 49.19516
+    assert first_record.location_features.municipality_longitude == 16.606937
+    assert first_record.location_features.distance_to_okresni_mesto_km == 0.0
+    assert first_record.location_features.distance_to_orp_center_km == 0.0
     assert first_record.location_features.is_district_city is True
     assert first_record.location_features.is_orp_center is True
     assert first_record.location_features.city_district_normalized is None
@@ -214,6 +222,10 @@ def test_enricher_uses_location_text_district_hint_to_resolve_duplicate_municipa
     assert enriched_record.location_features.municipality_code == "581291"
     assert enriched_record.location_features.district_name == "Blansko"
     assert enriched_record.location_features.region_name == "Jihomoravský kraj"
+    assert enriched_record.location_features.municipality_latitude == 49.295708
+    assert enriched_record.location_features.municipality_longitude == 16.663955
+    assert enriched_record.location_features.distance_to_okresni_mesto_km == 7.787
+    assert enriched_record.location_features.distance_to_orp_center_km == 7.787
     assert enriched_record.location_features.is_district_city is False
     assert enriched_record.location_features.is_orp_center is False
     assert enriched_record.location_features.city_district_normalized == "Blansko"
@@ -244,6 +256,10 @@ def test_enricher_keeps_non_matching_locations_explicitly_unresolved() -> None:
     assert enriched_record.location_features.municipality_code is None
     assert enriched_record.location_features.district_code is None
     assert enriched_record.location_features.region_code is None
+    assert enriched_record.location_features.municipality_latitude is None
+    assert enriched_record.location_features.municipality_longitude is None
+    assert enriched_record.location_features.distance_to_okresni_mesto_km is None
+    assert enriched_record.location_features.distance_to_orp_center_km is None
     assert enriched_record.location_features.is_district_city is None
     assert enriched_record.location_features.is_orp_center is None
     assert enriched_record.location_features.municipality_match_status == "unmatched"

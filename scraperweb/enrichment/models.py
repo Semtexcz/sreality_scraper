@@ -48,6 +48,10 @@ class EnrichedLocationFeatures:
     region_code: str | None = None
     orp_name: str | None = None
     orp_code: str | None = None
+    municipality_latitude: float | None = None
+    municipality_longitude: float | None = None
+    distance_to_okresni_mesto_km: float | None = None
+    distance_to_orp_center_km: float | None = None
     is_district_city: bool | None = None
     is_orp_center: bool | None = None
     city_district_normalized: str | None = None
