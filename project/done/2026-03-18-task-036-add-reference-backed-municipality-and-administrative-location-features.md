@@ -1,6 +1,6 @@
 ---
 task: TASK-036
-status: "backlog"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add reference-backed municipality and administrative location features
 
 Task: TASK-036
-Status: backlog
+Status: done
 Priority: P1
 Type: feature
 Author:
@@ -25,17 +25,17 @@ that could anchor price modeling on much more reliable geography.
 
 ## Definition of Done
 
-- [ ] Join normalized municipality labels against `data/souradnice.csv` using a
+- [x] Join normalized municipality labels against `data/souradnice.csv` using a
       documented deterministic matching strategy.
-- [ ] Extend the canonical pipeline output with stable administrative identifiers,
+- [x] Extend the canonical pipeline output with stable administrative identifiers,
       including at least `municipality_code`, `district_code`, `region_code`, and
       the matched municipality name from the reference dataset.
-- [ ] Derive reference-backed boolean or categorical features such as
+- [x] Derive reference-backed boolean or categorical features such as
       `is_district_city` and `is_orp_center` using
       `data/OkresniMesta.csv` and `data/ObceSRozsirenouPusobnosti.csv`.
-- [ ] Add a normalized or enriched representation of `city_district_normalized`
+- [x] Add a normalized or enriched representation of `city_district_normalized`
       when the source district label can be stabilized without inventing data.
-- [ ] Add regression coverage for duplicate municipality names, Prague listings,
+- [x] Add regression coverage for duplicate municipality names, Prague listings,
       and non-matching locations that must remain explicitly unresolved.
 
 ## Notes

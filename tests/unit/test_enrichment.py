@@ -20,7 +20,7 @@ from scraperweb.scraper.models import RawListingRecord, RawSourceMetadata
 
 
 def test_enricher_derives_explicit_features_from_normalized_record() -> None:
-    """Compute the V1 enrichment feature set from normalized inputs only."""
+    """Compute the current enrichment feature set from normalized inputs only."""
 
     normalized_record = _build_normalized_record(
         title="Byt 2+kk 58 m², Praha 8 - Karlín",
@@ -53,6 +53,19 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.property_features.has_energy_efficiency_rating is True
     assert enriched_record.property_features.has_city_district is True
     assert enriched_record.property_features.is_prague_listing is True
+    assert enriched_record.location_features.municipality_name == "Praha"
+    assert enriched_record.location_features.municipality_code == "554782"
+    assert enriched_record.location_features.district_code == "CZ0100"
+    assert enriched_record.location_features.region_code == "CZ010"
+    assert enriched_record.location_features.is_district_city is True
+    assert enriched_record.location_features.is_orp_center is True
+    assert enriched_record.location_features.orp_code == "1000"
+    assert enriched_record.location_features.city_district_normalized == "Praha 8"
+    assert enriched_record.location_features.municipality_match_status == "matched"
+    assert enriched_record.location_features.municipality_match_method == (
+        "city_prague_numbered"
+    )
+    assert enriched_record.location_features.municipality_match_input == "Praha 8"
     assert enriched_record.enrichment_metadata is not None
     assert enriched_record.enrichment_metadata.enriched_at_utc == (
         normalized_record.normalized_at_utc
@@ -60,7 +73,7 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.enrichment_metadata.source_normalization_version == (
         normalized_record.normalization_version
     )
-    assert len(enriched_record.enrichment_metadata.derivation_notes) == 5
+    assert len(enriched_record.enrichment_metadata.derivation_notes) == 6
 
 
 def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic() -> None:
@@ -94,6 +107,15 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
     assert first_record.property_features.has_energy_efficiency_rating is False
     assert first_record.property_features.has_city_district is False
     assert first_record.property_features.is_prague_listing is False
+    assert first_record.location_features.municipality_name == "Brno"
+    assert first_record.location_features.municipality_code == "582786"
+    assert first_record.location_features.district_code == "CZ0642"
+    assert first_record.location_features.region_code == "CZ064"
+    assert first_record.location_features.is_district_city is True
+    assert first_record.location_features.is_orp_center is True
+    assert first_record.location_features.city_district_normalized is None
+    assert first_record.location_features.municipality_match_status == "matched"
+    assert first_record.location_features.municipality_match_method == "city"
 
 
 def test_enricher_derives_building_and_energy_features_from_normalized_fields() -> None:
@@ -140,6 +162,93 @@ def test_enricher_keeps_unknown_energy_bucket_optional() -> None:
     enriched_record = NormalizedListingEnricher().enrich(normalized_record)
 
     assert enriched_record.property_features.energy_efficiency_bucket is None
+
+
+def test_enricher_marks_duplicate_municipality_names_as_ambiguous_without_district_hint() -> None:
+    """Keep duplicate municipality names unresolved when no safe hint exists."""
+
+    normalized_record = _build_normalized_record(
+        title="Byt 2+kk 50 m², Adamov",
+        amount_text="5 500 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Adamov",
+        city_district=None,
+        physical_condition=None,
+        floor_position=None,
+        total_floor_count=None,
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.location_features.municipality_name is None
+    assert enriched_record.location_features.municipality_code is None
+    assert enriched_record.location_features.municipality_match_status == "ambiguous"
+    assert enriched_record.location_features.municipality_match_method == "city"
+    assert enriched_record.location_features.municipality_match_input == "Adamov"
+    assert enriched_record.location_features.municipality_match_candidates == (
+        "Adamov (České Budějovice) [535826]",
+        "Adamov (Blansko) [581291]",
+        "Adamov (Kutná Hora) [531367]",
+    )
+
+
+def test_enricher_uses_location_text_district_hint_to_resolve_duplicate_municipality_names() -> None:
+    """Resolve duplicate municipality names only when location text names one district."""
+
+    normalized_record = _build_normalized_record(
+        title="Byt 2+kk 50 m², Adamov - Blansko",
+        amount_text="5 500 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Adamov",
+        city_district="Blansko",
+        physical_condition=None,
+        floor_position=None,
+        total_floor_count=None,
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.location_features.municipality_name == "Adamov"
+    assert enriched_record.location_features.municipality_code == "581291"
+    assert enriched_record.location_features.district_name == "Blansko"
+    assert enriched_record.location_features.region_name == "Jihomoravský kraj"
+    assert enriched_record.location_features.is_district_city is False
+    assert enriched_record.location_features.is_orp_center is False
+    assert enriched_record.location_features.city_district_normalized == "Blansko"
+    assert enriched_record.location_features.municipality_match_status == "matched"
+    assert enriched_record.location_features.municipality_match_method == (
+        "city_and_location_text_district"
+    )
+
+
+def test_enricher_keeps_non_matching_locations_explicitly_unresolved() -> None:
+    """Leave unmatched municipality joins empty instead of guessing a reference row."""
+
+    normalized_record = _build_normalized_record(
+        title="Byt 2+kk 50 m², Atlantis",
+        amount_text="5 500 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Atlantis",
+        city_district=None,
+        physical_condition=None,
+        floor_position=None,
+        total_floor_count=None,
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.location_features.municipality_name is None
+    assert enriched_record.location_features.municipality_code is None
+    assert enriched_record.location_features.district_code is None
+    assert enriched_record.location_features.region_code is None
+    assert enriched_record.location_features.is_district_city is None
+    assert enriched_record.location_features.is_orp_center is None
+    assert enriched_record.location_features.municipality_match_status == "unmatched"
+    assert enriched_record.location_features.municipality_match_method == "city"
+    assert enriched_record.location_features.municipality_match_input == "Atlantis"
 
 
 def test_enricher_rejects_non_normalized_inputs() -> None:

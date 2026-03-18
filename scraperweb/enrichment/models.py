@@ -37,6 +37,27 @@ class EnrichedPropertyFeatures:
 
 
 @dataclass(frozen=True)
+class EnrichedLocationFeatures:
+    """Reference-backed location features derived during enrichment."""
+
+    municipality_name: str | None = None
+    municipality_code: str | None = None
+    district_name: str | None = None
+    district_code: str | None = None
+    region_name: str | None = None
+    region_code: str | None = None
+    orp_name: str | None = None
+    orp_code: str | None = None
+    is_district_city: bool | None = None
+    is_orp_center: bool | None = None
+    city_district_normalized: str | None = None
+    municipality_match_status: str = "unmatched"
+    municipality_match_method: str | None = None
+    municipality_match_input: str | None = None
+    municipality_match_candidates: tuple[str, ...] = field(default_factory=tuple)
+
+
+@dataclass(frozen=True)
 class EnrichmentMetadata:
     """Traceability metadata for enrichment outputs."""
 
@@ -57,5 +78,8 @@ class EnrichedListingRecord:
     price_features: EnrichedPriceFeatures = field(default_factory=EnrichedPriceFeatures)
     property_features: EnrichedPropertyFeatures = field(
         default_factory=EnrichedPropertyFeatures,
+    )
+    location_features: EnrichedLocationFeatures = field(
+        default_factory=EnrichedLocationFeatures,
     )
     enrichment_metadata: EnrichmentMetadata | None = None

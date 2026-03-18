@@ -5,9 +5,13 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from datetime import datetime, timezone
+from pathlib import Path
 
+from scraperweb.config import DATA_DIR
+from scraperweb.enrichment.location_intelligence import LocationReferenceIndex
 from scraperweb.enrichment.models import (
     EnrichedListingRecord,
+    EnrichedLocationFeatures,
     EnrichedPriceFeatures,
     EnrichedPropertyFeatures,
     EnrichmentMetadata,
@@ -15,13 +19,14 @@ from scraperweb.enrichment.models import (
 from scraperweb.normalization.models import NormalizedListingRecord
 
 
-ENRICHMENT_VERSION = "enriched-listing-v2"
+ENRICHMENT_VERSION = "enriched-listing-v3"
 _DERIVATION_NOTES = (
     "asking_price_czk is derived from normalized typed price amounts only",
     "floor_area_sqm and disposition are parsed from normalized title text",
     "price_per_square_meter_czk is computed only when both price and floor area exist",
     "is_top_floor and is_new_build are derived from normalized building fields only",
     "energy_efficiency_bucket is derived from normalized energy efficiency classes only",
+    "location_features use conservative reference joins against bundled municipality datasets",
 )
 _ENERGY_EFFICIENCY_BUCKETS = {
     "A": "efficient",
@@ -47,6 +52,7 @@ class NormalizedListingEnricher:
     def __init__(
         self,
         enriched_at_provider: Callable[[NormalizedListingRecord], datetime] | None = None,
+        reference_data_dir: Path = DATA_DIR,
     ) -> None:
         """Store the timestamp provider used for enriched record creation.
 
@@ -55,6 +61,9 @@ class NormalizedListingEnricher:
         """
 
         self._enriched_at_provider = enriched_at_provider or self._default_enriched_at
+        self._location_reference_index = LocationReferenceIndex.from_data_dir(
+            reference_data_dir,
+        )
 
     def enrich(self, record: NormalizedListingRecord) -> EnrichedListingRecord:
         """Return the canonical enrichment-stage representation for one listing."""
@@ -68,6 +77,7 @@ class NormalizedListingEnricher:
             asking_price_czk=asking_price_czk,
             floor_area_sqm=floor_area_sqm,
         )
+        resolved_location = self._location_reference_index.resolve(record.location)
 
         return EnrichedListingRecord(
             listing_id=record.listing_id,
@@ -91,6 +101,25 @@ class NormalizedListingEnricher:
                 ),
                 has_city_district=record.location.city_district is not None,
                 is_prague_listing=self._is_prague_listing(record),
+            ),
+            location_features=EnrichedLocationFeatures(
+                municipality_name=resolved_location.municipality_name,
+                municipality_code=resolved_location.municipality_code,
+                district_name=resolved_location.district_name,
+                district_code=resolved_location.district_code,
+                region_name=resolved_location.region_name,
+                region_code=resolved_location.region_code,
+                orp_name=resolved_location.orp_name,
+                orp_code=resolved_location.orp_code,
+                is_district_city=resolved_location.is_district_city,
+                is_orp_center=resolved_location.is_orp_center,
+                city_district_normalized=resolved_location.city_district_normalized,
+                municipality_match_status=resolved_location.municipality_match_status,
+                municipality_match_method=resolved_location.municipality_match_method,
+                municipality_match_input=resolved_location.municipality_match_input,
+                municipality_match_candidates=(
+                    resolved_location.municipality_match_candidates
+                ),
             ),
             enrichment_metadata=EnrichmentMetadata(
                 enriched_at_utc=self._ensure_utc(self._enriched_at_provider(record)),

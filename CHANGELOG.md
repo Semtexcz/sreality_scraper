@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.13.0] - 2026-03-18
+
+### Added
+
+- added enrichment-owned `location_features` with conservative municipality
+  matching, administrative identifiers, district-city and ORP-center flags, and
+  explicit match-status traceability derived from the bundled reference datasets
+- added regression coverage for Prague municipality normalization, duplicate
+  municipality ambiguity, district-aware disambiguation via location text, and
+  explicit unmatched-location handling
+
+### Changed
+
+- changed enrichment outputs to version `enriched-listing-v3` so the canonical
+  contract now includes the first reference-backed administrative location
+  feature set
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-036` so the remaining
+  backlog order now starts with `TASK-037`
+- updated module documentation to reflect that the first location-intelligence
+  features now ship from the enrichment stage while coordinate and spatial work
+  remains deferred to later tasks
+
 ## [1.12.8] - 2026-03-18
 
 ### Added

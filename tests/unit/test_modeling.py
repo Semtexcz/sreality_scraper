@@ -122,7 +122,7 @@ def test_linear_pipeline_service_composes_full_stage_handoffs() -> None:
     assert modeling_record.modeling_metadata.dataset_lineage == (
         "raw-listing-record-v1",
         NORMALIZATION_VERSION,
-        "enriched-listing-v2",
+        "enriched-listing-v3",
         "modeling-input-v2",
     )
     assert modeling_record.enriched_record is not None

@@ -80,11 +80,13 @@ Canonical enrichment-stage package for typed output contracts and deterministic
 derived-feature services built on normalized records only.
 
 Status: active package boundary with `NormalizedListingEnricher` and a stable
-enriched record contract. The initial feature set stays explicit and deterministic,
-while preserving the full normalized input record for traceability. The approved
-next extension is a dedicated enrichment-owned location-intelligence sub-contract
-that will join bundled reference datasets from `data/` and expose explicit match
-status, provenance, administrative identifiers, coordinates, and spatial buckets.
+enriched record contract. The current feature set stays explicit and deterministic,
+while preserving the full normalized input record for traceability. Enrichment
+now owns a dedicated `location_features` sub-contract that joins bundled
+reference datasets from `data/` and exposes explicit match status,
+administrative identifiers, district-city and ORP-center flags, and conservative
+district normalization. Coordinates and spatial buckets remain deferred to later
+follow-up tasks.
 
 ### `scraperweb.modeling`
 
