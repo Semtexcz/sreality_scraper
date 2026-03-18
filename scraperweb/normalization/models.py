@@ -75,6 +75,18 @@ class NormalizedLocation:
     city_district_source: str | None = None
     location_descriptor: str | None = None
     location_descriptor_source: str | None = None
+    nearby_places: tuple["NormalizedNearbyPlace", ...] = field(default_factory=tuple)
+
+
+@dataclass(frozen=True)
+class NormalizedNearbyPlace:
+    """Structured one nearby-place fact copied from supported source payload keys."""
+
+    category: str
+    source_key: str
+    source_text: str
+    name: str | None = None
+    distance_m: int | None = None
 
 
 @dataclass(frozen=True)

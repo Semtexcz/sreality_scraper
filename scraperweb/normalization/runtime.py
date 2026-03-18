@@ -15,6 +15,7 @@ from scraperweb.normalization.models import (
     NormalizedListingRecord,
     NormalizedListingLifecycle,
     NormalizedLocation,
+    NormalizedNearbyPlace,
     NormalizedOwnership,
     NormalizedPrice,
     NormalizedSourceIdentifiers,
@@ -22,10 +23,11 @@ from scraperweb.normalization.models import (
 from scraperweb.scraper.models import JsonValue, RawListingRecord
 
 
-NORMALIZATION_VERSION = "normalized-listing-v4"
+NORMALIZATION_VERSION = "normalized-listing-v5"
 RAW_CONTRACT_VERSION = "raw-listing-record-v1"
 TITLE_FALLBACK_SOURCE = "title_fallback"
 SOURCE_PAYLOAD_PREFIX = "source_payload:"
+NEARBY_PLACES_PARSER_VERSION = "nearby-places-v1"
 _AREA_FRAGMENT_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (
         re.compile(r"^Užitná plocha (?P<value>\d+(?:[.,]\d+)?) m²$"),
@@ -87,6 +89,33 @@ _BUILDING_STRUCTURAL_ATTRIBUTES = frozenset(
         "Podkrovní",
     },
 )
+_NEARBY_PLACE_PATTERN = re.compile(
+    r"^(?P<name>.*?)\((?P<distance>\d+)\s*m\)$",
+)
+_NEARBY_PLACE_CATEGORY_BY_SOURCE_KEY: dict[str, str] = {
+    "Bankomat:": "bankomat",
+    "Bus MHD:": "bus_mhd",
+    "Cukrárna:": "cukrarna",
+    "Divadlo:": "divadlo",
+    "Hospoda:": "hospoda",
+    "Hřiště:": "hriste",
+    "Kino:": "kino",
+    "Kulturní památka:": "kulturni_pamatka",
+    "Lékař:": "lekar",
+    "Lékárna:": "lekarna",
+    "Metro:": "metro",
+    "Obchod:": "obchod",
+    "Pošta:": "posta",
+    "Přírodní zajímavost:": "prirodni_zajimavost",
+    "Restaurace:": "restaurace",
+    "Sportoviště:": "sportoviste",
+    "Tram:": "tram",
+    "Veterinář:": "veterinar",
+    "Večerka:": "vecerka",
+    "Vlak:": "vlak",
+    "Škola:": "skola",
+    "Školka:": "skolka",
+}
 
 
 class RawListingNormalizer:
@@ -442,6 +471,7 @@ class RawListingNormalizer:
                 if location_descriptor is not None
                 else None
             ),
+            nearby_places=cls._build_nearby_places(payload),
         )
 
     @classmethod
@@ -515,6 +545,53 @@ class RawListingNormalizer:
         district = parts[1] or None if len(parts) > 1 else None
         return city, district
 
+    @classmethod
+    def _build_nearby_places(
+        cls,
+        payload: dict[str, JsonValue],
+    ) -> tuple[NormalizedNearbyPlace, ...]:
+        """Build typed nearby-place entries from approved source-specific keys only."""
+
+        nearby_places: list[NormalizedNearbyPlace] = []
+        for source_key in sorted(_NEARBY_PLACE_CATEGORY_BY_SOURCE_KEY):
+            source_text = cls._get_text_value(payload, source_key)
+            if source_text is None:
+                continue
+            nearby_places.append(
+                cls._parse_nearby_place(
+                    category=_NEARBY_PLACE_CATEGORY_BY_SOURCE_KEY[source_key],
+                    source_key=source_key,
+                    source_text=source_text,
+                ),
+            )
+        return tuple(nearby_places)
+
+    @staticmethod
+    def _parse_nearby_place(
+        *,
+        category: str,
+        source_key: str,
+        source_text: str,
+    ) -> NormalizedNearbyPlace:
+        """Parse one supported nearby-place text without failing on malformed values."""
+
+        match = _NEARBY_PLACE_PATTERN.fullmatch(source_text.strip())
+        if match is None:
+            return NormalizedNearbyPlace(
+                category=category,
+                source_key=source_key,
+                source_text=source_text,
+            )
+
+        parsed_name = match.group("name").strip() or None
+        return NormalizedNearbyPlace(
+            category=category,
+            source_key=source_key,
+            source_text=source_text,
+            name=parsed_name,
+            distance_m=int(match.group("distance")),
+        )
+
     @staticmethod
     def _build_source_specific_attributes(
         payload: dict[str, JsonValue],
@@ -537,5 +614,5 @@ class RawListingNormalizer:
         return {
             key: payload[key]
             for key in sorted(payload)
-            if key not in mapped_keys
+            if key not in mapped_keys and key not in _NEARBY_PLACE_CATEGORY_BY_SOURCE_KEY
         }

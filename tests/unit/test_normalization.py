@@ -88,38 +88,36 @@ def test_normalizer_maps_real_snapshot_into_broader_stable_contract() -> None:
         "Upraveno:",
         "Vlastnictví:",
         "Vloženo:",
+        "Bankomat:",
+        "Bus MHD:",
+        "Cukrárna:",
+        "Hospoda:",
+        "Hřiště:",
+        "Kino:",
+        "Lékař:",
+        "Lékárna:",
+        "Obchod:",
+        "Pošta:",
+        "Restaurace:",
+        "Sportoviště:",
+        "Veterinář:",
+        "Večerka:",
+        "Vlak:",
+        "Škola:",
+        "Školka:",
     ):
         assert mapped_key not in normalized_record.core_attributes.source_specific_attributes
     assert normalized_record.core_attributes.source_specific_attributes == {
-        "Bankomat:": "Bankomat ČSOB(856 m)",
-        "Bus MHD:": "Blansko, Okružní(43 m)",
-        "Cukrárna:": "Kavárna Cafisco(1061 m)",
-        "Hospoda:": "Pivnice Sever(785 m)",
-        "Hřiště:": "(167 m)",
         "Infrastruktura:": (
             "Vodovod:Vodovod, Plyn:Plynovod, Zdroj vytápění:Plynový kotel, "
             "Vytápěcí těleso:Radiátory, Kanalizace:Veřejná kanalizace, "
             "Telekomunikace:Internet, Kabelová televize, Kabelové rozvody, "
             "Doprava:Vlak, Silnice, MHD, Autobus, Komunikace:Asfaltová"
         ),
-        "Kino:": "Kino Blansko(1741 m)",
-        "Lékař:": "MUDr. Eva Hlaváčová(666 m)",
-        "Lékárna:": "Dr.Max Lékárna(858 m)",
-        "Obchod:": "Kaufland(836 m)",
-        "Pošta:": "Pošta Blansko 1 - Česká pošta, s.p.(2017 m)",
         "Příslušenství:": (
             "Bez výtahuNezařízenoBalkonSklep, Bez výtahu, Nezařízeno, Balkon, Sklep"
         ),
-        "Restaurace:": "Starobrněnská pivnice VELVET(231 m)",
-        "Sportoviště:": (
-            "Sdružení rodičů a přátel dětí a školy při ZŠ Dvorská Blansko(928 m)"
-        ),
-        "Veterinář:": "MVDr. Ivana Stodůlková - veterinární ordinace(1036 m)",
-        "Večerka:": "HRUŠKA(231 m)",
-        "Vlak:": "Blansko město(1786 m)",
         "Zobrazeno:": "1410×",
-        "Škola:": "Střední škola technická a gastronomická Blansko(702 m)",
-        "Školka:": "MŠ Blansko, Dvorská 96(811 m)",
     }
     assert normalized_record.location.location_text == "Blansko"
     assert normalized_record.location.location_text_source == "title_fallback"
@@ -131,6 +129,45 @@ def test_normalizer_maps_real_snapshot_into_broader_stable_contract() -> None:
     assert normalized_record.location.location_descriptor_source == (
         "source_payload:Lokalita:"
     )
+    nearby_places_by_source_key = {
+        place.source_key: place for place in normalized_record.location.nearby_places
+    }
+    assert len(normalized_record.location.nearby_places) == 17
+    assert set(nearby_places_by_source_key) == {
+        "Bankomat:",
+        "Bus MHD:",
+        "Cukrárna:",
+        "Hospoda:",
+        "Hřiště:",
+        "Kino:",
+        "Lékař:",
+        "Lékárna:",
+        "Obchod:",
+        "Pošta:",
+        "Restaurace:",
+        "Sportoviště:",
+        "Veterinář:",
+        "Večerka:",
+        "Vlak:",
+        "Škola:",
+        "Školka:",
+    }
+    assert nearby_places_by_source_key["Bankomat:"].category == "bankomat"
+    assert nearby_places_by_source_key["Bankomat:"].source_text == (
+        "Bankomat ČSOB(856 m)"
+    )
+    assert nearby_places_by_source_key["Bankomat:"].name == "Bankomat ČSOB"
+    assert nearby_places_by_source_key["Bankomat:"].distance_m == 856
+    assert nearby_places_by_source_key["Hřiště:"].category == "hriste"
+    assert nearby_places_by_source_key["Hřiště:"].source_text == "(167 m)"
+    assert nearby_places_by_source_key["Hřiště:"].name is None
+    assert nearby_places_by_source_key["Hřiště:"].distance_m == 167
+    assert nearby_places_by_source_key["Školka:"].category == "skolka"
+    assert nearby_places_by_source_key["Školka:"].source_text == (
+        "MŠ Blansko, Dvorská 96(811 m)"
+    )
+    assert nearby_places_by_source_key["Školka:"].name == "MŠ Blansko, Dvorská 96"
+    assert nearby_places_by_source_key["Školka:"].distance_m == 811
     assert normalized_record.normalization_metadata.source_contract_version == (
         "raw-listing-record-v1"
     )
@@ -375,6 +412,53 @@ def test_normalizer_preserves_partially_parseable_building_and_energy_fragments(
         "Mimo standard",
     )
     assert normalized_record.energy_details.unparsed_fragments == ()
+
+
+def test_normalizer_keeps_malformed_supported_nearby_places_traceable() -> None:
+    """Emit partial nearby-place entries for supported keys with malformed text."""
+
+    raw_record = RawListingRecord(
+        listing_id="partial-nearby-places-1",
+        source_url=(
+            "https://www.sreality.cz/detail/prodej/byt/praha/partial-nearby-places-1"
+        ),
+        captured_at_utc=datetime(2026, 3, 18, 12, 0, 0, tzinfo=timezone.utc),
+        source_payload={
+            "Název": "Prodej bytu 2+kk 70m²Praha 4 - Nusle",
+            "Bus MHD:": "Náměstí Bratří Synků",
+            "Metro:": "Vyšehrad(1200 m)",
+            "Makléř:": {"jméno": "Example Broker"},
+        },
+        source_metadata=RawSourceMetadata(
+            region="all-czechia",
+            listing_page_number=1,
+            scrape_run_id="run-partial-nearby-places",
+            http_status=200,
+            parser_version="sreality-detail-v1",
+            captured_from="detail_page",
+        ),
+        raw_page_snapshot=None,
+    )
+    normalizer = RawListingNormalizer()
+
+    normalized_record = normalizer.normalize(raw_record)
+
+    nearby_places_by_source_key = {
+        place.source_key: place for place in normalized_record.location.nearby_places
+    }
+    assert nearby_places_by_source_key["Bus MHD:"].category == "bus_mhd"
+    assert nearby_places_by_source_key["Bus MHD:"].source_text == (
+        "Náměstí Bratří Synků"
+    )
+    assert nearby_places_by_source_key["Bus MHD:"].name is None
+    assert nearby_places_by_source_key["Bus MHD:"].distance_m is None
+    assert nearby_places_by_source_key["Metro:"].category == "metro"
+    assert nearby_places_by_source_key["Metro:"].source_text == "Vyšehrad(1200 m)"
+    assert nearby_places_by_source_key["Metro:"].name == "Vyšehrad"
+    assert nearby_places_by_source_key["Metro:"].distance_m == 1200
+    assert normalized_record.core_attributes.source_specific_attributes == {
+        "Makléř:": {"jméno": "Example Broker"},
+    }
 
 
 def test_normalizer_is_idempotent_for_identical_raw_input() -> None:

@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.11.0] - 2026-03-18
+
+### Added
+
+- added typed `location.nearby_places` normalization output with explicit
+  `category`, `source_key`, `source_text`, `name`, and `distance_m` fields for
+  supported nearby-place payload keys
+- added focused nearby-place regression coverage for persisted raw snapshots and
+  malformed-but-supported source values so normalization keeps traceability
+
+### Changed
+
+- changed normalization outputs to version `normalized-listing-v5` so supported
+  nearby-place keys now map into the canonical location contract instead of
+  remaining only under `core_attributes.source_specific_attributes`
+
 ## [1.10.2] - 2026-03-18
 
 ### Added
