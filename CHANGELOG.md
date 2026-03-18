@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.12.2] - 2026-03-18
+
+### Added
+
+- added backlog tasks `TASK-029` through `TASK-034` to break the remaining
+  enrichment-stage roadmap work into explicit deliverables covering typed
+  area-based pricing, building semantics, accessories, nearby-place
+  accessibility, lifecycle freshness, and an operator-facing enrichment replay
+  workflow
+
 ## [1.12.1] - 2026-03-18
 
 ### Added
