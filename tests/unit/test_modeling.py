@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 import pytest
 
 from scraperweb.application.linear_pipeline_service import LinearListingPipelineService
-from scraperweb.enrichment import NormalizedListingEnricher
+from scraperweb.enrichment import ENRICHMENT_VERSION, NormalizedListingEnricher
 from scraperweb.modeling import (
     MODEL_VERSION,
     MODELING_INPUT_VERSION,
@@ -127,7 +127,7 @@ def test_linear_pipeline_service_composes_full_stage_handoffs() -> None:
     assert modeling_record.modeling_metadata.dataset_lineage == (
         "raw-listing-record-v1",
         NORMALIZATION_VERSION,
-        "enriched-listing-v6",
+        ENRICHMENT_VERSION,
         "modeling-input-v3",
     )
     assert modeling_record.enriched_record is not None

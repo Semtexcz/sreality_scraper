@@ -8,6 +8,8 @@ import pytest
 
 from scraperweb.enrichment import ENRICHMENT_VERSION, NormalizedListingEnricher
 from scraperweb.normalization.models import (
+    NormalizedAccessories,
+    NormalizedAccessoryAreaFeature,
     NormalizedAreaDetails,
     NormalizedEnergyDetails,
     NormalizationMetadata,
@@ -36,6 +38,15 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
         physical_condition="Novostavba",
         floor_position=7,
         total_floor_count=7,
+        accessories=NormalizedAccessories(
+            has_elevator=True,
+            is_barrier_free=True,
+            furnishing_state="partially_furnished",
+            balcony=NormalizedAccessoryAreaFeature(is_present=True, area_sqm=4.0),
+            loggia=NormalizedAccessoryAreaFeature(is_present=True, area_sqm=3.5),
+            terrace=NormalizedAccessoryAreaFeature(is_present=True, area_sqm=8.0),
+            cellar=NormalizedAccessoryAreaFeature(is_present=True, area_sqm=2.0),
+        ),
     )
     enricher = NormalizedListingEnricher()
 
@@ -65,6 +76,16 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.property_features.building_condition_bucket == "new_build"
     assert enriched_record.property_features.energy_efficiency_bucket == "efficient"
     assert enriched_record.property_features.has_energy_efficiency_rating is True
+    assert enriched_record.property_features.has_balcony is True
+    assert enriched_record.property_features.has_loggia is True
+    assert enriched_record.property_features.has_terrace is True
+    assert enriched_record.property_features.has_cellar is True
+    assert enriched_record.property_features.has_elevator is True
+    assert enriched_record.property_features.is_barrier_free is True
+    assert enriched_record.property_features.outdoor_accessory_area_sqm == 15.5
+    assert enriched_record.property_features.furnishing_bucket == (
+        "partially_furnished"
+    )
     assert enriched_record.property_features.has_city_district is True
     assert enriched_record.property_features.is_prague_listing is True
     assert enriched_record.location_features.municipality_name == "Praha"
@@ -91,7 +112,7 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.enrichment_metadata.source_normalization_version == (
         normalized_record.normalization_version
     )
-    assert len(enriched_record.enrichment_metadata.derivation_notes) == 12
+    assert len(enriched_record.enrichment_metadata.derivation_notes) == 14
 
 
 def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic() -> None:
@@ -110,6 +131,7 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
         physical_condition=None,
         floor_position=None,
         total_floor_count=None,
+        accessories=NormalizedAccessories(),
     )
     enricher = NormalizedListingEnricher()
 
@@ -136,6 +158,14 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
     assert first_record.property_features.building_condition_bucket is None
     assert first_record.property_features.energy_efficiency_bucket is None
     assert first_record.property_features.has_energy_efficiency_rating is False
+    assert first_record.property_features.has_balcony is None
+    assert first_record.property_features.has_loggia is None
+    assert first_record.property_features.has_terrace is None
+    assert first_record.property_features.has_cellar is None
+    assert first_record.property_features.has_elevator is None
+    assert first_record.property_features.is_barrier_free is None
+    assert first_record.property_features.outdoor_accessory_area_sqm is None
+    assert first_record.property_features.furnishing_bucket is None
     assert first_record.property_features.has_city_district is False
     assert first_record.property_features.is_prague_listing is False
     assert first_record.location_features.municipality_name == "Brno"
@@ -185,6 +215,120 @@ def test_enricher_derives_building_and_energy_features_from_normalized_fields() 
     assert enriched_record.property_features.building_condition_bucket == "needs_work"
     assert enriched_record.property_features.energy_efficiency_bucket == "average"
     assert enriched_record.property_features.has_energy_efficiency_rating is True
+
+
+def test_enricher_derives_accessory_and_outdoor_features_from_normalized_accessories() -> None:
+    """Expose explicit accessory booleans and aggregated outdoor area."""
+
+    normalized_record = _build_normalized_record(
+        title="Byt 4+kk, Brno - Veveří",
+        amount_text="15 000 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Brno",
+        city_district="Veveří",
+        usable_area_sqm=110.0,
+        total_area_sqm=125.0,
+        building_material="Cihla",
+        physical_condition=None,
+        floor_position=5,
+        total_floor_count=6,
+        accessories=NormalizedAccessories(
+            has_elevator=False,
+            is_barrier_free=False,
+            furnishing_state="furnished",
+            balcony=NormalizedAccessoryAreaFeature(is_present=True, area_sqm=6.0),
+            loggia=NormalizedAccessoryAreaFeature(is_present=True, area_sqm=4.5),
+            terrace=NormalizedAccessoryAreaFeature(is_present=True, area_sqm=12.0),
+            cellar=NormalizedAccessoryAreaFeature(is_present=True, area_sqm=3.0),
+        ),
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.property_features.has_balcony is True
+    assert enriched_record.property_features.has_loggia is True
+    assert enriched_record.property_features.has_terrace is True
+    assert enriched_record.property_features.has_cellar is True
+    assert enriched_record.property_features.has_elevator is False
+    assert enriched_record.property_features.is_barrier_free is False
+    assert enriched_record.property_features.outdoor_accessory_area_sqm == 22.5
+    assert enriched_record.property_features.furnishing_bucket == "furnished"
+
+
+def test_enricher_keeps_absent_or_unmeasured_accessory_values_explicit() -> None:
+    """Preserve optionality when accessory presence or measured areas are missing."""
+
+    normalized_record = _build_normalized_record(
+        title="Byt 2+kk, Olomouc",
+        amount_text="5 800 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Olomouc",
+        city_district=None,
+        usable_area_sqm=54.0,
+        total_area_sqm=60.0,
+        building_material="Cihla",
+        physical_condition=None,
+        floor_position=2,
+        total_floor_count=5,
+        accessories=NormalizedAccessories(
+            has_elevator=None,
+            is_barrier_free=None,
+            furnishing_state=None,
+            balcony=NormalizedAccessoryAreaFeature(is_present=None, area_sqm=None),
+            loggia=NormalizedAccessoryAreaFeature(is_present=False, area_sqm=None),
+            terrace=NormalizedAccessoryAreaFeature(is_present=True, area_sqm=None),
+            cellar=NormalizedAccessoryAreaFeature(is_present=False, area_sqm=None),
+        ),
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.property_features.has_balcony is None
+    assert enriched_record.property_features.has_loggia is False
+    assert enriched_record.property_features.has_terrace is True
+    assert enriched_record.property_features.has_cellar is False
+    assert enriched_record.property_features.has_elevator is None
+    assert enriched_record.property_features.is_barrier_free is None
+    assert enriched_record.property_features.outdoor_accessory_area_sqm is None
+    assert enriched_record.property_features.furnishing_bucket is None
+
+
+def test_enricher_ignores_ambiguous_source_specific_accessory_fragments() -> None:
+    """Keep enrichment bound to normalized accessories instead of raw fallback fragments."""
+
+    normalized_record = _build_normalized_record(
+        title="Byt 3+1, Ostrava - Poruba",
+        amount_text="6 400 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Ostrava",
+        city_district="Poruba",
+        usable_area_sqm=78.0,
+        total_area_sqm=82.0,
+        building_material="Panelová",
+        physical_condition=None,
+        floor_position=6,
+        total_floor_count=8,
+        accessories=NormalizedAccessories(
+            has_elevator=True,
+            furnishing_state="unfurnished",
+            balcony=NormalizedAccessoryAreaFeature(is_present=True, area_sqm=5.0),
+            unparsed_fragments=("2 garáže",),
+        ),
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.property_features.has_balcony is True
+    assert enriched_record.property_features.has_loggia is None
+    assert enriched_record.property_features.has_terrace is None
+    assert enriched_record.property_features.has_cellar is None
+    assert enriched_record.property_features.has_elevator is True
+    assert enriched_record.property_features.is_barrier_free is None
+    assert enriched_record.property_features.outdoor_accessory_area_sqm == 5.0
+    assert enriched_record.property_features.furnishing_bucket == "unfurnished"
 
 
 def test_enricher_derives_ground_floor_and_low_rise_building_buckets() -> None:
@@ -442,6 +586,7 @@ def _build_normalized_record(
     physical_condition: str | None,
     floor_position: int | None,
     total_floor_count: int | None,
+    accessories: NormalizedAccessories | None = None,
 ) -> NormalizedListingRecord:
     """Build a normalized record fixture for enrichment tests."""
 
@@ -466,8 +611,10 @@ def _build_normalized_record(
                 floor_position=floor_position,
                 total_floor_count=total_floor_count,
             ),
+            accessories=accessories or NormalizedAccessories(),
             source_specific_attributes={
                 "Vybavení:": ["Sklep", "Balkon"],
+                "Příslušenství:": ["2 garáže", "Terasa o ploše 99 m²"],
             },
         ),
         location=NormalizedLocation(

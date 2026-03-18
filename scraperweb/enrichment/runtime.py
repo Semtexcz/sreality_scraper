@@ -19,7 +19,7 @@ from scraperweb.enrichment.models import (
 from scraperweb.normalization.models import NormalizedListingRecord
 
 
-ENRICHMENT_VERSION = "enriched-listing-v6"
+ENRICHMENT_VERSION = "enriched-listing-v7"
 _DERIVATION_NOTES = (
     "asking_price_czk is derived from normalized typed price amounts only",
     "disposition is parsed from normalized title text only",
@@ -46,6 +46,14 @@ _DERIVATION_NOTES = (
     ),
     "is_new_build is derived from normalized building fields only",
     "energy_efficiency_bucket is derived from normalized energy efficiency classes only",
+    (
+        "accessory booleans and outdoor_accessory_area_sqm are derived only from "
+        "normalized accessory fields and never from source-specific attributes"
+    ),
+    (
+        "furnishing_bucket preserves the normalized accessory furnishing state as a "
+        "stable enrichment-owned categorical feature"
+    ),
     "location_features use conservative reference joins against bundled municipality datasets",
     "municipality coordinates use souradnice.csv centroids rather than parcel-level geometry",
     (
@@ -159,6 +167,16 @@ class NormalizedListingEnricher:
                 has_energy_efficiency_rating=(
                     record.energy_details.efficiency_class is not None
                 ),
+                has_balcony=record.core_attributes.accessories.balcony.is_present,
+                has_loggia=record.core_attributes.accessories.loggia.is_present,
+                has_terrace=record.core_attributes.accessories.terrace.is_present,
+                has_cellar=record.core_attributes.accessories.cellar.is_present,
+                has_elevator=record.core_attributes.accessories.has_elevator,
+                is_barrier_free=record.core_attributes.accessories.is_barrier_free,
+                outdoor_accessory_area_sqm=self._derive_outdoor_accessory_area_sqm(
+                    record,
+                ),
+                furnishing_bucket=self._derive_furnishing_bucket(record),
                 has_city_district=record.location.city_district is not None,
                 is_prague_listing=self._is_prague_listing(record),
             ),
@@ -362,3 +380,33 @@ class NormalizedListingEnricher:
         if efficiency_class is None:
             return None
         return _ENERGY_EFFICIENCY_BUCKETS.get(efficiency_class)
+
+    @classmethod
+    def _derive_outdoor_accessory_area_sqm(
+        cls,
+        record: NormalizedListingRecord,
+    ) -> float | None:
+        """Sum measured outdoor accessory areas when at least one is known."""
+
+        accessory_areas = (
+            record.core_attributes.accessories.balcony.area_sqm,
+            record.core_attributes.accessories.loggia.area_sqm,
+            record.core_attributes.accessories.terrace.area_sqm,
+        )
+        normalized_areas = [
+            area
+            for area in (
+                cls._normalize_area_value(area_value)
+                for area_value in accessory_areas
+            )
+            if area is not None
+        ]
+        if not normalized_areas:
+            return None
+        return round(sum(normalized_areas), 2)
+
+    @staticmethod
+    def _derive_furnishing_bucket(record: NormalizedListingRecord) -> str | None:
+        """Return the normalized furnishing state as a stable derived category."""
+
+        return record.core_attributes.accessories.furnishing_state

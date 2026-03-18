@@ -1,6 +1,6 @@
 ---
 task: TASK-031
-status: "backlog"
+status: "done"
 priority: P2
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add accessory and outdoor space enrichment features
 
 Task: TASK-031
-Status: backlog
+Status: done
 Priority: P2
 Type: feature
 Author:
@@ -25,16 +25,16 @@ enriched contract.
 
 ## Definition of Done
 
-- [ ] Extend enrichment with derived accessory features sourced only from
+- [x] Extend enrichment with derived accessory features sourced only from
       `core_attributes.accessories`.
-- [ ] Add explicit booleans for key accessory presence, including balcony, loggia,
+- [x] Add explicit booleans for key accessory presence, including balcony, loggia,
       terrace, cellar, elevator, and barrier-free access when those values are
       known.
-- [ ] Add one deterministic outdoor-area aggregate derived from balcony, loggia,
+- [x] Add one deterministic outdoor-area aggregate derived from balcony, loggia,
       and terrace measurements.
-- [ ] Preserve furnishing state as a stable derived categorical feature if it does
+- [x] Preserve furnishing state as a stable derived categorical feature if it does
       not simply duplicate the normalized representation without added value.
-- [ ] Add tests covering listings with measured accessories, absent accessories,
+- [x] Add tests covering listings with measured accessories, absent accessories,
       and ambiguous accessory source fragments.
 
 ## Notes

@@ -42,6 +42,14 @@ class EnrichedPropertyFeatures:
     building_condition_bucket: str | None = None
     energy_efficiency_bucket: str | None = None
     has_energy_efficiency_rating: bool = False
+    has_balcony: bool | None = None
+    has_loggia: bool | None = None
+    has_terrace: bool | None = None
+    has_cellar: bool | None = None
+    has_elevator: bool | None = None
+    is_barrier_free: bool | None = None
+    outdoor_accessory_area_sqm: float | None = None
+    furnishing_bucket: str | None = None
     has_city_district: bool = False
     is_prague_listing: bool = False
 

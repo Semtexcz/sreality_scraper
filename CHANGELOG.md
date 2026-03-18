@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.17.0] - 2026-03-18
+
+### Added
+
+- added explicit accessory-derived enrichment fields, including nullable
+  booleans for balcony, loggia, terrace, cellar, elevator, and barrier-free
+  access, plus `outdoor_accessory_area_sqm` and `furnishing_bucket`
+- added focused enrichment regression coverage for measured accessory areas,
+  absent accessory values, and ambiguous raw accessory fragments that must stay
+  ignored by enrichment
+
+### Changed
+
+- changed enrichment outputs to version `enriched-listing-v7` so the canonical
+  contract now includes deterministic accessory and outdoor-space semantics
+  sourced only from `normalized_record.core_attributes.accessories`
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-031` so the remaining
+  backlog order now starts with `TASK-032`
+
 ## [1.16.0] - 2026-03-18
 
 ### Added
