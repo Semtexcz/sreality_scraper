@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.10.0] - 2026-03-18
+
+### Added
+
+- added derived enrichment features for normalized building and energy fields,
+  including optional `is_top_floor`, `is_new_build`, and
+  `energy_efficiency_bucket` semantics alongside the existing price metrics
+- added focused enrichment regression coverage built from normalized record
+  fixtures so derived feature behavior stays deterministic without raw payload
+  parsing
+
+### Changed
+
+- changed enrichment outputs to version `enriched-listing-v2` so the canonical
+  contract now exposes the new building and energy derived features while
+  preserving the full normalized source record for traceability
+- changed modeling inputs to version `modeling-input-v2` so downstream
+  consumers receive the new derived building and energy features at the
+  modeling boundary
+- changed asking-price derivation to rely on normalized typed monetary fields
+  only instead of reparsing preserved raw price text during enrichment
+
 ## [1.9.0] - 2026-03-18
 
 ### Added

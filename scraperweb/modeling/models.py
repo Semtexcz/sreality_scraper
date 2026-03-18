@@ -16,6 +16,9 @@ class ModelingFeatureSet:
     floor_area_sqm: float | None = None
     asking_price_czk: int | None = None
     price_per_square_meter_czk: float | None = None
+    is_top_floor: bool | None = None
+    is_new_build: bool | None = None
+    energy_efficiency_bucket: str | None = None
     has_price_note: bool = False
     has_energy_efficiency_rating: bool = False
     has_city_district: bool = False

@@ -29,6 +29,9 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
         energy_efficiency_class="Velmi úsporná",
         city="Praha 8",
         city_district="Karlín",
+        physical_condition="Novostavba",
+        floor_position=7,
+        total_floor_count=7,
     )
     enricher = NormalizedListingEnricher()
 
@@ -44,6 +47,9 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.price_features.has_price_note is True
     assert enriched_record.property_features.disposition == "2+kk"
     assert enriched_record.property_features.floor_area_sqm == 58.0
+    assert enriched_record.property_features.is_top_floor is True
+    assert enriched_record.property_features.is_new_build is True
+    assert enriched_record.property_features.energy_efficiency_bucket == "efficient"
     assert enriched_record.property_features.has_energy_efficiency_rating is True
     assert enriched_record.property_features.has_city_district is True
     assert enriched_record.property_features.is_prague_listing is True
@@ -54,7 +60,7 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.enrichment_metadata.source_normalization_version == (
         normalized_record.normalization_version
     )
-    assert len(enriched_record.enrichment_metadata.derivation_notes) == 3
+    assert len(enriched_record.enrichment_metadata.derivation_notes) == 5
 
 
 def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic() -> None:
@@ -67,6 +73,9 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
         energy_efficiency_class=None,
         city="Brno",
         city_district=None,
+        physical_condition=None,
+        floor_position=None,
+        total_floor_count=None,
     )
     enricher = NormalizedListingEnricher()
 
@@ -79,9 +88,58 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
     assert first_record.price_features.has_price_note is False
     assert first_record.property_features.disposition == "1+kk"
     assert first_record.property_features.floor_area_sqm is None
+    assert first_record.property_features.is_top_floor is None
+    assert first_record.property_features.is_new_build is None
+    assert first_record.property_features.energy_efficiency_bucket is None
     assert first_record.property_features.has_energy_efficiency_rating is False
     assert first_record.property_features.has_city_district is False
     assert first_record.property_features.is_prague_listing is False
+
+
+def test_enricher_derives_building_and_energy_features_from_normalized_fields() -> None:
+    """Derive building and energy semantics from explicit normalized sub-fields."""
+
+    normalized_record = _build_normalized_record(
+        title="Byt 3+kk 81 m², Brno - Žabovřesky",
+        amount_text="11 340 000 Kč",
+        price_note=None,
+        energy_efficiency_class="Méně úsporná",
+        city="Brno",
+        city_district="Žabovřesky",
+        physical_condition="Před rekonstrukcí",
+        floor_position=3,
+        total_floor_count=5,
+    )
+    enricher = NormalizedListingEnricher()
+
+    enriched_record = enricher.enrich(normalized_record)
+
+    assert enriched_record.price_features.asking_price_czk == 11_340_000
+    assert enriched_record.price_features.price_per_square_meter_czk == 140_000.0
+    assert enriched_record.property_features.is_top_floor is False
+    assert enriched_record.property_features.is_new_build is False
+    assert enriched_record.property_features.energy_efficiency_bucket == "average"
+    assert enriched_record.property_features.has_energy_efficiency_rating is True
+
+
+def test_enricher_keeps_unknown_energy_bucket_optional() -> None:
+    """Keep ambiguous energy bucketing unset when the normalized class is unsupported."""
+
+    normalized_record = _build_normalized_record(
+        title="Byt 2+1 64 m², Ostrava - Poruba",
+        amount_text="4 800 000 Kč",
+        price_note=None,
+        energy_efficiency_class="Neznámá třída",
+        city="Ostrava",
+        city_district="Poruba",
+        physical_condition="Velmi dobrý",
+        floor_position=4,
+        total_floor_count=8,
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.property_features.energy_efficiency_bucket is None
 
 
 def test_enricher_rejects_non_normalized_inputs() -> None:
@@ -119,6 +177,9 @@ def _build_normalized_record(
     energy_efficiency_class: str | None,
     city: str | None,
     city_district: str | None,
+    physical_condition: str | None,
+    floor_position: int | None,
+    total_floor_count: int | None,
 ) -> NormalizedListingRecord:
     """Build a normalized record fixture for enrichment tests."""
 
@@ -132,14 +193,16 @@ def _build_normalized_record(
             title=title,
             price=NormalizedPrice(
                 amount_text=amount_text,
-                amount_czk=8_490_000 if amount_text == "8 490 000 Kč" else None,
-                currency_code="CZK" if amount_text == "8 490 000 Kč" else None,
-                pricing_mode="fixed_amount" if amount_text == "8 490 000 Kč" else None,
+                amount_czk=_parse_amount_czk(amount_text),
+                currency_code="CZK" if amount_text is not None else None,
+                pricing_mode="fixed_amount" if amount_text is not None else None,
                 note=price_note,
             ),
             building=NormalizedBuilding(
                 material="Cihla",
-                physical_condition="Ve velmi dobrém stavu",
+                physical_condition=physical_condition,
+                floor_position=floor_position,
+                total_floor_count=total_floor_count,
             ),
             source_specific_attributes={
                 "Vybavení:": ["Sklep", "Balkon"],
@@ -167,3 +230,11 @@ def _build_normalized_record(
             efficiency_class=energy_efficiency_class,
         ),
     )
+
+
+def _parse_amount_czk(amount_text: str | None) -> int | None:
+    """Convert one normalized fixed-price fixture string into an integer amount."""
+
+    if amount_text is None:
+        return None
+    return int(amount_text.replace(" Kč", "").replace(" ", ""))

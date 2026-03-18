@@ -24,10 +24,13 @@ class EnrichedPriceFeatures:
 
 @dataclass(frozen=True)
 class EnrichedPropertyFeatures:
-    """Derived listing features computed from normalized title and location fields."""
+    """Derived listing features computed from normalized listing fields."""
 
     disposition: str | None = None
     floor_area_sqm: float | None = None
+    is_top_floor: bool | None = None
+    is_new_build: bool | None = None
+    energy_efficiency_bucket: str | None = None
     has_energy_efficiency_rating: bool = False
     has_city_district: bool = False
     is_prague_listing: bool = False

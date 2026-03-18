@@ -15,12 +15,30 @@ from scraperweb.enrichment.models import (
 from scraperweb.normalization.models import NormalizedListingRecord
 
 
-ENRICHMENT_VERSION = "enriched-listing-v1"
+ENRICHMENT_VERSION = "enriched-listing-v2"
 _DERIVATION_NOTES = (
-    "asking_price_czk prefers normalized typed price fields and falls back to price text parsing",
+    "asking_price_czk is derived from normalized typed price amounts only",
     "floor_area_sqm and disposition are parsed from normalized title text",
     "price_per_square_meter_czk is computed only when both price and floor area exist",
+    "is_top_floor and is_new_build are derived from normalized building fields only",
+    "energy_efficiency_bucket is derived from normalized energy efficiency classes only",
 )
+_ENERGY_EFFICIENCY_BUCKETS = {
+    "A": "efficient",
+    "B": "efficient",
+    "C": "efficient",
+    "D": "average",
+    "E": "inefficient",
+    "F": "inefficient",
+    "G": "inefficient",
+    "Mimořádně úsporná": "efficient",
+    "Velmi úsporná": "efficient",
+    "Úsporná": "efficient",
+    "Méně úsporná": "average",
+    "Nehospodárná": "inefficient",
+    "Velmi nehospodárná": "inefficient",
+    "Mimořádně nehospodárná": "inefficient",
+}
 
 
 class NormalizedListingEnricher:
@@ -65,6 +83,9 @@ class NormalizedListingEnricher:
             property_features=EnrichedPropertyFeatures(
                 disposition=self._parse_disposition(record.core_attributes.title),
                 floor_area_sqm=floor_area_sqm,
+                is_top_floor=self._derive_is_top_floor(record),
+                is_new_build=self._derive_is_new_build(record),
+                energy_efficiency_bucket=self._derive_energy_efficiency_bucket(record),
                 has_energy_efficiency_rating=(
                     record.energy_details.efficiency_class is not None
                 ),
@@ -119,27 +140,9 @@ class NormalizedListingEnricher:
 
     @staticmethod
     def _resolve_asking_price_czk(record: NormalizedListingRecord) -> int | None:
-        """Resolve the asking price from normalized typed fields or legacy text."""
+        """Resolve the asking price from normalized typed fields only."""
 
-        amount_czk = record.core_attributes.price.amount_czk
-        if amount_czk is not None:
-            return amount_czk
-        return NormalizedListingEnricher._parse_asking_price_czk(
-            record.core_attributes.price.amount_text,
-        )
-
-    @staticmethod
-    def _parse_asking_price_czk(amount_text: str | None) -> int | None:
-        """Parse the numeric asking price from normalized price text."""
-
-        if amount_text is None:
-            return None
-
-        digits = "".join(character for character in amount_text if character.isdigit())
-        if not digits:
-            return None
-
-        return int(digits)
+        return record.core_attributes.price.amount_czk
 
     @staticmethod
     def _compute_price_per_square_meter(
@@ -159,3 +162,34 @@ class NormalizedListingEnricher:
 
         city = record.location.city
         return city is not None and city.startswith("Praha")
+
+    @staticmethod
+    def _derive_is_top_floor(record: NormalizedListingRecord) -> bool | None:
+        """Return whether the normalized building position is on the top floor."""
+
+        building = record.core_attributes.building
+        if building.floor_position is None or building.total_floor_count is None:
+            return None
+        if building.total_floor_count <= 0:
+            return None
+        return building.floor_position == building.total_floor_count
+
+    @staticmethod
+    def _derive_is_new_build(record: NormalizedListingRecord) -> bool | None:
+        """Return whether the normalized building condition denotes a new build."""
+
+        physical_condition = record.core_attributes.building.physical_condition
+        if physical_condition is None:
+            return None
+        return physical_condition == "Novostavba"
+
+    @staticmethod
+    def _derive_energy_efficiency_bucket(
+        record: NormalizedListingRecord,
+    ) -> str | None:
+        """Map the normalized energy efficiency class into a coarse bucket."""
+
+        efficiency_class = record.energy_details.efficiency_class
+        if efficiency_class is None:
+            return None
+        return _ENERGY_EFFICIENCY_BUCKETS.get(efficiency_class)

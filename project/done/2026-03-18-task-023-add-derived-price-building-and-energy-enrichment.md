@@ -1,6 +1,6 @@
 ---
 task: TASK-023
-status: "todo"
+status: "done"
 priority: P2
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add derived price, building, and energy enrichment
 
 Task: TASK-023
-Status: todo
+Status: done
 Priority: P2
 Type: feature
 Author:
@@ -25,16 +25,16 @@ normalized fields rather than direct reshaping of one raw payload string.
 
 ## Definition of Done
 
-- [ ] Extend enrichment to compute derived price, building, or energy features only
+- [x] Extend enrichment to compute derived price, building, or energy features only
       from normalized records.
-- [ ] Consider features such as `price_per_sqm`, `is_top_floor`, `is_new_build`,
+- [x] Consider features such as `price_per_sqm`, `is_top_floor`, `is_new_build`,
       and energy buckets only when they can be defined explicitly and tested
       deterministically.
-- [ ] Keep every derived feature optional when source normalized fields are missing
+- [x] Keep every derived feature optional when source normalized fields are missing
       or ambiguous.
-- [ ] Preserve traceability back to the full normalized input record so operators can
+- [x] Preserve traceability back to the full normalized input record so operators can
       understand how each derived feature was produced.
-- [ ] Add focused tests that verify derivation behavior from normalized fixtures
+- [x] Add focused tests that verify derivation behavior from normalized fixtures
       rather than raw source payloads.
 
 ## Notes
