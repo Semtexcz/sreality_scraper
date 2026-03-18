@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.11.1] - 2026-03-18
+
+### Added
+
+- added the approved design for normalized accessories support, including the
+  `core_attributes.accessories` contract shape, shared area-feature sub-model,
+  conservative fallback rules, and the planned normalization contract bump to
+  `normalized-listing-v6`
+
 ## [1.11.0] - 2026-03-18
 
 ### Added
