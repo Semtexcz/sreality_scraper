@@ -4,7 +4,7 @@
 
 The primary goal is data acquisition, not downstream processing. Scraper runs should
 capture the source payloads as faithfully as possible and avoid enrichment,
-normalization, geocoding, or other transformations that alter the original data.
+geocoding, or other transformations that alter the original data in-place.
 
 The approved target architecture extends the repository into a simple linear
 in-process pipeline with explicit stage boundaries:
@@ -16,7 +16,7 @@ in-process pipeline with explicit stage boundaries:
 
 Each stage boundary is defined as a typed Python model and follows a one-way
 dependency flow from scraper to normalization to enrichment to modeling. The current
-runtime still implements the scraper stage only.
+runtime exposes raw acquisition and a filesystem-backed normalization workflow.
 
 ## Project Scope
 
@@ -83,10 +83,10 @@ Runtime configuration only exposes values required for raw persistence:
 The project now exposes a Typer-based CLI with explicit subcommands:
 
 - `poetry run scraperweb scrape`: scrape raw listing records from `sreality.cz`
+- `poetry run scraperweb normalize`: normalize persisted raw filesystem snapshots
 
-The `scrape` command is intentionally scoped to raw-data acquisition and persistence.
-It does not expose enrichment, geocoding, normalization, reference-data loaders, or
-derived-output options.
+The `scrape` command stays scoped to raw-data acquisition and persistence. It does
+not expose enrichment, geocoding, reference-data loaders, or derived-output options.
 
 The internal normalization contract distinguishes direct raw payload facts from
 documented title-fallback values. For example, `Lokalita:` now maps into a typed
@@ -119,3 +119,26 @@ Validation rules:
   `--storage-backend mongodb`
 - `--output-dir` custom values are allowed only with
   `--storage-backend filesystem`
+
+Normalize command options:
+
+- exactly one selector is required:
+  `--region <slug>`, `--listing-id <id>`, or `--scrape-run-id <uuid>`
+- `--input-dir <path>`: filesystem raw snapshot root (default `data/raw`)
+- `--output-dir <path>`: filesystem normalized output root (default
+  `data/normalized`)
+
+Normalization workflow semantics:
+
+- input currently supports persisted filesystem raw snapshots only
+- region scope reads every `*.json` raw record under `data/raw/<region>/`
+- listing scope reads every `*.json` raw record under `data/raw/<region>/<listing_id>/`
+- scrape-run scope scans filesystem raw snapshots and selects records whose
+  `source_metadata.scrape_run_id` matches the requested run id
+- markup-failure artifacts are ignored and are never normalized
+- normalized outputs mirror raw snapshot identity at
+  `data/normalized/<region>/<listing_id>/<captured_at_utc>.json`
+- each normalized JSON artifact preserves `normalization_version`,
+  `normalized_at_utc`, and full `normalization_metadata` traceability fields so
+  operators can inspect stage handoffs or reuse the outputs downstream without
+  rerunning scraping

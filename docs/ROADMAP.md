@@ -30,7 +30,7 @@ repository. Unchecked items represent the next supported milestones.
   and basic location mapping.
 - [x] Replace title-text heuristics with clearer field-level extraction rules where
   the source payload allows it.
-- [ ] Expose normalization as a supported operator-facing workflow instead of an
+- [x] Expose normalization as a supported operator-facing workflow instead of an
   internal component only.
 
 ## Enrichment Stage
@@ -66,8 +66,8 @@ repository. Unchecked items represent the next supported milestones.
   `normalization`, `enrichment`, and `modeling`.
 - [x] Implement an internal synchronous linear pipeline service from raw collection
   to modeling inputs.
-- [x] Keep the public runtime intentionally centered on raw acquisition and
-  persistence.
+- [x] Keep the public runtime intentionally centered on raw acquisition while
+  allowing deliberate later-stage entrypoints where explicitly documented.
 - [ ] Expose the internal linear pipeline behind a deliberate user-facing
   entrypoint without weakening the raw-only workflow.
 - [ ] Decide which stage outputs, if any, should gain first-class persistence

@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.8.2] - 2026-03-18
+
+### Added
+
+- added a public `scraperweb normalize` CLI workflow that replays persisted raw
+  filesystem snapshots into normalized JSON artifacts scoped by region,
+  listing id, or scrape run id
+- added filesystem-backed normalization workflow services and integration-style
+  tests that exercise representative raw fixtures derived from
+  `data/raw/all-czechia`
+
+### Changed
+
+- changed generated artifacts documentation to include normalized filesystem
+  outputs and their traceability guarantees
+- changed roadmap and module documentation so normalization is now documented as
+  a supported operator-facing workflow instead of an internal-only stage
 ## [1.8.1] - 2026-03-18
 
 ### Added

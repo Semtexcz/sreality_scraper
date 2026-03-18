@@ -18,13 +18,13 @@ from scraperweb.cli_runtime_options import (
     build_runtime_cli_options,
 )
 from scraperweb.estate_scraper import run_scraper
+from scraperweb.normalization import NormalizationWorkflowError, run_filesystem_normalization_workflow
 from scraperweb.progress import TerminalScrapeProgressReporter
 
 
 app = typer.Typer(
     help=(
-        "Run raw-data scraper operations. "
-        "The CLI is intentionally scoped to raw acquisition and persistence flows."
+        "Run raw-data acquisition and filesystem normalization workflows."
     ),
     no_args_is_help=True,
     pretty_exceptions_enable=False,
@@ -186,6 +186,63 @@ def scrape_command(
     typer.echo(f"Processed {processed_estates} estates.")
 
 
+@app.command("normalize")
+def normalize_command(
+    region: Annotated[
+        str | None,
+        typer.Option(
+            "--region",
+            help="Normalize every raw snapshot stored under one region directory.",
+            show_default=False,
+        ),
+    ] = None,
+    listing_id: Annotated[
+        str | None,
+        typer.Option(
+            "--listing-id",
+            help="Normalize every stored raw snapshot for one listing id.",
+            show_default=False,
+        ),
+    ] = None,
+    scrape_run_id: Annotated[
+        str | None,
+        typer.Option(
+            "--scrape-run-id",
+            help="Normalize every stored raw snapshot captured in one scrape run.",
+            show_default=False,
+        ),
+    ] = None,
+    input_dir: Annotated[
+        Path,
+        typer.Option(
+            "--input-dir",
+            help="Filesystem input directory that contains persisted raw snapshots.",
+        ),
+    ] = DEFAULT_OUTPUT_DIR,
+    output_dir: Annotated[
+        Path,
+        typer.Option(
+            "--output-dir",
+            help="Filesystem output directory for normalized JSON artifacts.",
+        ),
+    ] = Path("data/normalized"),
+) -> None:
+    """Normalize persisted raw filesystem snapshots into stable JSON artifacts."""
+
+    try:
+        normalized_records = run_filesystem_normalization_workflow(
+            input_dir=input_dir,
+            output_dir=output_dir,
+            region=region,
+            listing_id=listing_id,
+            scrape_run_id=scrape_run_id,
+        )
+    except NormalizationWorkflowError as error:
+        raise typer.BadParameter(str(error)) from error
+
+    typer.echo(f"Normalized {normalized_records} records.")
+
+
 def main() -> None:
     """Run the top-level Typer application."""
 
@@ -196,5 +253,6 @@ __all__ = [
     "REGION_CHOICES",
     "app",
     "main",
+    "normalize_command",
     "scrape_command",
 ]

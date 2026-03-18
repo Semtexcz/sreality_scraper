@@ -17,6 +17,14 @@ from scraperweb.normalization.models import (
     NormalizedSourceIdentifiers,
 )
 from scraperweb.normalization.runtime import NORMALIZATION_VERSION, RawListingNormalizer
+from scraperweb.normalization.workflow import (
+    FilesystemNormalizationWorkflowService,
+    FilesystemNormalizedRecordRepository,
+    FilesystemRawSnapshotSource,
+    NormalizationWorkflowError,
+    NormalizationWorkflowSelection,
+    run_filesystem_normalization_workflow,
+)
 
 __all__ = [
     "NORMALIZATION_VERSION",
@@ -31,4 +39,10 @@ __all__ = [
     "NormalizedPrice",
     "NormalizedSourceIdentifiers",
     "RawListingNormalizer",
+    "FilesystemNormalizationWorkflowService",
+    "FilesystemNormalizedRecordRepository",
+    "FilesystemRawSnapshotSource",
+    "NormalizationWorkflowError",
+    "NormalizationWorkflowSelection",
+    "run_filesystem_normalization_workflow",
 ]

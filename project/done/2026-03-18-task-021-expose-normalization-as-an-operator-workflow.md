@@ -1,6 +1,6 @@
 ---
 task: TASK-021
-status: "backlog"
+status: "done"
 priority: P2
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Expose normalization as an operator workflow
 
 Task: TASK-021
-Status: backlog
+Status: done
 Priority: P2
 Type: feature
 Author:
@@ -26,17 +26,17 @@ real-world inputs for an operator-facing workflow.
 
 ## Definition of Done
 
-- [ ] Add a supported user-facing entrypoint that runs normalization from persisted
+- [x] Add a supported user-facing entrypoint that runs normalization from persisted
       raw records without requiring enrichment or modeling execution.
-- [ ] Support normalization over filesystem-backed raw snapshots and document the
+- [x] Support normalization over filesystem-backed raw snapshots and document the
       expected input and output locations or stream format.
-- [ ] Define how operators select a raw source scope such as one listing, one run,
+- [x] Define how operators select a raw source scope such as one listing, one run,
       or one region dataset.
-- [ ] Emit stable normalized outputs with explicit version metadata suitable for
+- [x] Emit stable normalized outputs with explicit version metadata suitable for
       inspection, testing, and downstream reuse.
-- [ ] Add integration-style tests that execute the normalization workflow against
+- [x] Add integration-style tests that execute the normalization workflow against
       representative raw fixtures derived from `data/raw/all-czechia`.
-- [ ] Update developer-facing documentation so the public normalization workflow,
+- [x] Update developer-facing documentation so the public normalization workflow,
       constraints, and traceability guarantees are clear.
 
 ## Notes

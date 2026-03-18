@@ -58,13 +58,14 @@ detail pages must preserve a non-empty `h1` title plus at least one aligned
 Canonical normalization-stage package for typed output contracts and deterministic
 raw-to-normalized mapping services.
 
-Status: active package boundary with `RawListingNormalizer` and a stable normalized
-record contract. Missing known values are represented as `None`, partially parsed
-composite values leave unresolved typed fields as `None`, and unmapped raw source
-fields remain under `source_specific_attributes`. Location normalization now maps
-`Lokalita:` into a dedicated typed field and marks title-derived municipality or
-district values explicitly as fallback provenance instead of treating them as direct
-source facts.
+Status: active package boundary with `RawListingNormalizer`, a stable normalized
+record contract, and a filesystem-backed operator workflow for replaying persisted
+raw snapshots into normalized JSON artifacts. Missing known values are represented
+as `None`, partially parsed composite values leave unresolved typed fields as
+`None`, and unmapped raw source fields remain under `source_specific_attributes`.
+Location normalization now maps `Lokalita:` into a dedicated typed field and marks
+title-derived municipality or district values explicitly as fallback provenance
+instead of treating them as direct source facts.
 
 ### `scraperweb.enrichment`
 

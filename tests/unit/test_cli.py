@@ -8,18 +8,20 @@ from typer.testing import CliRunner
 
 from scraperweb.cli import app
 from scraperweb.cli_runtime_options import StorageBackend
+from scraperweb.normalization import NormalizationWorkflowError
 
 
 runner = CliRunner()
 
 
-def test_root_help_lists_only_raw_scrape_command() -> None:
-    """Expose only the raw scraper command on the public CLI surface."""
+def test_root_help_lists_scrape_and_normalize_commands() -> None:
+    """Expose raw acquisition and normalization workflows on the public CLI surface."""
 
     result = runner.invoke(app, ["--help"])
 
     assert result.exit_code == 0
     assert "scrape" in result.stdout
+    assert "normalize" in result.stdout
     assert "load-towns" not in result.stdout
     assert "load-districts" not in result.stdout
 
@@ -230,3 +232,99 @@ def test_scrape_command_rejects_non_positive_estate_limit() -> None:
 
     assert result.exit_code != 0
     assert "Invalid value for '--max-estates'" in result.stdout
+
+
+def test_normalize_command_runs_with_region_scope(monkeypatch) -> None:
+    """Pass region-scoped normalization arguments into the workflow runner."""
+
+    captured_arguments = {}
+
+    def fake_run_filesystem_normalization_workflow(**kwargs) -> int:
+        """Capture normalization workflow arguments passed from the CLI."""
+
+        captured_arguments.update(kwargs)
+        return 4
+
+    monkeypatch.setattr(
+        "scraperweb.cli.run_filesystem_normalization_workflow",
+        fake_run_filesystem_normalization_workflow,
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "normalize",
+            "--region",
+            "all-czechia",
+            "--input-dir",
+            "tmp/raw",
+            "--output-dir",
+            "tmp/normalized",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Normalized 4 records." in result.stdout
+    assert captured_arguments == {
+        "input_dir": Path("tmp/raw"),
+        "output_dir": Path("tmp/normalized"),
+        "region": "all-czechia",
+        "listing_id": None,
+        "scrape_run_id": None,
+    }
+
+
+def test_normalize_command_supports_listing_scope(monkeypatch) -> None:
+    """Pass listing-scoped normalization arguments into the workflow runner."""
+
+    captured_arguments = {}
+
+    def fake_run_filesystem_normalization_workflow(**kwargs) -> int:
+        """Capture normalization workflow arguments passed from the CLI."""
+
+        captured_arguments.update(kwargs)
+        return 2
+
+    monkeypatch.setattr(
+        "scraperweb.cli.run_filesystem_normalization_workflow",
+        fake_run_filesystem_normalization_workflow,
+    )
+
+    result = runner.invoke(
+        app,
+        [
+            "normalize",
+            "--listing-id",
+            "2664846156",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert "Normalized 2 records." in result.stdout
+    assert captured_arguments["listing_id"] == "2664846156"
+    assert captured_arguments["region"] is None
+    assert captured_arguments["scrape_run_id"] is None
+    assert captured_arguments["input_dir"] == Path("data/raw")
+    assert captured_arguments["output_dir"] == Path("data/normalized")
+
+
+def test_normalize_command_reports_workflow_validation_errors(monkeypatch) -> None:
+    """Translate workflow validation failures into CLI parameter errors."""
+
+    def fake_run_filesystem_normalization_workflow(**kwargs) -> int:
+        """Raise a workflow validation error for CLI coverage."""
+
+        del kwargs
+        raise NormalizationWorkflowError(
+            "Exactly one normalization selector must be provided.",
+        )
+
+    monkeypatch.setattr(
+        "scraperweb.cli.run_filesystem_normalization_workflow",
+        fake_run_filesystem_normalization_workflow,
+    )
+
+    result = runner.invoke(app, ["normalize"])
+
+    assert result.exit_code != 0
+    assert "Exactly one normalization selector must be provided." in result.stdout

@@ -12,16 +12,20 @@ These files are treated as input datasets for reference-data loading.
 
 The repository currently does not define a dedicated output directory for scraper runs.
 
-The intended generated output is raw data downloaded from `sreality.cz` without
-post-processing.
+The intended generated outputs are raw data downloaded from `sreality.cz` and
+deterministic normalized artifacts derived from persisted raw snapshots.
 
 The persistence backend is configurable. Generated outputs are:
 
 - MongoDB collection `raw_listings` containing immutable raw listing records
 - filesystem snapshots under `data/raw/<region>/<listing_id>/<captured_at_utc>.json`
 - optional sibling HTML snapshots under `data/raw/<region>/<listing_id>/<captured_at_utc>.html`
+- normalized filesystem snapshots under
+  `data/normalized/<region>/<listing_id>/<captured_at_utc>.json`
 
-Derived or normalized payloads are not a target artifact for this project scope.
+The supported normalization workflow currently targets filesystem-backed raw
+snapshots only. Each normalized artifact preserves stable stage identity via
+`normalization_version`, `normalized_at_utc`, and `normalization_metadata`.
 
 ## Backend Tradeoffs
 

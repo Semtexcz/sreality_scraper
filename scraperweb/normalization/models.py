@@ -9,8 +9,9 @@ traceability without depending on source-shaped payloads.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from datetime import date, datetime
+from datetime import timezone
 
 from scraperweb.scraper.models import JsonValue
 
@@ -125,3 +126,27 @@ class NormalizedListingRecord:
     source_identifiers: NormalizedSourceIdentifiers = field(
         default_factory=NormalizedSourceIdentifiers,
     )
+
+    def to_serializable_dict(self) -> dict[str, JsonValue]:
+        """Return a JSON-serializable representation of the normalized record."""
+
+        return _serialize_json_value(asdict(self))
+
+
+def _serialize_json_value(value: object) -> JsonValue:
+    """Convert nested dataclass output into JSON-compatible primitives."""
+
+    if isinstance(value, datetime):
+        return value.astimezone(timezone.utc).isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    if isinstance(value, dict):
+        return {
+            str(key): _serialize_json_value(nested_value)
+            for key, nested_value in value.items()
+        }
+    if isinstance(value, list):
+        return [_serialize_json_value(item) for item in value]
+    if isinstance(value, tuple):
+        return [_serialize_json_value(item) for item in value]
+    return value  # type: ignore[return-value]
