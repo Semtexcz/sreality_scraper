@@ -142,3 +142,19 @@ Normalization workflow semantics:
   `normalized_at_utc`, and full `normalization_metadata` traceability fields so
   operators can inspect stage handoffs or reuse the outputs downstream without
   rerunning scraping
+- supported nearby-place source keys now replay into `location.nearby_places`
+  instead of remaining only in `core_attributes.source_specific_attributes`
+- supported `Příslušenství:` fragments now replay into
+  `core_attributes.accessories`, while unsupported or ambiguous fragments remain
+  traceable in `core_attributes.accessories.unparsed_fragments`
+
+Replay and validation notes:
+
+- representative replay coverage should include persisted snapshots with
+  populated `location.nearby_places` and `core_attributes.accessories`
+- validation should confirm both typed fields and traceability guarantees in the
+  serialized JSON artifacts, including the absence of successfully mapped source
+  keys from `core_attributes.source_specific_attributes`
+- downstream enrichment and modeling stages currently preserve these typed
+  normalization outputs for traceability, but they do not consume the new
+  nearby-place or accessories fields directly yet

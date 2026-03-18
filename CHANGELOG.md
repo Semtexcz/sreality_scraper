@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.12.1] - 2026-03-18
+
+### Added
+
+- added representative normalization replay validation for persisted raw
+  snapshots that exercise both `location.nearby_places` and
+  `core_attributes.accessories` in serialized filesystem artifacts
+
+### Changed
+
+- updated operator-facing documentation to record artifact validation
+  expectations, canonical access paths for nearby places and accessories, and
+  the current decision to defer downstream consumption of these typed fields in
+  enrichment and modeling
+- recorded migration guidance for normalized artifacts so reviewers can verify
+  that mapped nearby-place keys and `Příslušenství:` values no longer remain in
+  `core_attributes.source_specific_attributes` after replay
+
 ## [1.12.0] - 2026-03-18
 
 ### Added

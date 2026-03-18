@@ -26,6 +26,20 @@ The persistence backend is configurable. Generated outputs are:
 The supported normalization workflow currently targets filesystem-backed raw
 snapshots only. Each normalized artifact preserves stable stage identity via
 `normalization_version`, `normalized_at_utc`, and `normalization_metadata`.
+Recognized nearby-place and accessories values are promoted into the canonical
+typed paths `location.nearby_places` and `core_attributes.accessories` instead
+of remaining only inside `core_attributes.source_specific_attributes`.
+
+Representative normalization replay validation should confirm:
+
+- stored artifacts remain path-stable and idempotent for the same raw snapshot
+- `normalized_at_utc` and `normalization_metadata` preserve raw-capture lineage
+- successfully mapped nearby-place keys are removed from
+  `core_attributes.source_specific_attributes`
+- successfully mapped `Příslušenství:` values are removed from
+  `core_attributes.source_specific_attributes`
+- ambiguous accessory fragments remain traceable in
+  `core_attributes.accessories.unparsed_fragments`
 
 ## Backend Tradeoffs
 

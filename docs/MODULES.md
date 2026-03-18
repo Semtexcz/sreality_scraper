@@ -69,6 +69,9 @@ instead of treating them as direct source facts. Core attribute normalization al
 maps supported `Příslušenství:` fragments into `core_attributes.accessories`,
 including elevator, accessibility, furnishing, balcony/loggia/terrace/cellar, and
 parking-capacity semantics while preserving unsupported fragments explicitly.
+Downstream enrichment and modeling currently keep these typed normalized values
+available for traceability, but they do not consume `location.nearby_places` or
+`core_attributes.accessories` as dedicated feature inputs yet.
 
 ### `scraperweb.enrichment`
 
