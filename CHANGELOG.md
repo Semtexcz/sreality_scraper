@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.10.2] - 2026-03-18
+
+### Added
+
+- added the approved design for normalized nearby-place support, including the
+  `location.nearby_places` contract shape, overflow coexistence rules, parser
+  fallback strategy, and the planned normalization contract bump to
+  `normalized-listing-v5`
+
 ## [1.10.1] - 2026-03-18
 
 ### Added
