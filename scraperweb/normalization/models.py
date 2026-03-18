@@ -44,11 +44,16 @@ class NormalizedCoreAttributes:
 
 @dataclass(frozen=True)
 class NormalizedLocation:
-    """Structured location fields derived directly from raw listing text."""
+    """Structured location fields with explicit source provenance per value."""
 
     location_text: str | None = None
+    location_text_source: str | None = None
     city: str | None = None
+    city_source: str | None = None
     city_district: str | None = None
+    city_district_source: str | None = None
+    location_descriptor: str | None = None
+    location_descriptor_source: str | None = None
 
 
 @dataclass(frozen=True)

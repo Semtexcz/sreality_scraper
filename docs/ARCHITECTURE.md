@@ -102,7 +102,8 @@ Required contract fields:
 - `captured_at_utc`: original capture timestamp
 - `normalized_at_utc`: normalization timestamp
 - `core_attributes`: stable typed property fields extracted from raw payload
-- `location`: stable structured location fields derived from raw source facts only
+- `location`: stable structured location fields with per-field source provenance and
+  explicit title-fallback markers where dedicated raw attributes do not exist
 - `normalization_metadata`: stage version and traceability metadata
 
 Rules:

@@ -26,9 +26,9 @@ repository. Unchecked items represent the next supported milestones.
 - [x] Implement deterministic raw-to-normalized mapping from scraper outputs only.
 - [x] Preserve unmapped raw source fields for traceability.
 - [x] Keep normalization isolated from downstream enrichment and modeling modules.
-- [ ] Broaden normalized field coverage beyond the current title, price, building,
+- [x] Broaden normalized field coverage beyond the current title, price, building,
   and basic location mapping.
-- [ ] Replace title-text heuristics with clearer field-level extraction rules where
+- [x] Replace title-text heuristics with clearer field-level extraction rules where
   the source payload allows it.
 - [ ] Expose normalization as a supported operator-facing workflow instead of an
   internal component only.

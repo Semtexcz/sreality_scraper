@@ -1,6 +1,6 @@
 ---
 task: TASK-020
-status: "backlog"
+status: "done"
 priority: P1
 type: refactor
 ---
@@ -8,7 +8,7 @@ type: refactor
 # Replace title heuristics with source-backed normalization rules
 
 Task: TASK-020
-Status: backlog
+Status: done
 Priority: P1
 Type: refactor
 Author:
@@ -27,16 +27,16 @@ and hides which fields are explicit source facts versus heuristic fallbacks.
 
 ## Definition of Done
 
-- [ ] Define and document extraction precedence for normalized fields so explicit
+- [x] Define and document extraction precedence for normalized fields so explicit
       detail-payload attributes are always preferred over title parsing.
-- [ ] Remove title-based parsing for any field that can be sourced from dedicated raw
+- [x] Remove title-based parsing for any field that can be sourced from dedicated raw
       attributes introduced by the expanded normalization contract.
-- [ ] Rework location extraction so any remaining fallback parsing is isolated,
+- [x] Rework location extraction so any remaining fallback parsing is isolated,
       explicitly documented, and covered by representative tests.
-- [ ] Ensure normalized outputs distinguish between directly mapped source facts and
+- [x] Ensure normalized outputs distinguish between directly mapped source facts and
       fallback heuristic values without leaking raw scraper models into downstream
       stages.
-- [ ] Add regression coverage for common title formats from `data/raw/all-czechia`,
+- [x] Add regression coverage for common title formats from `data/raw/all-czechia`,
       including Prague district patterns, non-Prague municipality listings, and
       titles with no clean separator between area and street text.
 

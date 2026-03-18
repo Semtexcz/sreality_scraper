@@ -69,6 +69,7 @@ def test_normalizer_maps_real_snapshot_into_broader_stable_contract() -> None:
     assert normalized_record.source_identifiers.source_listing_reference == "00183"
     for mapped_key in (
         "ID zakázky:",
+        "Lokalita:",
         "Plocha:",
         "Upraveno:",
         "Vlastnictví:",
@@ -88,7 +89,6 @@ def test_normalizer_maps_real_snapshot_into_broader_stable_contract() -> None:
             "Doprava:Vlak, Silnice, MHD, Autobus, Komunikace:Asfaltová"
         ),
         "Kino:": "Kino Blansko(1741 m)",
-        "Lokalita:": "Klidná část obce, Bydlení",
         "Lékař:": "MUDr. Eva Hlaváčová(666 m)",
         "Lékárna:": "Dr.Max Lékárna(858 m)",
         "Obchod:": "Kaufland(836 m)",
@@ -108,8 +108,15 @@ def test_normalizer_maps_real_snapshot_into_broader_stable_contract() -> None:
         "Školka:": "MŠ Blansko, Dvorská 96(811 m)",
     }
     assert normalized_record.location.location_text == "Blansko"
+    assert normalized_record.location.location_text_source == "title_fallback"
     assert normalized_record.location.city == "Blansko"
+    assert normalized_record.location.city_source == "title_fallback"
     assert normalized_record.location.city_district is None
+    assert normalized_record.location.city_district_source is None
+    assert normalized_record.location.location_descriptor == "Klidná část obce, Bydlení"
+    assert normalized_record.location.location_descriptor_source == (
+        "source_payload:Lokalita:"
+    )
     assert normalized_record.normalization_metadata.source_contract_version == (
         "raw-listing-record-v1"
     )
@@ -149,8 +156,15 @@ def test_normalizer_keeps_missing_optional_typed_values_explicit_for_real_snapsh
     assert normalized_record.source_identifiers.source_listing_reference is None
     assert "ID zakázky:" not in normalized_record.core_attributes.source_specific_attributes
     assert normalized_record.location.location_text == "Brno - Židenice"
+    assert normalized_record.location.location_text_source == "title_fallback"
     assert normalized_record.location.city == "Brno"
+    assert normalized_record.location.city_source == "title_fallback"
     assert normalized_record.location.city_district == "Židenice"
+    assert normalized_record.location.city_district_source == "title_fallback"
+    assert normalized_record.location.location_descriptor == "Klidná část obce, Bydlení a kanceláře"
+    assert normalized_record.location.location_descriptor_source == (
+        "source_payload:Lokalita:"
+    )
 
 
 def test_normalizer_preserves_unparsed_area_fragments_for_traceability() -> None:
@@ -198,6 +212,14 @@ def test_normalizer_preserves_unparsed_area_fragments_for_traceability() -> None
     assert normalized_record.core_attributes.source_specific_attributes == {
         "Makléř:": {"jméno": "Example Broker"},
     }
+    assert normalized_record.location.location_text == "Praha 4 - Nusle"
+    assert normalized_record.location.location_text_source == "title_fallback"
+    assert normalized_record.location.city == "Praha"
+    assert normalized_record.location.city_source == "title_fallback"
+    assert normalized_record.location.city_district == "Nusle"
+    assert normalized_record.location.city_district_source == "title_fallback"
+    assert normalized_record.location.location_descriptor is None
+    assert normalized_record.location.location_descriptor_source is None
 
 
 def test_normalizer_is_idempotent_for_identical_raw_input() -> None:
@@ -227,3 +249,47 @@ def test_normalizer_is_idempotent_for_identical_raw_input() -> None:
     second_record = normalizer.normalize(raw_record)
 
     assert first_record == second_record
+
+
+def test_normalizer_parses_prague_street_title_fallback_from_real_snapshot() -> None:
+    """Parse Prague city and district from a representative street-prefixed title."""
+
+    raw_record = _load_raw_record_from_snapshot(
+        "data/raw/all-czechia/10208076/2026-03-18T08-57-03.691606+00-00.json",
+    )
+    normalizer = RawListingNormalizer()
+
+    normalized_record = normalizer.normalize(raw_record)
+
+    assert normalized_record.location.location_text == "Praha - Staré Město"
+    assert normalized_record.location.location_text_source == "title_fallback"
+    assert normalized_record.location.city == "Praha"
+    assert normalized_record.location.city_source == "title_fallback"
+    assert normalized_record.location.city_district == "Staré Město"
+    assert normalized_record.location.city_district_source == "title_fallback"
+    assert normalized_record.location.location_descriptor == "Centrum obce"
+    assert normalized_record.location.location_descriptor_source == (
+        "source_payload:Lokalita:"
+    )
+
+
+def test_normalizer_parses_non_prague_dash_location_without_comma_from_real_snapshot() -> None:
+    """Parse municipality and district from a dash-delimited title suffix."""
+
+    raw_record = _load_raw_record_from_snapshot(
+        "data/raw/all-czechia/3301245772/2026-03-18T08-57-05.223481+00-00.json",
+    )
+    normalizer = RawListingNormalizer()
+
+    normalized_record = normalizer.normalize(raw_record)
+
+    assert normalized_record.location.location_text == "Olomouc - Nové Sady"
+    assert normalized_record.location.location_text_source == "title_fallback"
+    assert normalized_record.location.city == "Olomouc"
+    assert normalized_record.location.city_source == "title_fallback"
+    assert normalized_record.location.city_district == "Nové Sady"
+    assert normalized_record.location.city_district_source == "title_fallback"
+    assert normalized_record.location.location_descriptor == "Sídliště"
+    assert normalized_record.location.location_descriptor_source == (
+        "source_payload:Lokalita:"
+    )

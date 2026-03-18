@@ -88,6 +88,11 @@ The `scrape` command is intentionally scoped to raw-data acquisition and persist
 It does not expose enrichment, geocoding, normalization, reference-data loaders, or
 derived-output options.
 
+The internal normalization contract distinguishes direct raw payload facts from
+documented title-fallback values. For example, `Lokalita:` now maps into a typed
+location descriptor field, while municipality and district values derived from the
+presentation title are marked explicitly as fallback provenance.
+
 Scrape command options:
 
 - `--region <slug>` (repeatable): limit scraping to specific regions; when omitted, the

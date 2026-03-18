@@ -21,8 +21,10 @@ from scraperweb.normalization.models import (
 from scraperweb.scraper.models import JsonValue, RawListingRecord
 
 
-NORMALIZATION_VERSION = "normalized-listing-v2"
+NORMALIZATION_VERSION = "normalized-listing-v3"
 RAW_CONTRACT_VERSION = "raw-listing-record-v1"
+TITLE_FALLBACK_SOURCE = "title_fallback"
+SOURCE_PAYLOAD_PREFIX = "source_payload:"
 _AREA_FRAGMENT_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (
         re.compile(r"^Užitná plocha (?P<value>\d+(?:[.,]\d+)?) m²$"),
@@ -41,6 +43,13 @@ _AREA_FRAGMENT_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
         "garden_area_sqm",
     ),
 )
+_TITLE_AREA_SUFFIX_PATTERN = re.compile(
+    r"\d+(?:[.,]\d+)?\s*m²(?P<location>[A-ZÁ-Ž].+)$",
+)
+_TITLE_LOCATION_CANDIDATE_PATTERN = re.compile(
+    r"^(?P<city>[A-ZÁ-Ž][A-Za-zÀ-ž0-9./'’-]*(?: [A-ZÁ-Ž0-9][A-Za-zÀ-ž0-9./'’-]*)*)(?: - (?P<district>[A-ZÁ-Ž0-9][A-Za-zÀ-ž0-9./'’-]*(?: [A-ZÁ-Ž0-9][A-Za-zÀ-ž0-9./'’-]*)*))?$",
+)
+_PRAGUE_NUMBERED_DISTRICT_PATTERN = re.compile(r"^Praha \d+$")
 
 
 class RawListingNormalizer:
@@ -64,7 +73,7 @@ class RawListingNormalizer:
         title = self._get_text_value(record.source_payload, "Název")
         building_text = self._get_text_value(record.source_payload, "Stavba:")
         area_text = self._get_text_value(record.source_payload, "Plocha:")
-        location_text, city, city_district = self._extract_location_fields(title)
+        location = self._build_location(title, record.source_payload)
 
         return NormalizedListingRecord(
             listing_id=record.listing_id,
@@ -83,11 +92,7 @@ class RawListingNormalizer:
                     record.source_payload,
                 ),
             ),
-            location=NormalizedLocation(
-                location_text=location_text,
-                city=city,
-                city_district=city_district,
-            ),
+            location=location,
             normalization_metadata=NormalizationMetadata(
                 source_contract_version=RAW_CONTRACT_VERSION,
                 source_parser_version=record.source_metadata.parser_version,
@@ -249,21 +254,96 @@ class RawListingNormalizer:
         except ValueError:
             return None
 
-    @staticmethod
+    @classmethod
+    def _build_location(
+        cls,
+        title: str | None,
+        payload: dict[str, JsonValue],
+    ) -> NormalizedLocation:
+        """Build the normalized location contract with explicit source precedence."""
+
+        location_descriptor = cls._get_text_value(payload, "Lokalita:")
+        location_text, location_text_source = cls._extract_location_text_from_title(title)
+        city, city_district = cls._split_location_text(location_text)
+
+        return NormalizedLocation(
+            location_text=location_text,
+            location_text_source=location_text_source,
+            city=city,
+            city_source=location_text_source if city is not None else None,
+            city_district=city_district,
+            city_district_source=(
+                location_text_source if city_district is not None else None
+            ),
+            location_descriptor=location_descriptor,
+            location_descriptor_source=(
+                f"{SOURCE_PAYLOAD_PREFIX}Lokalita:"
+                if location_descriptor is not None
+                else None
+            ),
+        )
+
+    @classmethod
     def _extract_location_fields(
         title: str | None,
     ) -> tuple[str | None, str | None, str | None]:
-        """Extract stable location text, city, and district from the raw title."""
+        """Extract legacy location fields from title fallback parsing only."""
 
-        if title is None or "," not in title:
-            return None, None, None
-
-        location_text = title.split(",", maxsplit=1)[1].strip() or None
-        if location_text is None:
-            return None, None, None
-
-        city, city_district = RawListingNormalizer._split_dash_pair(location_text)
+        location_text, _ = RawListingNormalizer._extract_location_text_from_title(title)
+        city, city_district = RawListingNormalizer._split_location_text(location_text)
         return location_text, city, city_district
+
+    @classmethod
+    def _extract_location_text_from_title(
+        cls,
+        title: str | None,
+    ) -> tuple[str | None, str | None]:
+        """Extract a location fragment from supported title fallback patterns."""
+
+        if title is None:
+            return None, None
+
+        if "," in title:
+            location_candidate = title.rsplit(",", maxsplit=1)[1].strip() or None
+            if cls._is_supported_title_location(location_candidate):
+                return location_candidate, TITLE_FALLBACK_SOURCE
+
+        match = _TITLE_AREA_SUFFIX_PATTERN.search(title)
+        if match is None:
+            return None, None
+
+        location_candidate = match.group("location").strip() or None
+        if not cls._is_supported_title_location(location_candidate):
+            return None, None
+
+        return location_candidate, TITLE_FALLBACK_SOURCE
+
+    @staticmethod
+    def _is_supported_title_location(value: str | None) -> bool:
+        """Return whether one title-derived location fragment matches known formats."""
+
+        if value is None:
+            return False
+
+        normalized_value = re.sub(r"\s+", " ", value.strip())
+        return _TITLE_LOCATION_CANDIDATE_PATTERN.fullmatch(normalized_value) is not None
+
+    @classmethod
+    def _split_location_text(
+        cls,
+        location_text: str | None,
+    ) -> tuple[str | None, str | None]:
+        """Split a supported location fragment into city and district parts."""
+
+        if location_text is None:
+            return None, None
+
+        city, city_district = cls._split_dash_pair(location_text)
+        if city is None:
+            return None, None
+        if _PRAGUE_NUMBERED_DISTRICT_PATTERN.fullmatch(city) is not None:
+            return "Praha", city_district
+        return city, city_district
 
     @staticmethod
     def _split_dash_pair(value: str) -> tuple[str | None, str | None]:
@@ -291,6 +371,7 @@ class RawListingNormalizer:
             "Vloženo:",
             "Upraveno:",
             "ID zakázky:",
+            "Lokalita:",
         }
         return {
             key: payload[key]

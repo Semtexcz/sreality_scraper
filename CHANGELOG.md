@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.8.1] - 2026-03-18
+
+### Added
+
+- added typed location descriptor and per-field provenance metadata so normalized
+  location values now distinguish direct `Lokalita:` payload facts from
+  title-derived fallback values
+- added regression coverage for representative Prague and non-Prague title
+  patterns from `data/raw/all-czechia`, including titles without a comma
+  separator before the location suffix
+
+### Changed
+
+- changed location normalization to prefer dedicated raw payload fields where
+  available and to isolate remaining title parsing behind documented fallback
+  rules instead of the previous naive comma split
+- changed Prague numbered-district fallback parsing so municipality identity now
+  normalizes to `Praha` while keeping the district name in `city_district`
+
 ## [1.8.0] - 2026-03-18
 
 ### Added
