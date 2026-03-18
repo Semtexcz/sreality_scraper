@@ -895,7 +895,7 @@ def test_filesystem_repository_persists_detail_markup_failure_artifacts(
         detail_page_client=FakeDetailPageClient(
             {
                 "https://www.sreality.cz/detail/prodej/byt/praha/1": (
-                    "<html><body><h1>Byt 2+kk</h1><dl><dt>Celková cena:</dt><dd></dd></dl></body></html>"
+                    "<html><body><h1>Byt 2+kk</h1><dl><dt></dt><dd>7 500 000 Kč</dd></dl></body></html>"
                 ),
             },
         ),

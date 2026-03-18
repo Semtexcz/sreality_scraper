@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.7.6] - 2026-03-18
+
+### Fixed
+
+- fixed detail-page parsing so empty optional `dd` rows no longer cause the
+  whole listing to be rejected; the scraper now skips empty values and keeps
+  parsing the remaining attributes
+
 ## [1.7.5] - 2026-03-18
 
 ### Added

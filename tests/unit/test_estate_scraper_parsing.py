@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import pytest
+
+from scraperweb.scraper.exceptions import ScraperMarkupError
 from scraperweb.scraper.parsers import (
     SrealityDetailPageParser,
     SrealityListingPageParser,
@@ -83,3 +86,71 @@ def test_parse_raw_payload_extracts_title_and_pairs() -> None:
         "Celková cena:": "7 500 000 Kč",
         "Stavba:": "Cihla, Velmi dobrý",
     }
+
+
+def test_parse_raw_payload_ignores_empty_div_children_when_value_exists() -> None:
+    """Keep non-empty ``dd`` values when decorative child divs are empty."""
+
+    html = """
+    <html>
+      <body>
+        <h1>Byt 2+kk 45 m², Plzeň</h1>
+        <dl>
+          <dt>Ostatní:</dt>
+          <dd><div></div><div>Sklep</div><div>Parkování</div></dd>
+        </dl>
+      </body>
+    </html>
+    """
+    parser = SrealityDetailPageParser()
+
+    assert parser.parse_raw_payload(html) == {
+        "Název": "Byt 2+kk 45 m², Plzeň",
+        "Ostatní:": "Sklep, Parkování",
+    }
+
+
+def test_parse_raw_payload_skips_empty_attribute_values() -> None:
+    """Skip optional rows whose ``dd`` content is present in markup but empty."""
+
+    html = """
+    <html>
+      <body>
+        <h1>Byt 2+kk 45 m², Plzeň</h1>
+        <dl>
+          <dt>Ostatní:</dt>
+          <dd><div></div></dd>
+          <dt>Historie:</dt>
+          <dd><div>Rok kolaudace 1945</div></dd>
+        </dl>
+      </body>
+    </html>
+    """
+    parser = SrealityDetailPageParser()
+
+    assert parser.parse_raw_payload(html) == {
+        "Název": "Byt 2+kk 45 m², Plzeň",
+        "Historie:": "Rok kolaudace 1945",
+    }
+
+
+def test_parse_raw_payload_rejects_empty_attribute_names() -> None:
+    """Reject malformed rows whose ``dt`` label is empty."""
+
+    html = """
+    <html>
+      <body>
+        <h1>Byt 2+kk 45 m², Plzeň</h1>
+        <dl>
+          <dt></dt>
+          <dd>Sklep</dd>
+        </dl>
+      </body>
+    </html>
+    """
+    parser = SrealityDetailPageParser()
+
+    with pytest.raises(ScraperMarkupError) as exc_info:
+        parser.parse_raw_payload(html)
+
+    assert "encountered empty attribute name or value" in exc_info.value.message

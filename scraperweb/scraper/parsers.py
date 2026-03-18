@@ -28,6 +28,19 @@ def clean_string(value: str) -> str:
     return re.sub(r"[\u200b\xa0]", "", value)
 
 
+def extract_dd_description(description_element: bSoup) -> str:
+    """Return a normalized ``dd`` description while ignoring empty sub-items."""
+
+    sub_items = [
+        cleaned_item
+        for div in description_element.find_all("div")
+        if (cleaned_item := clean_string(div.get_text(strip=True)))
+    ]
+    if sub_items:
+        return ", ".join(sub_items)
+    return clean_string(description_element.get_text(strip=True))
+
+
 class SrealityListingPageParser:
     """Parser for listing pagination hints and detail links."""
 
@@ -103,15 +116,13 @@ class SrealityDetailPageParser:
 
         for dt, dd in zip(dt_elements, dd_elements):
             term = dt.get_text(strip=True)
-            description = dd.get_text(strip=True)
-            sub_items = [div.get_text(strip=True) for div in dd.find_all("div")]
-            if sub_items:
-                description = ", ".join(sub_items)
-            cleaned_description = clean_string(description)
-            if not term or not cleaned_description:
+            cleaned_description = extract_dd_description(dd)
+            if not term:
                 raise ScraperMarkupError(
                     "detail page validation failed: encountered empty attribute name or value",
                 )
+            if not cleaned_description:
+                continue
             dictionary_data[term] = cleaned_description
 
         return dictionary_data
