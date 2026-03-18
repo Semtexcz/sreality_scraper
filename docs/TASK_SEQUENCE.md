@@ -1,6 +1,7 @@
-# Enrichment Task Sequence
+# Task Sequence
 
-Recommended implementation order for backlog tasks `TASK-029` through `TASK-039`.
+Recommended implementation order for current backlog tasks `TASK-029` through
+`TASK-039`.
 
 | Order | Task | Focus | Phase | Why now |
 | --- | --- | --- | --- | --- |

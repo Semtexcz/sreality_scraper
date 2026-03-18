@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.12.6] - 2026-03-18
+
+### Changed
+
+- renamed `docs/ENRICHMENT_TASK_SEQUENCE.md` to `docs/TASK_SEQUENCE.md` and
+  generalized the document so it serves as a reusable backlog ordering overview
+- updated `docs/README.md` to reference the generalized task sequence document
+
 ## [1.12.5] - 2026-03-18
 
 ### Changed
