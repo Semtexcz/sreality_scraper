@@ -26,10 +26,14 @@ consumers unless they manually traverse and aggregate `location.nearby_places`.
 
 - [ ] Extend enrichment with deterministic accessibility features computed from
       `location.nearby_places` only.
-- [ ] Add nearest-distance features for at least public transport and essential
-      daily services, using documented category groupings.
+- [ ] Add nearest-distance features for at least `nearest_public_transport_m`,
+      `nearest_metro_m`, `nearest_tram_m`, `nearest_bus_m`, `nearest_train_m`,
+      `nearest_shop_m`, `nearest_school_m`, and `nearest_kindergarten_m`, using
+      documented category groupings.
 - [ ] Add one or more compact amenity-density features such as counts of nearby
-      places within fixed distance thresholds.
+      places within fixed distance thresholds, including
+      `amenities_within_300m_count` and `amenities_within_1000m_count` or an
+      explicitly justified equivalent.
 - [ ] Define how duplicate or overlapping transport categories contribute to the
       derived features so results remain stable.
 - [ ] Add focused tests for Prague and non-Prague fixtures, including records with
@@ -41,3 +45,5 @@ consumers unless they manually traverse and aggregate `location.nearby_places`.
 - Public transport can be modeled as grouped minima from categories such as
   `metro`, `tram`, `bus_mhd`, and `vlak`, but the grouping rules must be explicit.
 - Missing `distance_m` values should not cause the whole feature family to fail.
+- Treat grouped transport and daily-service features as canonical model-facing
+  location outputs, not just as internal helper aggregates.

@@ -13,7 +13,7 @@ Priority: P1
 Type: feature
 Author:
 Created: 2026-03-18
-Related: TASK-021, TASK-023, TASK-029, TASK-032, TASK-033
+Related: TASK-021, TASK-023, TASK-029, TASK-032, TASK-033, TASK-036, TASK-037, TASK-038
 
 ## Problem
 
@@ -44,3 +44,6 @@ linear pipeline.
   or remain workflow-local files.
 - This task should include any necessary contract, changelog, or migration updates
   if the enriched schema changes beforehand.
+- The operator-facing workflow should be able to replay future location
+  intelligence fields so reference-backed location enrichment can be validated on
+  persisted normalized artifacts, not just in unit tests.

@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.12.3] - 2026-03-18
+
+### Added
+
+- added location-intelligence backlog tasks `TASK-035` through `TASK-039` for
+  reference-backed municipality matching, administrative codes, coordinates,
+  macro-distance metrics, metropolitan spatial bucketing, and propagation of
+  those features into the modeling boundary
+- expanded `TASK-032` and `TASK-034` so the enrichment backlog now captures the
+  concrete nearby-place feature set and the requirement to replay future
+  location intelligence through an operator-facing enrichment workflow
+
 ## [1.12.2] - 2026-03-18
 
 ### Added
