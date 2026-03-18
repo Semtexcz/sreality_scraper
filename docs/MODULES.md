@@ -65,7 +65,10 @@ as `None`, partially parsed composite values leave unresolved typed fields as
 `None`, and unmapped raw source fields remain under `source_specific_attributes`.
 Location normalization now maps `Lokalita:` into a dedicated typed field and marks
 title-derived municipality or district values explicitly as fallback provenance
-instead of treating them as direct source facts.
+instead of treating them as direct source facts. Core attribute normalization also
+maps supported `Příslušenství:` fragments into `core_attributes.accessories`,
+including elevator, accessibility, furnishing, balcony/loggia/terrace/cellar, and
+parking-capacity semantics while preserving unsupported fragments explicitly.
 
 ### `scraperweb.enrichment`
 

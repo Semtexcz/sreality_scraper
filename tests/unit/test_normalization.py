@@ -63,6 +63,24 @@ def test_normalizer_maps_real_snapshot_into_broader_stable_contract() -> None:
     assert normalized_record.core_attributes.building.total_floor_count is None
     assert normalized_record.core_attributes.building.underground_floor_count is None
     assert normalized_record.core_attributes.building.unparsed_fragments == ()
+    assert normalized_record.core_attributes.accessories.source_text == (
+        "Bez výtahuNezařízenoBalkonSklep, Bez výtahu, Nezařízeno, Balkon, Sklep"
+    )
+    assert normalized_record.core_attributes.accessories.has_elevator is False
+    assert normalized_record.core_attributes.accessories.is_barrier_free is None
+    assert normalized_record.core_attributes.accessories.furnishing_state == (
+        "unfurnished"
+    )
+    assert normalized_record.core_attributes.accessories.balcony.is_present is True
+    assert normalized_record.core_attributes.accessories.balcony.area_sqm is None
+    assert normalized_record.core_attributes.accessories.loggia.is_present is None
+    assert normalized_record.core_attributes.accessories.loggia.area_sqm is None
+    assert normalized_record.core_attributes.accessories.terrace.is_present is None
+    assert normalized_record.core_attributes.accessories.terrace.area_sqm is None
+    assert normalized_record.core_attributes.accessories.cellar.is_present is True
+    assert normalized_record.core_attributes.accessories.cellar.area_sqm is None
+    assert normalized_record.core_attributes.accessories.parking_space_count is None
+    assert normalized_record.core_attributes.accessories.unparsed_fragments == ()
     assert normalized_record.area_details.source_text == "Užitná plocha 77 m²"
     assert normalized_record.area_details.usable_area_sqm == 77.0
     assert normalized_record.area_details.total_area_sqm is None
@@ -113,9 +131,6 @@ def test_normalizer_maps_real_snapshot_into_broader_stable_contract() -> None:
             "Vytápěcí těleso:Radiátory, Kanalizace:Veřejná kanalizace, "
             "Telekomunikace:Internet, Kabelová televize, Kabelové rozvody, "
             "Doprava:Vlak, Silnice, MHD, Autobus, Komunikace:Asfaltová"
-        ),
-        "Příslušenství:": (
-            "Bez výtahuNezařízenoBalkonSklep, Bez výtahu, Nezařízeno, Balkon, Sklep"
         ),
         "Zobrazeno:": "1410×",
     }
@@ -302,6 +317,17 @@ def test_normalizer_parses_additional_building_and_energy_descriptors_from_real_
         "Nízkoenergetická budova",
     )
     assert normalized_record.energy_details.unparsed_fragments == ()
+    assert normalized_record.core_attributes.accessories.has_elevator is True
+    assert normalized_record.core_attributes.accessories.is_barrier_free is True
+    assert normalized_record.core_attributes.accessories.furnishing_state == (
+        "unfurnished"
+    )
+    assert normalized_record.core_attributes.accessories.terrace.is_present is True
+    assert normalized_record.core_attributes.accessories.terrace.area_sqm == 204.0
+    assert normalized_record.core_attributes.accessories.cellar.is_present is True
+    assert normalized_record.core_attributes.accessories.cellar.area_sqm == 3.0
+    assert normalized_record.core_attributes.accessories.parking_space_count == 4
+    assert normalized_record.core_attributes.accessories.unparsed_fragments == ()
 
 
 def test_normalizer_preserves_unparsed_area_fragments_for_traceability() -> None:
@@ -456,6 +482,59 @@ def test_normalizer_keeps_malformed_supported_nearby_places_traceable() -> None:
     assert nearby_places_by_source_key["Metro:"].source_text == "Vyšehrad(1200 m)"
     assert nearby_places_by_source_key["Metro:"].name == "Vyšehrad"
     assert nearby_places_by_source_key["Metro:"].distance_m == 1200
+    assert normalized_record.core_attributes.source_specific_attributes == {
+        "Makléř:": {"jméno": "Example Broker"},
+    }
+
+
+def test_normalizer_parses_accessories_and_preserves_ambiguous_fragments() -> None:
+    """Parse supported accessory tokens while keeping unsupported ones traceable."""
+
+    raw_record = RawListingRecord(
+        listing_id="partial-accessories-1",
+        source_url="https://www.sreality.cz/detail/prodej/byt/praha/partial-accessories-1",
+        captured_at_utc=datetime(2026, 3, 18, 12, 0, 0, tzinfo=timezone.utc),
+        source_payload={
+            "Název": "Prodej bytu 3+kk 89m²Praha 4 - Nusle",
+            "Příslušenství:": (
+                "VýtahZařízenoBalkon o ploše 6m²Parkovací stání s 4 místy2 garáže, "
+                "Výtah, Zařízeno, Balkon o ploše 6m², Parkovací stání s 4 místy, "
+                "2 garáže"
+            ),
+            "Makléř:": {"jméno": "Example Broker"},
+        },
+        source_metadata=RawSourceMetadata(
+            region="all-czechia",
+            listing_page_number=1,
+            scrape_run_id="run-partial-accessories",
+            http_status=200,
+            parser_version="sreality-detail-v1",
+            captured_from="detail_page",
+        ),
+        raw_page_snapshot=None,
+    )
+    normalizer = RawListingNormalizer()
+
+    normalized_record = normalizer.normalize(raw_record)
+
+    assert normalized_record.core_attributes.accessories.source_text == (
+        "VýtahZařízenoBalkon o ploše 6m²Parkovací stání s 4 místy2 garáže, "
+        "Výtah, Zařízeno, Balkon o ploše 6m², Parkovací stání s 4 místy, 2 garáže"
+    )
+    assert normalized_record.core_attributes.accessories.has_elevator is True
+    assert normalized_record.core_attributes.accessories.is_barrier_free is None
+    assert normalized_record.core_attributes.accessories.furnishing_state == (
+        "furnished"
+    )
+    assert normalized_record.core_attributes.accessories.balcony.is_present is True
+    assert normalized_record.core_attributes.accessories.balcony.area_sqm == 6.0
+    assert normalized_record.core_attributes.accessories.loggia.is_present is None
+    assert normalized_record.core_attributes.accessories.terrace.is_present is None
+    assert normalized_record.core_attributes.accessories.cellar.is_present is None
+    assert normalized_record.core_attributes.accessories.parking_space_count == 4
+    assert normalized_record.core_attributes.accessories.unparsed_fragments == (
+        "2 garáže",
+    )
     assert normalized_record.core_attributes.source_specific_attributes == {
         "Makléř:": {"jméno": "Example Broker"},
     }

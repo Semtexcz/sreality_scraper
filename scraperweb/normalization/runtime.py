@@ -7,6 +7,8 @@ from datetime import date, datetime, timezone
 import re
 
 from scraperweb.normalization.models import (
+    NormalizedAccessories,
+    NormalizedAccessoryAreaFeature,
     NormalizedAreaDetails,
     NormalizedEnergyDetails,
     NormalizationMetadata,
@@ -23,11 +25,12 @@ from scraperweb.normalization.models import (
 from scraperweb.scraper.models import JsonValue, RawListingRecord
 
 
-NORMALIZATION_VERSION = "normalized-listing-v5"
+NORMALIZATION_VERSION = "normalized-listing-v6"
 RAW_CONTRACT_VERSION = "raw-listing-record-v1"
 TITLE_FALLBACK_SOURCE = "title_fallback"
 SOURCE_PAYLOAD_PREFIX = "source_payload:"
 NEARBY_PLACES_PARSER_VERSION = "nearby-places-v1"
+ACCESSORIES_PARSER_VERSION = "accessories-v1"
 _AREA_FRAGMENT_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (
         re.compile(r"^Užitná plocha (?P<value>\d+(?:[.,]\d+)?) m²$"),
@@ -92,6 +95,41 @@ _BUILDING_STRUCTURAL_ATTRIBUTES = frozenset(
 _NEARBY_PLACE_PATTERN = re.compile(
     r"^(?P<name>.*?)\((?P<distance>\d+)\s*m\)$",
 )
+_ACCESSORY_AREA_PATTERNS: tuple[
+    tuple[re.Pattern[str], str],
+    ...,
+] = (
+    (
+        re.compile(r"^Balkon(?: o ploše (?P<value>\d+(?:[.,]\d+)?)\s*m²)?$"),
+        "balcony",
+    ),
+    (
+        re.compile(r"^Lodžie(?: o ploše (?P<value>\d+(?:[.,]\d+)?)\s*m²)?$"),
+        "loggia",
+    ),
+    (
+        re.compile(r"^Terasa(?: o ploše (?P<value>\d+(?:[.,]\d+)?)\s*m²)?$"),
+        "terrace",
+    ),
+    (
+        re.compile(r"^Sklep(?: o ploše (?P<value>\d+(?:[.,]\d+)?)\s*m²)?$"),
+        "cellar",
+    ),
+)
+_ACCESSORY_FLAG_VALUE_BY_FRAGMENT: dict[str, tuple[str, bool]] = {
+    "Výtah": ("has_elevator", True),
+    "Bez výtahu": ("has_elevator", False),
+    "Bezbariérový přístup": ("is_barrier_free", True),
+    "Nemá bezbariérový přístup": ("is_barrier_free", False),
+}
+_ACCESSORY_FURNISHING_STATE_BY_FRAGMENT: dict[str, str] = {
+    "Zařízeno": "furnished",
+    "Částečně zařízeno": "partially_furnished",
+    "Nezařízeno": "unfurnished",
+}
+_ACCESSORY_PARKING_SPACE_PATTERN = re.compile(
+    r"^Parkovací stání s (?P<count>\d+) místy$",
+)
 _NEARBY_PLACE_CATEGORY_BY_SOURCE_KEY: dict[str, str] = {
     "Bankomat:": "bankomat",
     "Bus MHD:": "bus_mhd",
@@ -153,6 +191,9 @@ class RawListingNormalizer:
                 title=title,
                 price=self._build_price(price_text, record.source_payload),
                 building=self._build_building(building_text),
+                accessories=self._build_accessories(
+                    self._get_text_value(record.source_payload, "Příslušenství:"),
+                ),
                 source_specific_attributes=self._build_source_specific_attributes(
                     record.source_payload,
                 ),
@@ -373,6 +414,88 @@ class RawListingNormalizer:
         )
 
     @classmethod
+    def _build_accessories(
+        cls,
+        accessories_text: str | None,
+    ) -> NormalizedAccessories:
+        """Parse supported accessory fragments into a stable typed sub-contract."""
+
+        if accessories_text is None:
+            return NormalizedAccessories()
+
+        fragments = cls._tokenize_accessories(accessories_text)
+        parsed_feature_names: set[str] = set()
+        has_elevator: bool | None = None
+        is_barrier_free: bool | None = None
+        furnishing_state: str | None = None
+        parking_space_count: int | None = None
+        area_features: dict[str, NormalizedAccessoryAreaFeature] = {
+            "balcony": NormalizedAccessoryAreaFeature(),
+            "loggia": NormalizedAccessoryAreaFeature(),
+            "terrace": NormalizedAccessoryAreaFeature(),
+            "cellar": NormalizedAccessoryAreaFeature(),
+        }
+        unparsed_fragments: list[str] = []
+
+        for fragment in fragments:
+            flag_value = _ACCESSORY_FLAG_VALUE_BY_FRAGMENT.get(fragment)
+            if flag_value is not None:
+                field_name, parsed_value = flag_value
+                current_value = (
+                    has_elevator if field_name == "has_elevator" else is_barrier_free
+                )
+                if current_value is None:
+                    if field_name == "has_elevator":
+                        has_elevator = parsed_value
+                    else:
+                        is_barrier_free = parsed_value
+                else:
+                    unparsed_fragments.append(fragment)
+                continue
+
+            parsed_furnishing_state = _ACCESSORY_FURNISHING_STATE_BY_FRAGMENT.get(
+                fragment,
+            )
+            if parsed_furnishing_state is not None:
+                if furnishing_state is None:
+                    furnishing_state = parsed_furnishing_state
+                else:
+                    unparsed_fragments.append(fragment)
+                continue
+
+            parking_match = _ACCESSORY_PARKING_SPACE_PATTERN.fullmatch(fragment)
+            if parking_match is not None:
+                if parking_space_count is None:
+                    parking_space_count = int(parking_match.group("count"))
+                else:
+                    unparsed_fragments.append(fragment)
+                continue
+
+            area_feature_name, area_feature = cls._parse_accessory_area_feature(fragment)
+            if area_feature_name is not None and area_feature is not None:
+                if area_feature_name in parsed_feature_names:
+                    unparsed_fragments.append(fragment)
+                else:
+                    area_features[area_feature_name] = area_feature
+                    parsed_feature_names.add(area_feature_name)
+                continue
+
+            unparsed_fragments.append(fragment)
+
+        return NormalizedAccessories(
+            source_text=accessories_text,
+            has_elevator=has_elevator,
+            is_barrier_free=is_barrier_free,
+            furnishing_state=furnishing_state,
+            balcony=area_features["balcony"],
+            loggia=area_features["loggia"],
+            terrace=area_features["terrace"],
+            cellar=area_features["cellar"],
+            parking_space_count=parking_space_count,
+            unparsed_fragments=tuple(unparsed_fragments),
+        )
+
+    @classmethod
     def _build_listing_lifecycle(
         cls,
         payload: dict[str, JsonValue],
@@ -393,6 +516,45 @@ class RawListingNormalizer:
         """Return stripped non-empty fragments from a comma-delimited source value."""
 
         return tuple(fragment.strip() for fragment in value.split(",") if fragment.strip())
+
+    @classmethod
+    def _tokenize_accessories(cls, value: str) -> tuple[str, ...]:
+        """Return accessory fragments while removing the duplicated leading prefix."""
+
+        fragments = cls._split_comma_delimited_value(value)
+        if len(fragments) <= 1:
+            return fragments
+
+        duplicated_prefix = "".join(fragments[1:])
+        if duplicated_prefix and fragments[0] == duplicated_prefix:
+            return fragments[1:]
+        return fragments
+
+    @classmethod
+    def _parse_accessory_area_feature(
+        cls,
+        fragment: str,
+    ) -> tuple[str | None, NormalizedAccessoryAreaFeature | None]:
+        """Parse one supported area-bearing accessory fragment."""
+
+        for pattern, feature_name in _ACCESSORY_AREA_PATTERNS:
+            match = pattern.fullmatch(fragment)
+            if match is None:
+                continue
+
+            parsed_area_text = match.group("value")
+            if parsed_area_text is None:
+                return feature_name, NormalizedAccessoryAreaFeature(is_present=True)
+
+            parsed_area = cls._parse_decimal_number(parsed_area_text)
+            if parsed_area is None:
+                return None, None
+            return feature_name, NormalizedAccessoryAreaFeature(
+                is_present=True,
+                area_sqm=parsed_area,
+            )
+
+        return None, None
 
     @staticmethod
     def _parse_decimal_number(value: str) -> float | None:
@@ -603,6 +765,7 @@ class RawListingNormalizer:
             "Celková cena:",
             "Poznámka k ceně:",
             "Stavba:",
+            "Příslušenství:",
             "Energetická náročnost:",
             "Plocha:",
             "Vlastnictví:",

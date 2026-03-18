@@ -54,12 +54,45 @@ class NormalizedEnergyDetails:
 
 
 @dataclass(frozen=True)
+class NormalizedAccessoryAreaFeature:
+    """Structured one area-bearing accessory feature parsed from source text."""
+
+    is_present: bool | None = None
+    area_sqm: float | None = None
+
+
+@dataclass(frozen=True)
+class NormalizedAccessories:
+    """Structured accessory facts parsed from the raw ``Příslušenství:`` field."""
+
+    source_text: str | None = None
+    has_elevator: bool | None = None
+    is_barrier_free: bool | None = None
+    furnishing_state: str | None = None
+    balcony: NormalizedAccessoryAreaFeature = field(
+        default_factory=NormalizedAccessoryAreaFeature,
+    )
+    loggia: NormalizedAccessoryAreaFeature = field(
+        default_factory=NormalizedAccessoryAreaFeature,
+    )
+    terrace: NormalizedAccessoryAreaFeature = field(
+        default_factory=NormalizedAccessoryAreaFeature,
+    )
+    cellar: NormalizedAccessoryAreaFeature = field(
+        default_factory=NormalizedAccessoryAreaFeature,
+    )
+    parking_space_count: int | None = None
+    unparsed_fragments: tuple[str, ...] = field(default_factory=tuple)
+
+
+@dataclass(frozen=True)
 class NormalizedCoreAttributes:
     """Stable property attributes with source-specific overflow preserved explicitly."""
 
     title: str | None = None
     price: NormalizedPrice = field(default_factory=NormalizedPrice)
     building: NormalizedBuilding = field(default_factory=NormalizedBuilding)
+    accessories: NormalizedAccessories = field(default_factory=NormalizedAccessories)
     source_specific_attributes: dict[str, JsonValue] = field(default_factory=dict)
 
 

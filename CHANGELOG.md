@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.12.0] - 2026-03-18
+
+### Added
+
+- added typed `core_attributes.accessories` normalization output with explicit
+  elevator, barrier-free access, furnishing state, balcony/loggia/terrace/cellar,
+  and parking-space capacity fields sourced from `Příslušenství:`
+- added focused accessories regression coverage for duplicated leading fragments,
+  measured accessory features, parking counts, and ambiguous fragments such as
+  `2 garáže`
+
+### Changed
+
+- changed normalization outputs to version `normalized-listing-v6` so supported
+  accessories now map into the canonical core-attributes contract instead of
+  remaining only under `source_specific_attributes`
+
 ## [1.11.1] - 2026-03-18
 
 ### Added

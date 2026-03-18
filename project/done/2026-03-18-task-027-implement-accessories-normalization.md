@@ -1,6 +1,6 @@
 ---
 task: TASK-027
-status: "backlog"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Implement accessories normalization
 
 Task: TASK-027
-Status: backlog
+Status: done
 Priority: P1
 Type: feature
 Author:
@@ -25,16 +25,16 @@ simple flags and measured sub-features.
 
 ## Definition of Done
 
-- [ ] Implement tokenization for the `Příslušenství:` source text using the
+- [x] Implement tokenization for the `Příslušenství:` source text using the
       comma-delimited normalized tail instead of the duplicated leading
       concatenated fragment.
-- [ ] Map supported flags, furnishing states, area-bearing features, and
+- [x] Map supported flags, furnishing states, area-bearing features, and
       parking-capacity features into the typed accessories contract.
-- [ ] Preserve unsupported or ambiguous accessory fragments in an explicit
+- [x] Preserve unsupported or ambiguous accessory fragments in an explicit
       overflow or `unparsed_fragments` field for traceability.
-- [ ] Add focused unit tests that cover common combinations and rare edge cases
+- [x] Add focused unit tests that cover common combinations and rare edge cases
       such as `Parkovací stání s 4 místy` and `2 garáže`.
-- [ ] Update normalization documentation, fixtures, and versioning impacted by
+- [x] Update normalization documentation, fixtures, and versioning impacted by
       the contract change.
 
 ## Notes

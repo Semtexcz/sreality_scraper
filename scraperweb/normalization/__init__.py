@@ -5,6 +5,8 @@ maps raw scraper outputs into a stable internal structure.
 """
 
 from scraperweb.normalization.models import (
+    NormalizedAccessories,
+    NormalizedAccessoryAreaFeature,
     NormalizedAreaDetails,
     NormalizedEnergyDetails,
     NormalizationMetadata,
@@ -30,6 +32,8 @@ from scraperweb.normalization.workflow import (
 
 __all__ = [
     "NORMALIZATION_VERSION",
+    "NormalizedAccessories",
+    "NormalizedAccessoryAreaFeature",
     "NormalizedAreaDetails",
     "NormalizedEnergyDetails",
     "NormalizationMetadata",
