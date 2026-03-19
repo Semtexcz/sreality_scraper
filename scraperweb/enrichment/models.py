@@ -128,6 +128,11 @@ class EnrichedLocationFeatures:
     nearest_kindergarten_m: int | None = None
     amenities_within_300m_count: int = 0
     amenities_within_1000m_count: int = 0
+    daily_service_amenities_within_500m_count: int = 0
+    community_amenities_within_1000m_count: int = 0
+    leisure_amenities_within_1000m_count: int = 0
+    nearest_nature_m: int | None = None
+    has_nature_within_1000m: bool | None = None
 
 
 @dataclass(frozen=True)

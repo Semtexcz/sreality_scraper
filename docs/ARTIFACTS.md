@@ -66,6 +66,9 @@ Approved geocoding artifact ownership:
   `urban_center_profile`, distances to supported city anchors, and backbone
   public-transport accessibility thresholds derived from normalized nearby
   places
+- enriched artifacts also own conservative neighborhood-context fields derived
+  from normalized nearby places, including grouped amenity counts for stable
+  daily-service, community, and leisure subsets plus optional nature proximity
 - municipality centroid coordinates must remain distinguishable from
   street-level or address-level coordinates through explicit geocoding fields,
   not through undocumented assumptions about which coordinate columns are

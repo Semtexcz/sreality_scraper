@@ -238,6 +238,11 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.location_features.nearest_kindergarten_m == 290
     assert enriched_record.location_features.amenities_within_300m_count == 5
     assert enriched_record.location_features.amenities_within_1000m_count == 8
+    assert enriched_record.location_features.daily_service_amenities_within_500m_count == 3
+    assert enriched_record.location_features.community_amenities_within_1000m_count == 2
+    assert enriched_record.location_features.leisure_amenities_within_1000m_count == 0
+    assert enriched_record.location_features.nearest_nature_m is None
+    assert enriched_record.location_features.has_nature_within_1000m is None
     assert enriched_record.lifecycle_features.listing_age_days == 6
     assert enriched_record.lifecycle_features.updated_recency_days == 1
     assert enriched_record.lifecycle_features.is_fresh_listing_7d is True
@@ -249,7 +254,7 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.enrichment_metadata.source_normalization_version == (
         normalized_record.normalization_version
     )
-    assert len(enriched_record.enrichment_metadata.derivation_notes) == 25
+    assert len(enriched_record.enrichment_metadata.derivation_notes) == 27
 
 
 def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic() -> None:
@@ -376,6 +381,11 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
     assert first_record.location_features.nearest_kindergarten_m is None
     assert first_record.location_features.amenities_within_300m_count == 0
     assert first_record.location_features.amenities_within_1000m_count == 0
+    assert first_record.location_features.daily_service_amenities_within_500m_count == 0
+    assert first_record.location_features.community_amenities_within_1000m_count == 0
+    assert first_record.location_features.leisure_amenities_within_1000m_count == 0
+    assert first_record.location_features.nearest_nature_m is None
+    assert first_record.location_features.has_nature_within_1000m is None
     assert first_record.lifecycle_features.listing_age_days is None
     assert first_record.lifecycle_features.updated_recency_days is None
     assert first_record.lifecycle_features.is_fresh_listing_7d is None
@@ -736,6 +746,89 @@ def test_enricher_derives_nearby_place_accessibility_for_partial_non_prague_data
     assert enriched_record.location_features.nearest_kindergarten_m == 410
     assert enriched_record.location_features.amenities_within_300m_count == 1
     assert enriched_record.location_features.amenities_within_1000m_count == 3
+    assert enriched_record.location_features.daily_service_amenities_within_500m_count == 1
+    assert enriched_record.location_features.community_amenities_within_1000m_count == 1
+    assert enriched_record.location_features.leisure_amenities_within_1000m_count == 0
+    assert enriched_record.location_features.nearest_nature_m is None
+    assert enriched_record.location_features.has_nature_within_1000m is None
+
+
+def test_enricher_derives_grouped_neighborhood_and_nature_features() -> None:
+    """Keep grouped local-intensity and nature features explicit and deterministic."""
+
+    normalized_record = _build_normalized_record(
+        title="Byt 4+kk, Praha - Smíchov",
+        amount_text="18 700 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Praha",
+        city_district="Smíchov",
+        usable_area_sqm=101.0,
+        total_area_sqm=108.0,
+        building_material="Cihla",
+        physical_condition="Ve velmi dobrém stavu",
+        floor_position=4,
+        total_floor_count=6,
+        nearby_places=(
+            NormalizedNearbyPlace(
+                category="bankomat",
+                source_key="Bankomat:",
+                source_text="Bankomat (190 m)",
+                name="Bankomat",
+                distance_m=190,
+            ),
+            NormalizedNearbyPlace(
+                category="posta",
+                source_key="Pošta:",
+                source_text="Pošta (420 m)",
+                name="Pošta",
+                distance_m=420,
+            ),
+            NormalizedNearbyPlace(
+                category="lekar",
+                source_key="Lékař:",
+                source_text="Lékař (330 m)",
+                name="Lékař",
+                distance_m=330,
+            ),
+            NormalizedNearbyPlace(
+                category="sportoviste",
+                source_key="Sportoviště:",
+                source_text="Sportoviště (880 m)",
+                name="Sportoviště",
+                distance_m=880,
+            ),
+            NormalizedNearbyPlace(
+                category="restaurace",
+                source_key="Restaurace:",
+                source_text="Restaurace (140 m)",
+                name="Restaurace",
+                distance_m=140,
+            ),
+            NormalizedNearbyPlace(
+                category="kino",
+                source_key="Kino:",
+                source_text="Kino (760 m)",
+                name="Kino",
+                distance_m=760,
+            ),
+            NormalizedNearbyPlace(
+                category="prirodni_zajimavost",
+                source_key="Přírodní zajímavost:",
+                source_text="Park (640 m)",
+                name="Park",
+                distance_m=640,
+            ),
+        ),
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.location_features.daily_service_amenities_within_500m_count == 2
+    assert enriched_record.location_features.community_amenities_within_1000m_count == 2
+    assert enriched_record.location_features.leisure_amenities_within_1000m_count == 2
+    assert enriched_record.location_features.nearest_nature_m == 640
+    assert enriched_record.location_features.has_nature_within_1000m is True
 
 
 def test_enricher_derives_building_and_energy_features_from_normalized_fields() -> None:

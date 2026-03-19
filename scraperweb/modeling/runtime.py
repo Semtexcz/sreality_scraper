@@ -14,7 +14,7 @@ from scraperweb.modeling.models import (
 )
 
 
-MODELING_INPUT_VERSION = "modeling-input-v6"
+MODELING_INPUT_VERSION = "modeling-input-v7"
 MODEL_VERSION = "listing-baseline-v2"
 
 
@@ -144,6 +144,19 @@ class EnrichedListingModelingInputBuilder:
                 ),
                 amenities_within_1000m_count=(
                     record.location_features.amenities_within_1000m_count
+                ),
+                daily_service_amenities_within_500m_count=(
+                    record.location_features.daily_service_amenities_within_500m_count
+                ),
+                community_amenities_within_1000m_count=(
+                    record.location_features.community_amenities_within_1000m_count
+                ),
+                leisure_amenities_within_1000m_count=(
+                    record.location_features.leisure_amenities_within_1000m_count
+                ),
+                nearest_nature_m=record.location_features.nearest_nature_m,
+                has_nature_within_1000m=(
+                    record.location_features.has_nature_within_1000m
                 ),
             ),
             targets=ModelingTargetSet(

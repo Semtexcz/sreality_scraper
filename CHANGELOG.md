@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.28.0] - 2026-03-19
+
+### Added
+
+- added conservative neighborhood-intensity features under enrichment and
+  modeling outputs, including grouped daily-service, community, and leisure
+  amenity counts derived from replayable nearby-place categories at fixed radii
+- added deterministic environment context fields for nature proximity via
+  `nearest_nature_m` and `has_nature_within_1000m` when a normalized
+  `prirodni_zajimavost` distance is available
+- added regression coverage for grouped amenity counts, nature proximity, and
+  workflow replay outputs so micro-location context stays deterministic without
+  using price-derived statistics
+
+### Changed
+
+- changed enrichment outputs to version `enriched-listing-v15` and modeling
+  inputs to version `modeling-input-v7` so canonical artifacts now include the
+  approved neighborhood-intensity and environment feature subset
+- updated architecture, module, and artifact documentation so grouped local
+  amenity density and nature-proximity ownership remain explicit at the
+  enrichment boundary
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-045` so the current
+  backlog now starts with `TASK-046`
+- completed `TASK-045` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.27.0] - 2026-03-19
 
 ### Added

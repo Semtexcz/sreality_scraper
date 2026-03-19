@@ -172,6 +172,9 @@ Approved location-intelligence ownership:
   employment, rail-hub, and airport distances
 - nearby-place accessibility thresholds belong here when they are derived from
   normalized replay-safe place distances rather than live routing APIs
+- grouped neighborhood-intensity counts and conservative nature-proximity
+  signals belong here when they are built from documented nearby-place category
+  subsets rather than target-derived market statistics
 - ambiguity must stay explicit through match-status and provenance metadata
 - enrichment must preserve the distinction between exact-address, street,
   district, municipality, and unresolved coordinate outcomes without requiring

@@ -116,6 +116,11 @@ def test_modeling_builder_maps_enriched_record_into_model_ready_contract() -> No
     assert modeling_record.features.nearest_kindergarten_m == 290
     assert modeling_record.features.amenities_within_300m_count == 6
     assert modeling_record.features.amenities_within_1000m_count == 9
+    assert modeling_record.features.daily_service_amenities_within_500m_count == 3
+    assert modeling_record.features.community_amenities_within_1000m_count == 2
+    assert modeling_record.features.leisure_amenities_within_1000m_count == 0
+    assert modeling_record.features.nearest_nature_m is None
+    assert modeling_record.features.has_nature_within_1000m is None
     assert modeling_record.targets.asking_price_czk == 8_490_000
     assert modeling_record.modeling_metadata is not None
     assert modeling_record.modeling_metadata.modeled_at_utc == (
@@ -175,7 +180,7 @@ def test_linear_pipeline_service_composes_full_stage_handoffs() -> None:
         "raw-listing-record-v1",
         NORMALIZATION_VERSION,
         ENRICHMENT_VERSION,
-        "modeling-input-v6",
+        "modeling-input-v7",
     )
     assert modeling_record.enriched_record is not None
     assert modeling_record.enriched_record.normalized_record.listing_id == raw_record.listing_id

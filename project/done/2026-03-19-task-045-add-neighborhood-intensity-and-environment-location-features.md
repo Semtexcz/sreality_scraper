@@ -1,6 +1,6 @@
 ---
 task: TASK-045
-status: "todo"
+status: "done"
 priority: P2
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add neighborhood intensity and environment location features
 
 Task: TASK-045
-Status: todo
+Status: done
 Priority: P2
 Type: feature
 Author:
@@ -25,17 +25,17 @@ micro-location component of a price surface.
 
 ## Definition of Done
 
-- [ ] Define the approved neighborhood and environmental feature subset that is
+- [x] Define the approved neighborhood and environmental feature subset that is
       stable enough for canonical enrichment or modeling inputs.
-- [ ] Add deterministic local-intensity features such as amenity density or
+- [x] Add deterministic local-intensity features such as amenity density or
       service counts across documented radii where the underlying reference data
       supports reliable replay.
-- [ ] Evaluate additional environment signals such as proximity to parks, water,
+- [x] Evaluate additional environment signals such as proximity to parks, water,
       major roads, or other locally important urban context if those inputs can be
       sourced deterministically.
-- [ ] Add regression coverage that demonstrates the features distinguish nearby
+- [x] Add regression coverage that demonstrates the features distinguish nearby
       micro-locations without leaking target information.
-- [ ] Update version metadata and documentation for the expanded local context
+- [x] Update version metadata and documentation for the expanded local context
       feature set.
 
 ## Notes

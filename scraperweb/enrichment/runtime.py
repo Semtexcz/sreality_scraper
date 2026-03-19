@@ -22,7 +22,7 @@ from scraperweb.normalization.models import NormalizedNearbyPlace
 from scraperweb.normalization.models import NormalizedListingRecord
 
 
-ENRICHMENT_VERSION = "enriched-listing-v14"
+ENRICHMENT_VERSION = "enriched-listing-v15"
 _DERIVATION_NOTES = (
     "asking_price_czk is derived from normalized typed price amounts only",
     "disposition is parsed from normalized title text only",
@@ -106,6 +106,17 @@ _DERIVATION_NOTES = (
         "normalized nearby-place record once against fixed thresholds"
     ),
     (
+        "daily_service_amenities_within_500m_count, "
+        "community_amenities_within_1000m_count, and "
+        "leisure_amenities_within_1000m_count use conservative nearby-place "
+        "category groups with fixed replay-safe radii"
+    ),
+    (
+        "nearest_nature_m and has_nature_within_1000m use normalized "
+        "prirodni_zajimavost distances only and stay empty when no supported "
+        "nature proxy is present in the source payload"
+    ),
+    (
         "lifecycle features use the deterministic enriched_at_utc date as their "
         "reference point instead of the system clock"
     ),
@@ -153,6 +164,16 @@ _BUILDING_CONDITION_BUCKETS = {
 _PUBLIC_TRANSPORT_CATEGORIES = frozenset({"metro", "tram", "bus_mhd", "vlak"})
 _BACKBONE_PUBLIC_TRANSPORT_CATEGORIES = frozenset({"metro", "tram", "vlak"})
 _SHOP_CATEGORIES = frozenset({"obchod", "vecerka"})
+_DAILY_SERVICE_CATEGORIES = frozenset(
+    {"bankomat", "lekarna", "obchod", "posta", "vecerka"},
+)
+_COMMUNITY_AMENITY_CATEGORIES = frozenset(
+    {"hriste", "lekar", "skola", "skolka", "sportoviste"},
+)
+_LEISURE_AMENITY_CATEGORIES = frozenset(
+    {"cukrarna", "divadlo", "hospoda", "kino", "kulturni_pamatka", "restaurace"},
+)
+_NATURE_CATEGORIES = frozenset({"prirodni_zajimavost"})
 
 
 class NormalizedListingEnricher:
@@ -217,6 +238,10 @@ class NormalizedListingEnricher:
         nearest_metro_m = self._derive_nearest_distance(nearby_places, {"metro"})
         nearest_tram_m = self._derive_nearest_distance(nearby_places, {"tram"})
         nearest_train_m = self._derive_nearest_distance(nearby_places, {"vlak"})
+        nearest_nature_m = self._derive_nearest_distance(
+            nearby_places,
+            _NATURE_CATEGORIES,
+        )
 
         return EnrichedListingRecord(
             listing_id=record.listing_id,
@@ -401,6 +426,32 @@ class NormalizedListingEnricher:
                 ),
                 amenities_within_1000m_count=self._count_amenities_within_distance(
                     nearby_places,
+                    threshold_m=1000,
+                ),
+                daily_service_amenities_within_500m_count=(
+                    self._count_category_group_within_distance(
+                        nearby_places,
+                        categories=_DAILY_SERVICE_CATEGORIES,
+                        threshold_m=500,
+                    )
+                ),
+                community_amenities_within_1000m_count=(
+                    self._count_category_group_within_distance(
+                        nearby_places,
+                        categories=_COMMUNITY_AMENITY_CATEGORIES,
+                        threshold_m=1000,
+                    )
+                ),
+                leisure_amenities_within_1000m_count=(
+                    self._count_category_group_within_distance(
+                        nearby_places,
+                        categories=_LEISURE_AMENITY_CATEGORIES,
+                        threshold_m=1000,
+                    )
+                ),
+                nearest_nature_m=nearest_nature_m,
+                has_nature_within_1000m=self._bucket_max_distance(
+                    distance_m=nearest_nature_m,
                     threshold_m=1000,
                 ),
             ),
@@ -723,5 +774,22 @@ class NormalizedListingEnricher:
             1
             for nearby_place in nearby_places
             if nearby_place.distance_m is not None
+            and nearby_place.distance_m <= threshold_m
+        )
+
+    @staticmethod
+    def _count_category_group_within_distance(
+        nearby_places: tuple[NormalizedNearbyPlace, ...],
+        *,
+        categories: frozenset[str],
+        threshold_m: int,
+    ) -> int:
+        """Count grouped nearby-place categories within one fixed distance band."""
+
+        return sum(
+            1
+            for nearby_place in nearby_places
+            if nearby_place.category in categories
+            and nearby_place.distance_m is not None
             and nearby_place.distance_m <= threshold_m
         )
