@@ -97,7 +97,7 @@ repository. Unchecked items represent the next supported milestones.
   representative real-world payloads, not only fixture-driven unit tests.
 - [x] Refresh developer-facing documentation once the supported runtime surface for
   later stages is finalized.
-- [ ] Convert the approved analysis-notebook plan into implementation batches so
+- [x] Convert the approved analysis-notebook plan into implementation batches so
   exploratory analysis and the later production training stage can evolve under
   explicit backlog ownership.
 - [ ] Reassess whether the bundled CSV reference datasets in `data/` still belong

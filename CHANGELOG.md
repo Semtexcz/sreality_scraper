@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.30.4] - 2026-03-19
+
+### Added
+
+- added backlog tasks `TASK-053` through `TASK-060` to break the approved
+  notebook-analysis plan into explicit design and implementation batches for
+  the analysis dataset, notebook workflow, spatial outputs, explanatory
+  modeling, predictive intervals, and later production training design
+
+### Changed
+
+- updated `docs/TASK_SEQUENCE.md` so the active backlog now sequences the new
+  notebook-analysis batch after the existing `TASK-046` spatial-design task
+- updated `docs/ROADMAP.md` to mark conversion of the approved analysis plan
+  into backlog batches as completed
+
 ## [1.30.3] - 2026-03-19
 
 ### Added
