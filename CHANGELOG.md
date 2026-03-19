@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.30.3] - 2026-03-19
+
+### Added
+
+- added `docs/ANALYSIS_NOTEBOOK_PLAN.md` to capture the staged plan for the
+  exploratory pricing notebook, scalar price-surface workflow, uncertainty
+  reporting, multicollinearity analysis, and the later production training
+  stage
+
+### Changed
+
+- updated `docs/ROADMAP.md` so the modeling and operations roadmap now includes
+  explicit milestones for the notebook-ready dataset, exploratory Jupyter
+  analysis, interval prediction, price-surface design, and conversion of the
+  plan into backlog batches
+- updated `docs/README.md` so the new analysis-planning document is discoverable
+  from the documentation index
+
 ## [1.30.2] - 2026-03-19
 
 ### Added

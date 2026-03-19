@@ -53,6 +53,19 @@ repository. Unchecked items represent the next supported milestones.
 - [x] Build model-ready feature and target sets from enriched records only.
 - [x] Attach explicit lineage and version metadata to modeling inputs.
 - [x] Keep modeling isolated from direct raw and normalized record access.
+- [ ] Define a canonical notebook-ready analysis dataset projection from
+  enriched or modeling artifacts so exploratory work does not depend on
+  source-shaped raw payloads.
+- [ ] Deliver an exploratory Jupyter notebook that documents price
+  distributions, spatial price behavior, feature influence, correlation
+  structure, multicollinearity risk, and predictive interval outputs for blog
+  publication.
+- [ ] Finalize the first supported scalar price-surface workflow, including
+  grid-based aggregation, minimum local support thresholds, and uncertainty
+  reporting for coarse or sparse locations.
+- [ ] Decide and document the first supported interval-prediction approach for
+  apartment pricing so later scoring outputs return a usable range rather than
+  only a point estimate.
 - [ ] Introduce supported workflows that consume modeling inputs directly, such as
   dataset export, training preparation, or scoring-oriented orchestration.
 - [ ] Decide whether modeling outputs should remain transient or gain persistence
@@ -84,5 +97,8 @@ repository. Unchecked items represent the next supported milestones.
   representative real-world payloads, not only fixture-driven unit tests.
 - [x] Refresh developer-facing documentation once the supported runtime surface for
   later stages is finalized.
+- [ ] Convert the approved analysis-notebook plan into implementation batches so
+  exploratory analysis and the later production training stage can evolve under
+  explicit backlog ownership.
 - [ ] Reassess whether the bundled CSV reference datasets in `data/` still belong
   in the active codebase or should be archived as historical artifacts.
