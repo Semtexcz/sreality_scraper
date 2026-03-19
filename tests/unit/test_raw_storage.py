@@ -13,6 +13,7 @@ from scraperweb.application.acquisition_service import RawAcquisitionService
 from scraperweb.cli_runtime_options import RuntimeCliOptions, StorageBackend
 from scraperweb.estate_scraper import build_raw_record_repository
 from scraperweb.persistence.repositories import FilesystemRawRecordRepository, MongoRawRecordRepository
+from scraperweb.progress import ScrapeProgressReporter
 from scraperweb.scraper.exceptions import ScraperResponseError, ScraperTransportError
 from scraperweb.scraper.models import (
     DetailMarkupFailureArtifact,
@@ -20,7 +21,7 @@ from scraperweb.scraper.models import (
     RawSourceMetadata,
 )
 from scraperweb.scraper.parsers import SrealityDetailPageParser, SrealityListingPageParser
-from scraperweb.scraper.runtime import RawListingCollector
+from scraperweb.scraper.runtime import ListingPageStopDiagnostics, RawListingCollector
 
 
 class FakeListingPageClient:
@@ -122,6 +123,25 @@ class RecordingLogger:
         """Ignore info logs emitted by the production logger surface."""
 
         del message, args
+
+
+class RecordingProgressReporter(ScrapeProgressReporter):
+    """Capture listing traversal stop diagnostics for assertions."""
+
+    def __init__(self) -> None:
+        """Initialize empty captured stop events."""
+
+        self.stop_events: list[tuple[str, ListingPageStopDiagnostics]] = []
+
+    def listing_traversal_stopped(
+        self,
+        *,
+        region_slug: str,
+        diagnostics: ListingPageStopDiagnostics,
+    ) -> None:
+        """Record each traversal stop event."""
+
+        self.stop_events.append((region_slug, diagnostics))
 
 
 class FailingListingPageClient:
@@ -613,6 +633,184 @@ def test_raw_listing_collector_stops_when_listing_page_has_no_new_estates() -> N
     assert listing_page_client.calls == [
         "https://example.test/praha?strana=1",
         "https://example.test/praha?strana=2",
+    ]
+
+
+def test_raw_listing_collector_all_czechia_tolerates_temporary_duplicate_window() -> None:
+    """Keep unbounded nationwide traversal alive across one stale duplicate window."""
+
+    listing_page_client = FakeListingPageClient(
+        {
+            "https://example.test/all-czechia?strana=1": (
+                "pages:999\nhttps://detail/1\nhttps://detail/2"
+            ),
+            "https://example.test/all-czechia?strana=2": (
+                "pages:999\nhttps://detail/3\nhttps://detail/4"
+            ),
+            "https://example.test/all-czechia?strana=3": (
+                "pages:999\nhttps://detail/2\nhttps://detail/1"
+            ),
+            "https://example.test/all-czechia?strana=4": (
+                "pages:999\nhttps://detail/5\nhttps://detail/6"
+            ),
+            "https://example.test/all-czechia?strana=5": "pages:999",
+        },
+    )
+    collector = RawListingCollector(
+        listing_page_client=listing_page_client,
+        detail_page_client=FakeDetailPageClient(
+            {
+                "https://detail/1": "<html>detail 1</html>",
+                "https://detail/2": "<html>detail 2</html>",
+                "https://detail/3": "<html>detail 3</html>",
+                "https://detail/4": "<html>detail 4</html>",
+                "https://detail/5": "<html>detail 5</html>",
+                "https://detail/6": "<html>detail 6</html>",
+            },
+        ),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=FakeDetailPageParser(),
+        region_slug="all-czechia",
+        scrape_run_id="run-all-czechia-transient-duplicate",
+    )
+
+    collected_records = list(
+        collector.collect_region_records(
+            district_link="https://example.test/all-czechia?strana=",
+            max_pages=None,
+        ),
+    )
+
+    assert [record.listing_id for record in collected_records] == ["1", "2", "3", "4", "5", "6"]
+    assert listing_page_client.calls == [
+        "https://example.test/all-czechia?strana=1",
+        "https://example.test/all-czechia?strana=2",
+        "https://example.test/all-czechia?strana=3",
+        "https://example.test/all-czechia?strana=4",
+        "https://example.test/all-czechia?strana=5",
+    ]
+
+
+def test_raw_listing_collector_all_czechia_stops_after_repeated_tail_page() -> None:
+    """Stop unbounded nationwide traversal on a repeated duplicate-tail signature."""
+
+    progress_reporter = RecordingProgressReporter()
+    listing_page_client = FakeListingPageClient(
+        {
+            "https://example.test/all-czechia?strana=1": (
+                "pages:999\nhttps://detail/1\nhttps://detail/2"
+            ),
+            "https://example.test/all-czechia?strana=2": (
+                "pages:999\nhttps://detail/3\nhttps://detail/4"
+            ),
+            "https://example.test/all-czechia?strana=3": (
+                "pages:999\nhttps://detail/2\nhttps://detail/1"
+            ),
+            "https://example.test/all-czechia?strana=4": (
+                "pages:999\nhttps://detail/2\nhttps://detail/1"
+            ),
+        },
+    )
+    collector = RawListingCollector(
+        listing_page_client=listing_page_client,
+        detail_page_client=FakeDetailPageClient(
+            {
+                "https://detail/1": "<html>detail 1</html>",
+                "https://detail/2": "<html>detail 2</html>",
+                "https://detail/3": "<html>detail 3</html>",
+                "https://detail/4": "<html>detail 4</html>",
+            },
+        ),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=FakeDetailPageParser(),
+        region_slug="all-czechia",
+        scrape_run_id="run-all-czechia-repeated-tail",
+        progress_reporter=progress_reporter,
+    )
+
+    collected_records = list(
+        collector.collect_region_records(
+            district_link="https://example.test/all-czechia?strana=",
+            max_pages=None,
+        ),
+    )
+
+    assert [record.listing_id for record in collected_records] == ["1", "2", "3", "4"]
+    assert progress_reporter.stop_events == [
+        (
+            "all-czechia",
+            ListingPageStopDiagnostics(
+                reason="repeated_listing_page_signature",
+                page_number=4,
+                observed_estates=2,
+                new_estates=0,
+                consecutive_stale_pages=2,
+                repeated_page_first_seen_at=3,
+            ),
+        ),
+    ]
+
+
+def test_raw_listing_collector_all_czechia_stops_after_stale_window_limit() -> None:
+    """Stop unbounded nationwide traversal after several stale pages with no recovery."""
+
+    progress_reporter = RecordingProgressReporter()
+    listing_page_client = FakeListingPageClient(
+        {
+            "https://example.test/all-czechia?strana=1": (
+                "pages:999\nhttps://detail/1\nhttps://detail/2"
+            ),
+            "https://example.test/all-czechia?strana=2": (
+                "pages:999\nhttps://detail/3\nhttps://detail/4"
+            ),
+            "https://example.test/all-czechia?strana=3": (
+                "pages:999\nhttps://detail/2\nhttps://detail/1"
+            ),
+            "https://example.test/all-czechia?strana=4": (
+                "pages:999\nhttps://detail/4\nhttps://detail/3"
+            ),
+            "https://example.test/all-czechia?strana=5": (
+                "pages:999\nhttps://detail/1\nhttps://detail/4"
+            ),
+        },
+    )
+    collector = RawListingCollector(
+        listing_page_client=listing_page_client,
+        detail_page_client=FakeDetailPageClient(
+            {
+                "https://detail/1": "<html>detail 1</html>",
+                "https://detail/2": "<html>detail 2</html>",
+                "https://detail/3": "<html>detail 3</html>",
+                "https://detail/4": "<html>detail 4</html>",
+            },
+        ),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=FakeDetailPageParser(),
+        region_slug="all-czechia",
+        scrape_run_id="run-all-czechia-stale-limit",
+        progress_reporter=progress_reporter,
+    )
+
+    collected_records = list(
+        collector.collect_region_records(
+            district_link="https://example.test/all-czechia?strana=",
+            max_pages=None,
+        ),
+    )
+
+    assert [record.listing_id for record in collected_records] == ["1", "2", "3", "4"]
+    assert progress_reporter.stop_events == [
+        (
+            "all-czechia",
+            ListingPageStopDiagnostics(
+                reason="stale_listing_window_limit",
+                page_number=5,
+                observed_estates=2,
+                new_estates=0,
+                consecutive_stale_pages=3,
+                repeated_page_first_seen_at=None,
+            ),
+        ),
     ]
 
 

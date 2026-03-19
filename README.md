@@ -115,6 +115,15 @@ Region traversal semantics:
 - traversal stops early when a listing page is empty
 - traversal stops early when a listing page repeats an already observed estate URL set
 - traversal stops early when a listing page contains only already-seen estate URLs, which protects runs from duplicate tail pages and pagination drift
+- unbounded `all-czechia` traversal now tolerates short duplicate windows with
+  no new estate URLs so temporary pagination drift does not stop the run after
+  a single stale page
+- unbounded `all-czechia` traversal still stops deterministically on a repeated
+  duplicate-tail page or after three consecutive stale pages without any newly
+  discovered estate URLs
+- every traversal stop now emits a page-level diagnostic with the stop reason,
+  observed estate count, new estate count, stale-page streak, and repeated-page
+  origin when applicable
 
 Validation rules:
 

@@ -10,6 +10,7 @@ from typing import Callable
 
 from loguru import logger
 
+from scraperweb.cli_runtime_options import ALL_CZECHIA_REGION
 from scraperweb.progress import ScrapeProgressReporter
 from scraperweb.scraper.clients import DetailPageClient, ListingPageClient
 from scraperweb.scraper.exceptions import (
@@ -29,14 +30,37 @@ from scraperweb.scraper.parsers import SrealityDetailPageParser, SrealityListing
 DETAIL_PAGE_PARSER_VERSION = "sreality-detail-v1"
 DETAIL_PAGE_HTTP_STATUS = 200
 DETAIL_PAGE_CAPTURED_FROM = "detail_page"
+ALL_CZECHIA_STALE_PAGE_LIMIT = 3
+
+
+@dataclass(frozen=True)
+class ListingPageStopDiagnostics:
+    """Describe why one listing traversal stopped on a specific page."""
+
+    reason: str
+    page_number: int
+    observed_estates: int
+    new_estates: int
+    consecutive_stale_pages: int
+    repeated_page_first_seen_at: int | None = None
+
+
+@dataclass(frozen=True)
+class ListingPageEvaluationResult:
+    """Capture the outcome of evaluating one listing page."""
+
+    should_continue: bool
+    new_estate_urls: list[str]
+    stop_diagnostics: ListingPageStopDiagnostics | None = None
 
 
 @dataclass
 class ListingTraversalState:
     """Track observed listing-page outcomes during one region traversal."""
 
-    seen_page_signatures: set[tuple[str, ...]] = field(default_factory=set)
+    seen_page_signatures: dict[tuple[str, ...], int] = field(default_factory=dict)
     seen_estate_urls: set[str] = field(default_factory=set)
+    consecutive_stale_pages: int = 0
 
 
 class RawListingCollector:
@@ -85,6 +109,9 @@ class RawListingCollector:
 
         traversal_state = ListingTraversalState()
         page_numbers = range(1, max_pages + 1) if max_pages is not None else count(1)
+        use_hardened_all_czechia_traversal = self._should_harden_all_czechia_traversal(
+            max_pages=max_pages,
+        )
 
         for page_number in page_numbers:
             listing_url = f"{district_link}{page_number}"
@@ -106,19 +133,25 @@ class RawListingCollector:
                     listing_url=None,
                 ) from error
 
-            should_continue, new_estate_urls = self._evaluate_listing_page(
+            evaluation_result = self._evaluate_listing_page(
                 estate_urls=estate_urls,
+                page_number=page_number,
                 traversal_state=traversal_state,
+                use_hardened_all_czechia_traversal=use_hardened_all_czechia_traversal,
             )
-            if not should_continue:
+            if not evaluation_result.should_continue:
+                assert evaluation_result.stop_diagnostics is not None
+                self._report_listing_traversal_stop(
+                    diagnostics=evaluation_result.stop_diagnostics,
+                )
                 return
             self._progress_reporter.listing_page_completed(
                 region_slug=self._region_slug,
                 page_number=page_number,
-                discovered_estates=len(new_estate_urls),
+                discovered_estates=len(evaluation_result.new_estate_urls),
             )
 
-            for estate_url in new_estate_urls:
+            for estate_url in evaluation_result.new_estate_urls:
                 try:
                     detail_html = self._fetch_detail_page(
                         detail_url=estate_url,
@@ -184,28 +217,98 @@ class RawListingCollector:
     def _evaluate_listing_page(
         self,
         estate_urls: list[str],
+        page_number: int,
         traversal_state: ListingTraversalState,
-    ) -> tuple[bool, list[str]]:
+        use_hardened_all_czechia_traversal: bool,
+    ) -> ListingPageEvaluationResult:
         """Return whether traversal should continue and which estate URLs are new."""
 
         if not estate_urls:
-            return False, []
+            return ListingPageEvaluationResult(
+                should_continue=False,
+                new_estate_urls=[],
+                stop_diagnostics=ListingPageStopDiagnostics(
+                    reason="empty_listing_page",
+                    page_number=page_number,
+                    observed_estates=0,
+                    new_estates=0,
+                    consecutive_stale_pages=traversal_state.consecutive_stale_pages,
+                ),
+            )
 
         page_signature = tuple(estate_urls)
-        if page_signature in traversal_state.seen_page_signatures:
-            return False, []
-
-        traversal_state.seen_page_signatures.add(page_signature)
         new_estate_urls = [
             estate_url
             for estate_url in estate_urls
             if estate_url not in traversal_state.seen_estate_urls
         ]
         if not new_estate_urls:
-            return False, []
+            traversal_state.consecutive_stale_pages += 1
+            repeated_page_first_seen_at = traversal_state.seen_page_signatures.get(
+                page_signature,
+            )
+            should_stop_for_stale_window = (
+                not use_hardened_all_czechia_traversal
+                or repeated_page_first_seen_at is not None
+                or traversal_state.consecutive_stale_pages >= ALL_CZECHIA_STALE_PAGE_LIMIT
+            )
+            traversal_state.seen_page_signatures.setdefault(page_signature, page_number)
+            if should_stop_for_stale_window:
+                return ListingPageEvaluationResult(
+                    should_continue=False,
+                    new_estate_urls=[],
+                    stop_diagnostics=ListingPageStopDiagnostics(
+                        reason=(
+                            "repeated_listing_page_signature"
+                            if repeated_page_first_seen_at is not None
+                            else "stale_listing_window_limit"
+                        ),
+                        page_number=page_number,
+                        observed_estates=len(estate_urls),
+                        new_estates=0,
+                        consecutive_stale_pages=traversal_state.consecutive_stale_pages,
+                        repeated_page_first_seen_at=repeated_page_first_seen_at,
+                    ),
+                )
+            return ListingPageEvaluationResult(
+                should_continue=True,
+                new_estate_urls=[],
+            )
 
+        traversal_state.consecutive_stale_pages = 0
+        traversal_state.seen_page_signatures.setdefault(page_signature, page_number)
         traversal_state.seen_estate_urls.update(new_estate_urls)
-        return True, new_estate_urls
+        return ListingPageEvaluationResult(
+            should_continue=True,
+            new_estate_urls=new_estate_urls,
+        )
+
+    def _should_harden_all_czechia_traversal(self, max_pages: int | None) -> bool:
+        """Return whether duplicate-window tolerance should be enabled."""
+
+        return self._region_slug == ALL_CZECHIA_REGION and max_pages is None
+
+    def _report_listing_traversal_stop(
+        self,
+        diagnostics: ListingPageStopDiagnostics,
+    ) -> None:
+        """Emit operator-visible diagnostics for one listing traversal stop."""
+
+        logger.info(
+            "Stopping listing traversal for region={} on page={} reason={} observed_estates={} "
+            "new_estates={} consecutive_stale_pages={} repeated_page_first_seen_at={}",
+            self._region_slug,
+            diagnostics.page_number,
+            diagnostics.reason,
+            diagnostics.observed_estates,
+            diagnostics.new_estates,
+            diagnostics.consecutive_stale_pages,
+            diagnostics.repeated_page_first_seen_at,
+        )
+        self._progress_reporter.listing_traversal_stopped(
+            region_slug=self._region_slug,
+            diagnostics=diagnostics,
+        )
 
     def _fetch_listing_page(self, listing_url: str, page_number: int) -> str:
         """Fetch one listing page and attach region and page context to failures."""

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from scraperweb.progress import TerminalScrapeProgressReporter
+from scraperweb.scraper.runtime import ListingPageStopDiagnostics
 
 
 def test_terminal_progress_reporter_emits_default_progress_messages() -> None:
@@ -64,10 +65,22 @@ def test_terminal_progress_reporter_emits_verbose_messages() -> None:
         max_estates=100,
         listing_url="https://detail/11",
     )
+    reporter.listing_traversal_stopped(
+        region_slug="all-czechia",
+        diagnostics=ListingPageStopDiagnostics(
+            reason="stale_listing_window_limit",
+            page_number=307,
+            observed_estates=24,
+            new_estates=0,
+            consecutive_stale_pages=3,
+            repeated_page_first_seen_at=None,
+        ),
+    )
 
     assert messages == [
         "Region all-czechia: page 4 yielded 24 new listings",
         "Processed 11/100 estates: https://detail/11",
+        "Region all-czechia: stopping on page 307 (reason=stale_listing_window_limit, observed=24, new=0, stale_streak=3, repeated_from_page=none)",
     ]
 
 
@@ -105,6 +118,17 @@ def test_terminal_progress_reporter_suppresses_output_in_quiet_mode() -> None:
         page_number=1,
         listing_url="https://detail/3",
         message="missing title",
+    )
+    reporter.listing_traversal_stopped(
+        region_slug="all-czechia",
+        diagnostics=ListingPageStopDiagnostics(
+            reason="empty_listing_page",
+            page_number=2,
+            observed_estates=0,
+            new_estates=0,
+            consecutive_stale_pages=0,
+            repeated_page_first_seen_at=None,
+        ),
     )
     reporter.region_completed(region_slug="all-czechia", processed_estates=1)
 

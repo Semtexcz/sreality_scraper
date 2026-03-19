@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.30.7] - 2026-03-19
+
+### Changed
+
+- hardened unbounded `all-czechia` listing traversal so a single stale page
+  without newly discovered listings no longer terminates a nationwide crawl
+- added explicit traversal-stop diagnostics for empty pages, repeated duplicate
+  tails, and stale-page exhaustion, including page-level counts and repeated
+  page provenance when available
+- updated scraper regression coverage and operator documentation to reflect the
+  new duplicate-window tolerance and stop-reporting semantics
+- completed `TASK-061` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.30.6] - 2026-03-19
 
 ### Added

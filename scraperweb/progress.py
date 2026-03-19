@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 
 DEFAULT_PROGRESS_REPORT_INTERVAL = 10
+
+if TYPE_CHECKING:
+    from scraperweb.scraper.runtime import ListingPageStopDiagnostics
 
 
 class ScrapeProgressReporter:
@@ -34,6 +38,14 @@ class ScrapeProgressReporter:
         discovered_estates: int,
     ) -> None:
         """Report the number of new estate URLs observed on one page."""
+
+    def listing_traversal_stopped(
+        self,
+        *,
+        region_slug: str,
+        diagnostics: ListingPageStopDiagnostics,
+    ) -> None:
+        """Report why region traversal stopped on a specific listing page."""
 
     def estate_processed(
         self,
@@ -133,6 +145,28 @@ class TerminalScrapeProgressReporter(ScrapeProgressReporter):
         self._output(
             f"Region {region_slug}: page {page_number} yielded "
             f"{discovered_estates} new listings",
+        )
+
+    def listing_traversal_stopped(
+        self,
+        *,
+        region_slug: str,
+        diagnostics: ListingPageStopDiagnostics,
+    ) -> None:
+        """Show stop diagnostics so operators can explain traversal termination."""
+
+        if self._quiet:
+            return
+        repeated_from_label = (
+            str(diagnostics.repeated_page_first_seen_at)
+            if diagnostics.repeated_page_first_seen_at is not None
+            else "none"
+        )
+        self._output(
+            f"Region {region_slug}: stopping on page {diagnostics.page_number} "
+            f"(reason={diagnostics.reason}, observed={diagnostics.observed_estates}, "
+            f"new={diagnostics.new_estates}, stale_streak={diagnostics.consecutive_stale_pages}, "
+            f"repeated_from_page={repeated_from_label})",
         )
 
     def estate_processed(
