@@ -54,6 +54,10 @@ Approved geocoding artifact ownership:
   `source_coordinates` object that stores replay-safe source-backed latitude,
   longitude, explicit source provenance, and an optional raw precision hint
   recovered from the approved embedded locality payload
+- newly scraped raw artifacts that emit `source_payload.source_coordinates`
+  now imply the active raw contract version `raw-listing-record-v2`, while
+  legacy persisted artifacts that omit the object still replay as
+  `raw-listing-record-v1`
 - raw artifacts must not store map-link query parameters, inferred address
   coordinates, or enrichment-owned fallback-quality metadata inside that raw
   coordinate object

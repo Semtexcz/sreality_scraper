@@ -24,6 +24,16 @@ class RawSourceMetadata:
 
 
 @dataclass(frozen=True)
+class RawSourceCoordinates:
+    """Replay-safe source-backed coordinates captured from the detail locality payload."""
+
+    latitude: float
+    longitude: float
+    source: str
+    precision: str | None = None
+
+
+@dataclass(frozen=True)
 class RawListingRecord:
     """Canonical raw listing record produced by the scraper stage."""
 

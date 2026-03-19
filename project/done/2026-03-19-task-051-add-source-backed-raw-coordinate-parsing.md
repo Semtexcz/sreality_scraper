@@ -1,6 +1,6 @@
 ---
 task: TASK-051
-status: "todo"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add source-backed raw-coordinate parsing
 
 Task: TASK-051
-Status: todo
+Status: done
 Priority: P1
 Type: feature
 Author:

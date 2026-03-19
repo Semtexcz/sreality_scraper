@@ -237,7 +237,7 @@ def test_normalization_workflow_replays_nearby_places_and_accessories_into_artif
 def test_normalization_workflow_persists_source_backed_detail_coordinates(
     tmp_path: Path,
 ) -> None:
-    """Persist normalized source-backed coordinates when the raw snapshot embeds locality JSON."""
+    """Persist normalized source-backed coordinates from structured raw payloads."""
 
     input_dir = tmp_path / "raw"
     raw_record = RawListingRecord(
@@ -248,6 +248,68 @@ def test_normalization_workflow_persists_source_backed_detail_coordinates(
             "Název": "Prodej bytu 2+kk 58 m², Praha 6 - Břevnov",
             "Celková cena:": "8 490 000 Kč",
             "Lokalita:": "Klidná část obce",
+            "source_coordinates": {
+                "latitude": 50.0577347,
+                "longitude": 14.3723456,
+                "source": "detail_locality_payload",
+                "precision": "listing",
+            },
+        },
+        source_metadata=RawSourceMetadata(
+            region="all-czechia",
+            listing_page_number=1,
+            scrape_run_id="run-049",
+            http_status=200,
+            parser_version="sreality-detail-v1",
+            captured_from="detail_page",
+        ),
+        raw_page_snapshot=None,
+    )
+    _write_raw_record_fixture(
+        input_dir=input_dir,
+        region="all-czechia",
+        listing_id=raw_record.listing_id,
+        snapshot_name="2026-03-19T11-27-24.855716+00-00.json",
+        raw_record=raw_record,
+    )
+    output_dir = tmp_path / "normalized"
+    service = FilesystemNormalizationWorkflowService(
+        raw_snapshot_source=FilesystemRawSnapshotSource(input_dir=input_dir),
+        normalized_record_repository=FilesystemNormalizedRecordRepository(output_dir=output_dir),
+    )
+
+    normalized_count = service.normalize(
+        NormalizationWorkflowSelection(listing_id=raw_record.listing_id),
+    )
+
+    assert normalized_count == 1
+    latest_record = json.loads(
+        (
+            output_dir
+            / "all-czechia/78467916/2026-03-19T11-27-24.855716+00-00.json"
+        ).read_text(encoding="utf-8"),
+    )
+    assert latest_record["normalization_version"] == "normalized-listing-v9"
+    assert latest_record["location"]["source_coordinate_latitude"] == 50.0577347
+    assert latest_record["location"]["source_coordinate_longitude"] == 14.3723456
+    assert latest_record["location"]["source_coordinate_source"] == (
+        "detail_locality_payload"
+    )
+    assert latest_record["location"]["source_coordinate_precision"] == "listing"
+
+
+def test_normalization_workflow_keeps_legacy_snapshot_coordinate_fallback(
+    tmp_path: Path,
+) -> None:
+    """Normalize older raw artifacts that still rely on persisted detail HTML replay."""
+
+    input_dir = tmp_path / "raw"
+    raw_record = RawListingRecord(
+        listing_id="legacy-coordinates-1",
+        source_url="https://www.sreality.cz/detail/prodej/byt/praha/legacy-coordinates-1",
+        captured_at_utc=datetime(2026, 3, 19, 11, 27, 24, 855716, tzinfo=timezone.utc),
+        source_payload={
+            "Název": "Prodej bytu 2+kk 58 m², Praha 6 - Břevnov",
         },
         source_metadata=RawSourceMetadata(
             region="all-czechia",
@@ -284,16 +346,11 @@ def test_normalization_workflow_persists_source_backed_detail_coordinates(
     latest_record = json.loads(
         (
             output_dir
-            / "all-czechia/78467916/2026-03-19T11-27-24.855716+00-00.json"
+            / "all-czechia/legacy-coordinates-1/2026-03-19T11-27-24.855716+00-00.json"
         ).read_text(encoding="utf-8"),
     )
-    assert latest_record["normalization_version"] == "normalized-listing-v9"
     assert latest_record["location"]["source_coordinate_latitude"] == 50.0577347
     assert latest_record["location"]["source_coordinate_longitude"] == 14.3723456
-    assert latest_record["location"]["source_coordinate_source"] == (
-        "detail_locality_payload"
-    )
-    assert latest_record["location"]["source_coordinate_precision"] == "listing"
 
 
 def _build_fixture_raw_dataset(target_root: Path, fixture_paths: tuple[str, ...]) -> Path:

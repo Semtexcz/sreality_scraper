@@ -80,7 +80,9 @@ Normalization also preserves source-backed detail coordinates when they are
 recovered from the approved raw `source_payload["source_coordinates"]` object,
 or from persisted detail HTML only as a backward-compatible fallback for older
 artifacts, with explicit provenance rather than reference-data or map-link
-heuristics.
+heuristics. Normalization metadata now reports `raw-listing-record-v2` only for
+artifacts that actually carry the structured raw coordinate object, while
+legacy snapshots without that object remain `raw-listing-record-v1`.
 
 ### `scraperweb.enrichment`
 

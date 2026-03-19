@@ -70,6 +70,15 @@ def test_parse_raw_payload_extracts_title_and_pairs() -> None:
     <html>
       <body>
         <h1>Byt\u200b\xa03+kk 75 m², Brno</h1>
+        <script>
+          window.__INITIAL_STATE__ = {
+            "locality": {
+              "latitude": 49.1950602,
+              "longitude": 16.6068371,
+              "inaccuracyType": "gps"
+            }
+          };
+        </script>
         <dl>
           <dt>Celková cena:</dt>
           <dd>7 500 000 Kč</dd>
@@ -85,6 +94,12 @@ def test_parse_raw_payload_extracts_title_and_pairs() -> None:
         "Název": "Byt3+kk 75 m², Brno",
         "Celková cena:": "7 500 000 Kč",
         "Stavba:": "Cihla, Velmi dobrý",
+        "source_coordinates": {
+            "latitude": 49.1950602,
+            "longitude": 16.6068371,
+            "source": "detail_locality_payload",
+            "precision": "listing",
+        },
     }
 
 
@@ -154,3 +169,32 @@ def test_parse_raw_payload_rejects_empty_attribute_names() -> None:
         parser.parse_raw_payload(html)
 
     assert "encountered empty attribute name or value" in exc_info.value.message
+
+
+def test_parse_raw_payload_omits_source_coordinates_without_complete_locality_pair() -> None:
+    """Skip raw source coordinates when the embedded locality payload is incomplete."""
+
+    html = """
+    <html>
+      <body>
+        <h1>Byt 2+kk 45 m², Plzeň</h1>
+        <script>
+          window.__INITIAL_STATE__ = {
+            "locality": {
+              "latitude": 49.7384314
+            }
+          };
+        </script>
+        <dl>
+          <dt>Celková cena:</dt>
+          <dd>5 990 000 Kč</dd>
+        </dl>
+      </body>
+    </html>
+    """
+    parser = SrealityDetailPageParser()
+
+    assert parser.parse_raw_payload(html) == {
+        "Název": "Byt 2+kk 45 m², Plzeň",
+        "Celková cena:": "5 990 000 Kč",
+    }

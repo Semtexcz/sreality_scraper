@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.30.0] - 2026-03-19
+
+### Added
+
+- added scraper-stage parsing of source-backed detail coordinates into the
+  approved raw `source_payload.source_coordinates` object so future raw
+  captures preserve GPS without requiring `raw_page_snapshot`
+- added regression coverage for structured raw-coordinate parsing, raw
+  persistence, collector emission, and normalization precedence across new and
+  legacy raw artifacts
+
+### Changed
+
+- changed normalization to prefer structured raw source coordinates before
+  legacy `raw_page_snapshot` replay while keeping snapshot parsing as a
+  backward-compatible fallback for older stored records
+- changed normalization metadata to emit `raw-listing-record-v2` only for raw
+  artifacts that carry the structured coordinate object and to keep legacy
+  artifacts at `raw-listing-record-v1`
+- updated artifact, module, and task-sequence documentation for the active
+  source-backed raw-coordinate implementation
+- completed `TASK-051` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.29.2] - 2026-03-19
 
 ### Added

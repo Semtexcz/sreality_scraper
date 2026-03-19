@@ -169,6 +169,23 @@ class RecordingDetailPageParser:
         }
 
 
+class SourceCoordinateDetailPageParser:
+    """Produce raw payloads that already include the approved source coordinate object."""
+
+    def parse_raw_payload(self, detail_html: str) -> dict[str, Any]:
+        """Convert fake detail HTML into a raw payload with source-backed coordinates."""
+
+        return {
+            "payload": detail_html,
+            "source_coordinates": {
+                "latitude": 50.0577347,
+                "longitude": 14.3723456,
+                "source": "detail_locality_payload",
+                "precision": "listing",
+            },
+        }
+
+
 class FakeCollection:
     """Minimal MongoDB collection stub for repository tests."""
 
@@ -225,7 +242,16 @@ def sample_record() -> RawListingRecord:
         listing_id="1234567890",
         source_url="https://www.sreality.cz/detail/prodej/byt/1234567890",
         captured_at_utc=datetime(2026, 3, 17, 11, 22, 33, tzinfo=timezone.utc),
-        source_payload={"Nazev": "Byt 2+kk", "Cena": "7500000"},
+        source_payload={
+            "Nazev": "Byt 2+kk",
+            "Cena": "7500000",
+            "source_coordinates": {
+                "latitude": 50.0577347,
+                "longitude": 14.3723456,
+                "source": "detail_locality_payload",
+                "precision": "listing",
+            },
+        },
         source_metadata=RawSourceMetadata(
             region="praha",
             listing_page_number=2,
@@ -257,6 +283,12 @@ def test_filesystem_repository_stores_json_and_optional_snapshot(
     assert stored_record["listing_id"] == sample_record.listing_id
     assert stored_record["captured_at_utc"] == "2026-03-17T11:22:33+00:00"
     assert stored_record["source_metadata"]["region"] == "praha"
+    assert stored_record["source_payload"]["source_coordinates"] == {
+        "latitude": 50.0577347,
+        "longitude": 14.3723456,
+        "source": "detail_locality_payload",
+        "precision": "listing",
+    }
     assert (listing_directory / stored_files[0]).read_text(encoding="utf-8") == "<html>detail</html>"
 
 
@@ -378,6 +410,49 @@ def test_raw_listing_collector_emits_source_faithful_raw_records() -> None:
     }
     assert "price_per_square_meter" not in collected_record.to_serializable_dict()
     json.dumps(collected_record.to_serializable_dict())
+
+
+def test_raw_listing_collector_preserves_structured_source_coordinates() -> None:
+    """Emit the approved raw source coordinate object verbatim for future replay."""
+
+    collector = RawListingCollector(
+        listing_page_client=FakeListingPageClient(
+            {
+                "https://example.test/praha?strana=1": "pages:1\nhttps://detail/1",
+            },
+        ),
+        detail_page_client=FakeDetailPageClient(
+            {
+                "https://detail/1": "<html>detail payload</html>",
+            },
+        ),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=SourceCoordinateDetailPageParser(),
+        region_slug="praha",
+        scrape_run_id="run-124",
+        capture_raw_page_snapshots=False,
+    )
+
+    collected_record = next(
+        collector.collect_region_records(
+            district_link="https://example.test/praha?strana=",
+            max_pages=1,
+        ),
+    )
+
+    assert collected_record.source_payload["source_coordinates"] == {
+        "latitude": 50.0577347,
+        "longitude": 14.3723456,
+        "source": "detail_locality_payload",
+        "precision": "listing",
+    }
+
+    assert collected_record.to_serializable_dict()["source_payload"]["source_coordinates"] == {
+        "latitude": 50.0577347,
+        "longitude": 14.3723456,
+        "source": "detail_locality_payload",
+        "precision": "listing",
+    }
 
 
 def test_raw_listing_collector_stops_on_repeated_listing_page_signature() -> None:

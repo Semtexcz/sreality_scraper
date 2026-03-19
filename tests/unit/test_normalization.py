@@ -299,6 +299,47 @@ def test_normalizer_extracts_source_backed_detail_coordinates_from_raw_snapshot(
     assert normalized_record.location.geocoding_query_text_source == "title_fallback"
 
 
+def test_normalizer_prefers_structured_raw_source_coordinates_over_snapshot_replay() -> None:
+    """Use the approved raw coordinate object before legacy HTML fallback when both exist."""
+
+    raw_record = RawListingRecord(
+        listing_id="78467916",
+        source_url="https://www.sreality.cz/detail/prodej/byt/2+kk/praha-brevnov/78467916",
+        captured_at_utc=datetime(2026, 3, 19, 11, 27, 24, tzinfo=timezone.utc),
+        source_payload={
+            "Název": "Prodej bytu 2+kk 58 m², Praha 6 - Břevnov",
+            "source_coordinates": {
+                "latitude": 50.1,
+                "longitude": 14.2,
+                "source": "detail_locality_payload",
+                "precision": "listing",
+            },
+        },
+        source_metadata=RawSourceMetadata(
+            region="all-czechia",
+            listing_page_number=1,
+            scrape_run_id="run-051",
+            http_status=200,
+            parser_version="sreality-detail-v1",
+            captured_from="detail_page",
+        ),
+        raw_page_snapshot=(
+            '<html><script>window.__INITIAL_STATE__={"locality":{"latitude":50.0577347,'
+            '"longitude":14.3723456}};</script></html>'
+        ),
+    )
+
+    normalized_record = RawListingNormalizer().normalize(raw_record)
+
+    assert normalized_record.normalization_metadata.source_contract_version == (
+        "raw-listing-record-v2"
+    )
+    assert normalized_record.location.source_coordinate_latitude == 50.1
+    assert normalized_record.location.source_coordinate_longitude == 14.2
+    assert normalized_record.location.source_coordinate_source == "detail_locality_payload"
+    assert normalized_record.location.source_coordinate_precision == "listing"
+
+
 def test_normalizer_parses_on_request_price_and_richer_building_energy_fields() -> None:
     """Parse deterministic typed fields from richer real-world price and energy strings."""
 

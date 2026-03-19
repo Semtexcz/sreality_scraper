@@ -9,11 +9,17 @@ and at least one aligned ``dt/dd`` attribute pair.
 from __future__ import annotations
 
 import re
+import json
 
 from bs4 import BeautifulSoup as bSoup
 
 from scraperweb.scraper.exceptions import ScraperMarkupError
-from scraperweb.scraper.models import JsonValue
+from scraperweb.scraper.models import JsonValue, RawSourceCoordinates
+
+
+DETAIL_LOCALITY_SOURCE = "detail_locality_payload"
+DETAIL_LOCALITY_PRECISION = "listing"
+_DETAIL_LOCALITY_PATTERN = re.compile(r'"locality"\s*:\s*\{')
 
 
 def remove_spaces(value: str) -> str:
@@ -125,4 +131,114 @@ class SrealityDetailPageParser:
                 continue
             dictionary_data[term] = cleaned_description
 
+        source_coordinates = self.extract_source_coordinates(detail_html)
+        if source_coordinates is not None:
+            dictionary_data["source_coordinates"] = {
+                "latitude": source_coordinates.latitude,
+                "longitude": source_coordinates.longitude,
+                "source": source_coordinates.source,
+                "precision": source_coordinates.precision,
+            }
+
         return dictionary_data
+
+    @classmethod
+    def extract_source_coordinates(
+        cls,
+        detail_html: str,
+    ) -> RawSourceCoordinates | None:
+        """Extract replay-safe source-backed coordinates from the embedded locality payload."""
+
+        locality_payload = cls._extract_detail_locality_payload(detail_html)
+        if locality_payload is None:
+            return None
+
+        latitude = cls._parse_json_float(locality_payload.get("latitude"))
+        longitude = cls._parse_json_float(locality_payload.get("longitude"))
+        if latitude is None or longitude is None:
+            return None
+
+        return RawSourceCoordinates(
+            latitude=latitude,
+            longitude=longitude,
+            source=DETAIL_LOCALITY_SOURCE,
+            precision=DETAIL_LOCALITY_PRECISION,
+        )
+
+    @classmethod
+    def _extract_detail_locality_payload(
+        cls,
+        detail_html: str,
+    ) -> dict[str, JsonValue] | None:
+        """Return the embedded locality object when it can be parsed from detail HTML."""
+
+        match = _DETAIL_LOCALITY_PATTERN.search(detail_html)
+        if match is None:
+            return None
+
+        locality_object_text = cls._extract_json_object(
+            detail_html,
+            object_start_index=match.end() - 1,
+        )
+        if locality_object_text is None:
+            return None
+
+        try:
+            payload = json.loads(locality_object_text)
+        except json.JSONDecodeError:
+            return None
+
+        if not isinstance(payload, dict):
+            return None
+        return payload
+
+    @staticmethod
+    def _extract_json_object(
+        value: str,
+        *,
+        object_start_index: int,
+    ) -> str | None:
+        """Return one balanced JSON object slice starting at the provided index."""
+
+        depth = 0
+        in_string = False
+        is_escaped = False
+
+        for index in range(object_start_index, len(value)):
+            character = value[index]
+            if in_string:
+                if is_escaped:
+                    is_escaped = False
+                elif character == "\\":
+                    is_escaped = True
+                elif character == '"':
+                    in_string = False
+                continue
+
+            if character == '"':
+                in_string = True
+                continue
+
+            if character == "{":
+                depth += 1
+            elif character == "}":
+                depth -= 1
+                if depth == 0:
+                    return value[object_start_index : index + 1]
+
+        return None
+
+    @staticmethod
+    def _parse_json_float(value: JsonValue) -> float | None:
+        """Return a float when the JSON value is numeric or a numeric string."""
+
+        if isinstance(value, bool) or value is None:
+            return None
+        if isinstance(value, (int, float)):
+            return float(value)
+        if isinstance(value, str):
+            try:
+                return float(value)
+            except ValueError:
+                return None
+        return None

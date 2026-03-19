@@ -27,7 +27,8 @@ from scraperweb.scraper.models import JsonValue, RawListingRecord
 
 
 NORMALIZATION_VERSION = "normalized-listing-v9"
-RAW_CONTRACT_VERSION = "raw-listing-record-v1"
+RAW_CONTRACT_VERSION_V1 = "raw-listing-record-v1"
+RAW_CONTRACT_VERSION_V2 = "raw-listing-record-v2"
 TITLE_FALLBACK_SOURCE = "title_fallback"
 SOURCE_PAYLOAD_PREFIX = "source_payload:"
 DETAIL_LOCALITY_PAYLOAD_SOURCE = "detail_locality_payload"
@@ -214,7 +215,9 @@ class RawListingNormalizer:
             ),
             location=location,
             normalization_metadata=NormalizationMetadata(
-                source_contract_version=RAW_CONTRACT_VERSION,
+                source_contract_version=self._resolve_raw_contract_version(
+                    record.source_payload,
+                ),
                 source_parser_version=record.source_metadata.parser_version,
                 source_region=record.source_metadata.region,
                 source_listing_page_number=record.source_metadata.listing_page_number,
@@ -653,7 +656,10 @@ class RawListingNormalizer:
             source_coordinate_longitude,
             source_coordinate_source,
             source_coordinate_precision,
-        ) = cls._extract_source_coordinates(raw_page_snapshot)
+        ) = cls._extract_source_coordinates(
+            payload=payload,
+            raw_page_snapshot=raw_page_snapshot,
+        )
 
         return NormalizedLocation(
             location_text=location_text,
@@ -689,12 +695,26 @@ class RawListingNormalizer:
             nearby_places=cls._build_nearby_places(payload),
         )
 
+    @staticmethod
+    def _resolve_raw_contract_version(payload: dict[str, JsonValue]) -> str:
+        """Return the raw contract version implied by the persisted payload shape."""
+
+        if isinstance(payload.get("source_coordinates"), dict):
+            return RAW_CONTRACT_VERSION_V2
+        return RAW_CONTRACT_VERSION_V1
+
     @classmethod
     def _extract_source_coordinates(
         cls,
+        *,
+        payload: dict[str, JsonValue],
         raw_page_snapshot: str | None,
     ) -> tuple[float | None, float | None, str | None, str | None]:
-        """Extract source-backed coordinates from the embedded detail locality payload."""
+        """Extract source-backed coordinates from structured raw payload or legacy HTML."""
+
+        structured_coordinates = cls._extract_structured_source_coordinates(payload)
+        if structured_coordinates != (None, None, None, None):
+            return structured_coordinates
 
         if raw_page_snapshot is None:
             return None, None, None, None
@@ -714,6 +734,32 @@ class RawListingNormalizer:
             DETAIL_LOCALITY_PAYLOAD_SOURCE,
             DETAIL_LOCALITY_PAYLOAD_PRECISION,
         )
+
+    @classmethod
+    def _extract_structured_source_coordinates(
+        cls,
+        payload: dict[str, JsonValue],
+    ) -> tuple[float | None, float | None, str | None, str | None]:
+        """Return source-backed coordinates from the approved raw payload object."""
+
+        raw_source_coordinates = payload.get("source_coordinates")
+        if not isinstance(raw_source_coordinates, dict):
+            return None, None, None, None
+
+        latitude = cls._parse_json_float(raw_source_coordinates.get("latitude"))
+        longitude = cls._parse_json_float(raw_source_coordinates.get("longitude"))
+        source_value = raw_source_coordinates.get("source")
+        precision_value = raw_source_coordinates.get("precision")
+        source = source_value.strip() if isinstance(source_value, str) else None
+        precision = (
+            precision_value.strip()
+            if isinstance(precision_value, str) and precision_value.strip()
+            else None
+        )
+        if latitude is None or longitude is None or source is None:
+            return None, None, None, None
+
+        return latitude, longitude, source, precision
 
     @classmethod
     def _extract_detail_locality_payload(

@@ -9,3 +9,4 @@ build/
 data/raw/
 data/normalized/
 data/enriched/
+old_data/
