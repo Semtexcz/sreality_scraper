@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.29.1] - 2026-03-19
+
+### Added
+
+- added backlog task `TASK-050` to design a scraper-owned raw contract for
+  source-backed detail coordinates stored directly in `source_payload`
+- added backlog task `TASK-051` to implement raw coordinate parsing so future
+  scrapes can preserve GPS without depending on full `raw_page_snapshot`
+
+### Changed
+
+- refreshed `docs/TASK_SEQUENCE.md` so the active backlog now prioritizes the
+  raw-coordinate contract and implementation work ahead of `TASK-046`
+
 ## [1.29.0] - 2026-03-19
 
 ### Added
