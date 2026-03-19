@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.31.2] - 2026-03-19
+
+### Changed
+
+- added the direct commercial-licensing contact address to the README and
+  `COMMERCIAL_LICENSE.md`
+- synchronized the exported package version in `scraperweb.__version__` with
+  the canonical Poetry package version
+
+## [1.31.1] - 2026-03-19
+
+### Added
+
+- added a repository `LICENSE` file declaring `AGPL-3.0-or-later` as the
+  default public license for the project
+- added `COMMERCIAL_LICENSE.md` to document the intended dual-licensing model
+  for users whose planned usage is incompatible with the AGPL
+
+### Changed
+
+- updated package metadata and README licensing documentation so the repository
+  now advertises the public AGPL license and the availability of a separate
+  commercial license
+- synchronized the exported package version in `scraperweb.__version__` with
+  the canonical Poetry package version
+
 ## [1.31.0] - 2026-03-19
 
 ### Added

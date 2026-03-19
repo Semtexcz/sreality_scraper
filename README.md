@@ -71,6 +71,20 @@ Run the live integration suite explicitly when network access is available:
 RUN_LIVE_INTEGRATION_TESTS=1 poetry run pytest tests/integration
 ```
 
+## Licensing
+
+This project is available under the GNU Affero General Public License v3.0 or
+later (`AGPL-3.0-or-later`).
+
+If you want to use this software in a way that is incompatible with the AGPL,
+including proprietary redistribution, embedding in a closed-source product, or
+offering a closed hosted service, a separate commercial license is available
+from the project maintainer.
+
+See `LICENSE` for the open-source terms and `COMMERCIAL_LICENSE.md` for the
+commercial-licensing overview. Commercial licensing contact:
+`kopecky.d (at) seznam.cz`.
+
 ## Configuration
 
 Runtime configuration only exposes values required for raw persistence:

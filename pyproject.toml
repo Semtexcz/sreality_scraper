@@ -1,9 +1,13 @@
 [tool.poetry]
 name = "scraperweb"
-version = "1.31.0"
+version = "1.31.2"
 description = "Raw Sreality listing scraper with filesystem and MongoDB persistence."
 authors = ["scraperweb contributors"]
 readme = "README.md"
+license = "AGPL-3.0-or-later"
+classifiers = [
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+]
 
 [tool.poetry.dependencies]
 python = "^3.12.7"
