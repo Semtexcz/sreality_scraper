@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.22.3] - 2026-03-19
+
+### Changed
+
+- reformatted `docs/TASK_SEQUENCE.md` into an explicit ordered backlog plan with
+  task-by-task focus, phase, and sequencing rationale for `TASK-040` through
+  `TASK-046`
+
 ## [1.22.2] - 2026-03-19
 
 ### Added
