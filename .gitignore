@@ -8,3 +8,4 @@ dist/
 build/
 data/raw/
 data/normalized/
+data/enriched/

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.22.1] - 2026-03-19
+
+### Added
+
+- added backlog task `TASK-040` to track the missing structured street field in
+  normalized and enriched location data
+
+### Changed
+
+- refreshed `docs/TASK_SEQUENCE.md` so the current backlog now lists `TASK-040`
+
 ## [1.22.0] - 2026-03-18
 
 ### Added
