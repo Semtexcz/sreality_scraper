@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.24.1] - 2026-03-19
+
+### Added
+
+- added the approved `TASK-041` design for multi-level geocoding, including
+  canonical address, street, district, municipality, and unresolved precision
+  levels together with explicit source, confidence, fallback, and traceability
+  fields
+
+### Changed
+
+- updated architecture, module, and artifact documentation so future geocoding
+  work keeps source-backed address inputs in normalization, resolved
+  coordinates and quality metadata in enrichment, and only stable geocoding
+  helpers in modeling
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-041` so the current
+  backlog now starts with `TASK-042`
+- completed `TASK-041` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.24.0] - 2026-03-19
 
 ### Added

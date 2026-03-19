@@ -70,9 +70,13 @@ maps supported `Příslušenství:` fragments into `core_attributes.accessories`
 including elevator, accessibility, furnishing, balcony/loggia/terrace/cellar, and
 parking-capacity semantics while preserving unsupported fragments explicitly.
 This boundary intentionally stops before any reference-data join. Municipality
-codes, region codes, ORP codes, coordinates, district-center membership, and
-spatial buckets are approved as enrichment-owned derived features, not
-normalization output fields.
+codes, region codes, ORP codes, resolved coordinates, geocoding precision,
+geocoding confidence, district-center membership, and spatial buckets are
+approved as enrichment-owned derived features, not normalization output fields.
+Normalization may still add replayable geocoding input fragments such as a
+canonical query string, parsed house number, or source-backed address text in a
+later implementation task because those remain normalized inputs rather than
+geocoding results.
 
 ### `scraperweb.enrichment`
 
@@ -94,8 +98,9 @@ sub-contract that joins bundled reference datasets from `data/` and exposes
 explicit match status, administrative identifiers, municipality centroid
 coordinates, macro distances to district cities and district-local ORP centers,
 district-city and ORP-center flags, metropolitan district overrides, Prague
-spatial buckets, nearby-place accessibility aggregates, and conservative
-district normalization.
+spatial buckets, nearby-place accessibility aggregates, conservative district
+normalization, and the future multi-level geocoding contract for resolved
+coordinates, precision, confidence, fallback level, and provider provenance.
 
 ### `scraperweb.modeling`
 
@@ -109,7 +114,9 @@ enrichment into `ModelingFeatureSet`, including administrative identifiers,
 metropolitan buckets, coordinates, macro-distance metrics, district-center
 flags, and nearby-place accessibility aggregates. Match candidates and other
 traceability-only metadata remain enrichment-only and are available through the
-preserved `enriched_record`.
+preserved `enriched_record`. Future geocoding-specific flattening should stay
+limited to stable fields such as coordinates, precision, confidence, and
+fallback booleans rather than replay-oriented input text.
 
 ### `scraperweb.persistence`
 

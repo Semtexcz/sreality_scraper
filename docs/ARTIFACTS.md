@@ -48,6 +48,21 @@ only. Each enriched artifact preserves deterministic lineage via
 `normalized_record`. Operators can replay by `region`, `listing_id`, or
 `source_scrape_run_id` without going back through raw acquisition.
 
+Approved geocoding artifact ownership:
+
+- normalized artifacts may preserve replayable geocoding inputs such as a
+  canonical query string, parsed address fragments, and their source
+  provenance, but they must not persist derived coordinates or fallback quality
+  decisions
+- enriched artifacts are the canonical location-geocoding boundary and should
+  persist resolved coordinates together with explicit `location_precision`,
+  `geocoding_source`, `geocoding_confidence`, and fallback metadata once the
+  implementation task lands
+- municipality centroid coordinates must remain distinguishable from
+  street-level or address-level coordinates through explicit geocoding fields,
+  not through undocumented assumptions about which coordinate columns are
+  populated
+
 Representative normalization replay validation should confirm:
 
 - stored artifacts remain path-stable and idempotent for the same raw snapshot
@@ -69,6 +84,9 @@ Representative enrichment replay validation should confirm:
   consumers can audit the exact normalized inputs used for derivation
 - location-intelligence, accessibility, building, accessory, and lifecycle
   features remain reproducible when replayed from persisted normalized artifacts
+- future geocoding outputs preserve both the replayable normalized input text
+  and the resolved precision/confidence metadata so geocoder swaps can be
+  audited without re-scraping
 
 ## Backend Tradeoffs
 

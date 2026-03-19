@@ -114,6 +114,10 @@ Rules:
 - normalization must not perform reference-data joins for municipality codes,
   coordinates, or spatial buckets; those remain enrichment concerns even when the
   reference datasets are bundled inside the repository
+- normalization may preserve replay-oriented geocoding input text such as a
+  canonical address query string or parsed house-number fragments only when they
+  are still source-backed reshaped inputs rather than resolved coordinates or
+  provider outcomes
 
 ### 3) Enrichment stage
 
@@ -153,9 +157,15 @@ Approved location-intelligence ownership:
 
 - municipality, district, region, and ORP identifiers belong here
 - coordinates and coordinate provenance belong here
+- explicit multi-level geocoding quality belongs here, including
+  `location_precision`, `geocoding_source`, `geocoding_confidence`, and
+  fallback-level semantics
 - district-center flags and metropolitan district interpretation belong here
 - spatial bucket identifiers belong here
 - ambiguity must stay explicit through match-status and provenance metadata
+- enrichment must preserve the distinction between exact-address, street,
+  district, municipality, and unresolved coordinate outcomes without requiring
+  downstream consumers to infer precision from missing fields
 
 ### 4) Modeling stage
 
@@ -188,6 +198,9 @@ Rules:
 - modeling should flatten only approved stable location fields from enrichment;
   match candidates and other traceability-only metadata remain outside the
   modeling contract
+- modeling may derive helper booleans or buckets from approved geocoding outputs,
+  but replay-oriented text inputs and provider traceability fields should remain
+  enrichment-owned unless a later contract task promotes them explicitly
 
 ## Target Application Layers
 
