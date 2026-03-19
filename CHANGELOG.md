@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.28.1] - 2026-03-19
+
+### Added
+
+- added backlog task `TASK-048` to define the canonical contract for
+  source-backed coordinates embedded in Sreality detail HTML
+- added backlog task `TASK-049` to implement parsing and propagation of
+  source-backed listing coordinates so enrichment can prefer them over fallback
+  geocoding
+
+### Changed
+
+- refreshed `docs/TASK_SEQUENCE.md` so the current backlog now prioritizes
+  source-backed detail coordinates before the later price-surface design work
+
 ## [1.28.0] - 2026-03-19
 
 ### Added
