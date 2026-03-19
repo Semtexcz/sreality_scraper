@@ -54,10 +54,10 @@ Approved geocoding artifact ownership:
   canonical query string, parsed address fragments, and their source
   provenance, but they must not persist derived coordinates or fallback quality
   decisions
-- enriched artifacts are the canonical location-geocoding boundary and should
+- enriched artifacts are the canonical location-geocoding boundary and now
   persist resolved coordinates together with explicit `location_precision`,
-  `geocoding_source`, `geocoding_confidence`, and fallback metadata once the
-  implementation task lands
+  `geocoding_source`, `geocoding_confidence`, fallback metadata, and replayable
+  query-text provenance
 - municipality centroid coordinates must remain distinguishable from
   street-level or address-level coordinates through explicit geocoding fields,
   not through undocumented assumptions about which coordinate columns are
@@ -84,8 +84,8 @@ Representative enrichment replay validation should confirm:
   consumers can audit the exact normalized inputs used for derivation
 - location-intelligence, accessibility, building, accessory, and lifecycle
   features remain reproducible when replayed from persisted normalized artifacts
-- future geocoding outputs preserve both the replayable normalized input text
-  and the resolved precision/confidence metadata so geocoder swaps can be
+- geocoding outputs preserve both the replayable normalized input text and the
+  resolved precision/confidence metadata so geocoder swaps can be
   audited without re-scraping
 
 ## Backend Tradeoffs

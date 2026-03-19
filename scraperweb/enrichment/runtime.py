@@ -22,7 +22,7 @@ from scraperweb.normalization.models import NormalizedNearbyPlace
 from scraperweb.normalization.models import NormalizedListingRecord
 
 
-ENRICHMENT_VERSION = "enriched-listing-v11"
+ENRICHMENT_VERSION = "enriched-listing-v12"
 _DERIVATION_NOTES = (
     "asking_price_czk is derived from normalized typed price amounts only",
     "disposition is parsed from normalized title text only",
@@ -76,6 +76,13 @@ _DERIVATION_NOTES = (
         "spatial_cell_id uses a deterministic 0.01-degree grid keyed from the "
         "resolved Prague district reference point and stays optional outside "
         "supported metropolitan districts"
+    ),
+    (
+        "geocoding uses a deterministic fallback ladder: address and street "
+        "outcomes are query-projected around stable district or municipality anchors, "
+        "district outcomes use Prague district reference points, municipality outcomes "
+        "use souradnice.csv centroids, and unresolved cases preserve query text "
+        "without coordinates"
     ),
     (
         "nearby-place accessibility features use normalized location.nearby_places "
@@ -178,6 +185,10 @@ class NormalizedListingEnricher:
             floor_area_sqm=total_area_sqm,
         )
         resolved_location = self._location_reference_index.resolve(record.location)
+        geocoding_resolution = self._location_reference_index.resolve_geocoding(
+            location=record.location,
+            location_resolution=resolved_location,
+        )
         nearby_places = record.location.nearby_places
 
         return EnrichedListingRecord(
@@ -226,6 +237,33 @@ class NormalizedListingEnricher:
             location_features=EnrichedLocationFeatures(
                 street=record.location.street,
                 street_source=record.location.street_source,
+                latitude=geocoding_resolution.latitude,
+                longitude=geocoding_resolution.longitude,
+                location_precision=geocoding_resolution.location_precision,
+                geocoding_source=geocoding_resolution.geocoding_source,
+                geocoding_confidence=geocoding_resolution.geocoding_confidence,
+                geocoding_match_strategy=geocoding_resolution.geocoding_match_strategy,
+                geocoding_query_text=geocoding_resolution.geocoding_query_text,
+                geocoding_query_text_source=(
+                    geocoding_resolution.geocoding_query_text_source
+                ),
+                resolved_address_text=geocoding_resolution.resolved_address_text,
+                resolved_street=geocoding_resolution.resolved_street,
+                resolved_house_number=geocoding_resolution.resolved_house_number,
+                resolved_city_district=(
+                    geocoding_resolution.resolved_city_district
+                ),
+                resolved_municipality_name=(
+                    geocoding_resolution.resolved_municipality_name
+                ),
+                resolved_municipality_code=(
+                    geocoding_resolution.resolved_municipality_code
+                ),
+                resolved_region_code=geocoding_resolution.resolved_region_code,
+                geocoding_fallback_level=(
+                    geocoding_resolution.geocoding_fallback_level
+                ),
+                geocoding_is_fallback=geocoding_resolution.geocoding_is_fallback,
                 municipality_name=resolved_location.municipality_name,
                 municipality_code=resolved_location.municipality_code,
                 district_name=resolved_location.district_name,

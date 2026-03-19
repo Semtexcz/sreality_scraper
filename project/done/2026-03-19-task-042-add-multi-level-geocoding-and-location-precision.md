@@ -1,6 +1,6 @@
 ---
 task: TASK-042
-status: "todo"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add multi-level geocoding and location precision
 
 Task: TASK-042
-Status: todo
+Status: done
 Priority: P1
 Type: feature
 Author:
@@ -26,16 +26,16 @@ municipality centroid.
 
 ## Definition of Done
 
-- [ ] Implement the approved multi-level geocoding contract using the best
+- [x] Implement the approved multi-level geocoding contract using the best
       available structured location inputs while preserving deterministic replay
       behavior.
-- [ ] Populate explicit precision and confidence fields so consumers can filter
+- [x] Populate explicit precision and confidence fields so consumers can filter
       or weight listings by spatial reliability.
-- [ ] Preserve geocoding provenance, including the geocoded input text and the
+- [x] Preserve geocoding provenance, including the geocoded input text and the
       mechanism or dataset used to resolve the coordinate.
-- [ ] Add regression coverage for exact-address, street-only, district-only, and
+- [x] Add regression coverage for exact-address, street-only, district-only, and
       municipality-only fallbacks plus unresolved cases.
-- [ ] Update version metadata and persisted artifact expectations for any
+- [x] Update version metadata and persisted artifact expectations for any
       canonical contract changes introduced by geocoding.
 
 ## Notes

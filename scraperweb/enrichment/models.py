@@ -61,6 +61,23 @@ class EnrichedLocationFeatures:
 
     street: str | None = None
     street_source: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    location_precision: str | None = None
+    geocoding_source: str | None = None
+    geocoding_confidence: str | None = None
+    geocoding_match_strategy: str | None = None
+    geocoding_query_text: str | None = None
+    geocoding_query_text_source: str | None = None
+    resolved_address_text: str | None = None
+    resolved_street: str | None = None
+    resolved_house_number: str | None = None
+    resolved_city_district: str | None = None
+    resolved_municipality_name: str | None = None
+    resolved_municipality_code: str | None = None
+    resolved_region_code: str | None = None
+    geocoding_fallback_level: str | None = None
+    geocoding_is_fallback: bool | None = None
     municipality_name: str | None = None
     municipality_code: str | None = None
     district_name: str | None = None

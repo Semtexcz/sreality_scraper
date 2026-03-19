@@ -48,7 +48,7 @@ def test_normalization_workflow_normalizes_all_snapshots_for_one_listing(
     )
     latest_record = json.loads(output_paths[-1].read_text(encoding="utf-8"))
     assert latest_record["listing_id"] == "2664846156"
-    assert latest_record["normalization_version"] == "normalized-listing-v7"
+    assert latest_record["normalization_version"] == "normalized-listing-v8"
     assert latest_record["normalization_metadata"]["source_contract_version"] == (
         "raw-listing-record-v1"
     )
@@ -56,6 +56,8 @@ def test_normalization_workflow_normalizes_all_snapshots_for_one_listing(
     assert latest_record["normalized_at_utc"] == latest_record["captured_at_utc"]
     assert latest_record["location"]["street"] == "Cihlářská"
     assert latest_record["location"]["street_source"] == "title_fallback"
+    assert latest_record["location"]["geocoding_query_text"] == "Cihlářská, Blansko"
+    assert latest_record["location"]["geocoding_query_text_source"] == "title_fallback"
     assert latest_record["location"]["nearby_places"][0] == {
         "category": "bankomat",
         "source_key": "Bankomat:",
@@ -162,7 +164,7 @@ def test_normalization_workflow_replays_nearby_places_and_accessories_into_artif
         ).read_text(encoding="utf-8"),
     )
     assert nearby_places_record["normalized_at_utc"] == nearby_places_record["captured_at_utc"]
-    assert nearby_places_record["normalization_version"] == "normalized-listing-v7"
+    assert nearby_places_record["normalization_version"] == "normalized-listing-v8"
     assert nearby_places_record["normalization_metadata"] == {
         "source_captured_from": "detail_page",
         "source_contract_version": "raw-listing-record-v1",
@@ -181,6 +183,7 @@ def test_normalization_workflow_replays_nearby_places_and_accessories_into_artif
     }
     assert nearby_places_record["location"]["street"] == "Cihlářská"
     assert nearby_places_record["location"]["street_source"] == "title_fallback"
+    assert nearby_places_record["location"]["address_text"] == "Cihlářská, Blansko"
     assert "Bankomat:" not in nearby_places_record["core_attributes"]["source_specific_attributes"]
     assert "Školka:" not in nearby_places_record["core_attributes"]["source_specific_attributes"]
 
@@ -191,9 +194,12 @@ def test_normalization_workflow_replays_nearby_places_and_accessories_into_artif
         ).read_text(encoding="utf-8"),
     )
     assert accessories_record["normalized_at_utc"] == accessories_record["captured_at_utc"]
-    assert accessories_record["normalization_version"] == "normalized-listing-v7"
+    assert accessories_record["normalization_version"] == "normalized-listing-v8"
     assert accessories_record["location"]["street"] == "Šiklové"
     assert accessories_record["location"]["street_source"] == "title_fallback"
+    assert accessories_record["location"]["geocoding_query_text"] == (
+        "Šiklové, Praha"
+    )
     assert accessories_record["core_attributes"]["accessories"] == {
         "source_text": (
             "VýtahBezbariérový přístupNezařízenoTerasa o ploše 204m²"

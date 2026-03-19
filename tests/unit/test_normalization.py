@@ -138,6 +138,10 @@ def test_normalizer_maps_real_snapshot_into_broader_stable_contract() -> None:
     assert normalized_record.location.location_text_source == "title_fallback"
     assert normalized_record.location.street == "Cihlářská"
     assert normalized_record.location.street_source == "title_fallback"
+    assert normalized_record.location.house_number is None
+    assert normalized_record.location.house_number_source is None
+    assert normalized_record.location.address_text == "Cihlářská, Blansko"
+    assert normalized_record.location.address_text_source == "title_fallback"
     assert normalized_record.location.city == "Blansko"
     assert normalized_record.location.city_source == "title_fallback"
     assert normalized_record.location.city_district is None
@@ -146,6 +150,8 @@ def test_normalizer_maps_real_snapshot_into_broader_stable_contract() -> None:
     assert normalized_record.location.location_descriptor_source == (
         "source_payload:Lokalita:"
     )
+    assert normalized_record.location.geocoding_query_text == "Cihlářská, Blansko"
+    assert normalized_record.location.geocoding_query_text_source == "title_fallback"
     nearby_places_by_source_key = {
         place.source_key: place for place in normalized_record.location.nearby_places
     }
@@ -249,6 +255,10 @@ def test_normalizer_keeps_missing_optional_typed_values_explicit_for_real_snapsh
     assert normalized_record.location.location_text_source == "title_fallback"
     assert normalized_record.location.street == "Souběžná"
     assert normalized_record.location.street_source == "title_fallback"
+    assert normalized_record.location.house_number is None
+    assert normalized_record.location.house_number_source is None
+    assert normalized_record.location.address_text == "Souběžná, Brno, Židenice"
+    assert normalized_record.location.address_text_source == "title_fallback"
     assert normalized_record.location.city == "Brno"
     assert normalized_record.location.city_source == "title_fallback"
     assert normalized_record.location.city_district == "Židenice"
@@ -259,6 +269,10 @@ def test_normalizer_keeps_missing_optional_typed_values_explicit_for_real_snapsh
     assert normalized_record.location.location_descriptor_source == (
         "source_payload:Lokalita:"
     )
+    assert normalized_record.location.geocoding_query_text == (
+        "Souběžná, Brno, Židenice"
+    )
+    assert normalized_record.location.geocoding_query_text_source == "title_fallback"
 
 
 def test_normalizer_parses_on_request_price_and_richer_building_energy_fields() -> None:

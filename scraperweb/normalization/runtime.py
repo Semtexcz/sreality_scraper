@@ -25,7 +25,7 @@ from scraperweb.normalization.models import (
 from scraperweb.scraper.models import JsonValue, RawListingRecord
 
 
-NORMALIZATION_VERSION = "normalized-listing-v7"
+NORMALIZATION_VERSION = "normalized-listing-v8"
 RAW_CONTRACT_VERSION = "raw-listing-record-v1"
 TITLE_FALLBACK_SOURCE = "title_fallback"
 SOURCE_PAYLOAD_PREFIX = "source_payload:"
@@ -59,6 +59,9 @@ _TITLE_STREET_CANDIDATE_PATTERN = re.compile(
     r"^(?P<street>[A-ZÁ-Ž][A-Za-zÀ-ž0-9./'’-]*(?: [A-ZÁ-Ž0-9][A-Za-zÀ-ž0-9./'’-]*)*)$",
 )
 _PRAGUE_NUMBERED_DISTRICT_PATTERN = re.compile(r"^Praha \d+$")
+_HOUSE_NUMBER_SUFFIX_PATTERN = re.compile(
+    r"^(?P<street>.+?)\s+(?P<house_number>\d+[A-Za-z]?(?:/\d+[A-Za-z]?)?)$",
+)
 _BUILDING_FLOOR_PATTERN = re.compile(
     r"^(?P<position>\d+)\.\s*podlaží(?:\s+z\s+(?P<total>\d+))?$",
 )
@@ -618,15 +621,33 @@ class RawListingNormalizer:
         """Build the normalized location contract with explicit source precedence."""
 
         location_descriptor = cls._get_text_value(payload, "Lokalita:")
-        street, street_source = cls._extract_street_from_title(title)
+        street_text, street_source = cls._extract_street_from_title(title)
+        street, house_number = cls._split_street_and_house_number(street_text)
         location_text, location_text_source = cls._extract_location_text_from_title(title)
         city, city_district = cls._split_location_text(location_text)
+        address_text = cls._build_address_text(
+            street=street,
+            house_number=house_number,
+            city=city,
+            city_district=city_district,
+        )
+        geocoding_query_text = cls._build_geocoding_query_text(
+            street=street,
+            house_number=house_number,
+            city=city,
+            city_district=city_district,
+            location_text=location_text,
+        )
 
         return NormalizedLocation(
             location_text=location_text,
             location_text_source=location_text_source,
             street=street,
             street_source=street_source,
+            house_number=house_number,
+            house_number_source=street_source if house_number is not None else None,
+            address_text=address_text,
+            address_text_source=street_source if address_text is not None else None,
             city=city,
             city_source=location_text_source if city is not None else None,
             city_district=city_district,
@@ -638,6 +659,12 @@ class RawListingNormalizer:
                 f"{SOURCE_PAYLOAD_PREFIX}Lokalita:"
                 if location_descriptor is not None
                 else None
+            ),
+            geocoding_query_text=geocoding_query_text,
+            geocoding_query_text_source=(
+                street_source
+                if geocoding_query_text is not None and street is not None
+                else location_text_source if geocoding_query_text is not None else None
             ),
             nearby_places=cls._build_nearby_places(payload),
         )
@@ -673,6 +700,71 @@ class RawListingNormalizer:
         if not cls._is_supported_title_street(street_candidate):
             return None, None
         return street_candidate, TITLE_FALLBACK_SOURCE
+
+    @staticmethod
+    def _split_street_and_house_number(
+        street: str | None,
+    ) -> tuple[str | None, str | None]:
+        """Split one street fragment into an optional trailing house number."""
+
+        if street is None:
+            return None, None
+
+        match = _HOUSE_NUMBER_SUFFIX_PATTERN.fullmatch(street)
+        if match is None:
+            return street, None
+        return match.group("street").strip(), match.group("house_number").strip()
+
+    @staticmethod
+    def _build_address_text(
+        *,
+        street: str | None,
+        house_number: str | None,
+        city: str | None,
+        city_district: str | None,
+    ) -> str | None:
+        """Build one deterministic address string from normalized source fragments."""
+
+        street_address = street
+        if street_address is not None and house_number is not None:
+            street_address = f"{street_address} {house_number}"
+        return RawListingNormalizer._join_location_parts(
+            street_address,
+            city,
+            city_district,
+        )
+
+    @staticmethod
+    def _build_geocoding_query_text(
+        *,
+        street: str | None,
+        house_number: str | None,
+        city: str | None,
+        city_district: str | None,
+        location_text: str | None,
+    ) -> str | None:
+        """Build one replayable geocoding query from the best known location parts."""
+
+        address_text = RawListingNormalizer._build_address_text(
+            street=street,
+            house_number=house_number,
+            city=city,
+            city_district=city_district,
+        )
+        if address_text is not None:
+            return address_text
+        return RawListingNormalizer._join_location_parts(street, location_text)
+
+    @staticmethod
+    def _join_location_parts(*parts: str | None) -> str | None:
+        """Join non-empty location fragments into one comma-delimited string."""
+
+        normalized_parts = [
+            part.strip() for part in parts if part is not None and part.strip()
+        ]
+        if not normalized_parts:
+            return None
+        return ", ".join(normalized_parts)
 
     @classmethod
     def _extract_location_text_from_title(

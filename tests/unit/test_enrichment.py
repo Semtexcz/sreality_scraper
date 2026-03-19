@@ -159,6 +159,27 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.property_features.is_prague_listing is True
     assert enriched_record.location_features.street is None
     assert enriched_record.location_features.street_source is None
+    assert enriched_record.location_features.latitude == 50.106109
+    assert enriched_record.location_features.longitude == 14.474073
+    assert enriched_record.location_features.location_precision == "district"
+    assert enriched_record.location_features.geocoding_source == "prague_district_reference"
+    assert enriched_record.location_features.geocoding_confidence == "medium"
+    assert enriched_record.location_features.geocoding_match_strategy == (
+        "district_override"
+    )
+    assert enriched_record.location_features.geocoding_query_text == "Praha 8, Karlín"
+    assert enriched_record.location_features.geocoding_query_text_source == (
+        "title_fallback"
+    )
+    assert enriched_record.location_features.resolved_address_text == "Praha 8, Karlín"
+    assert enriched_record.location_features.resolved_street is None
+    assert enriched_record.location_features.resolved_house_number is None
+    assert enriched_record.location_features.resolved_city_district == "Praha 8"
+    assert enriched_record.location_features.resolved_municipality_name == "Praha"
+    assert enriched_record.location_features.resolved_municipality_code == "554782"
+    assert enriched_record.location_features.resolved_region_code == "CZ010"
+    assert enriched_record.location_features.geocoding_fallback_level == "district"
+    assert enriched_record.location_features.geocoding_is_fallback is True
     assert enriched_record.location_features.municipality_name == "Praha"
     assert enriched_record.location_features.municipality_code == "554782"
     assert enriched_record.location_features.district_code == "CZ0100"
@@ -201,7 +222,7 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.enrichment_metadata.source_normalization_version == (
         normalized_record.normalization_version
     )
-    assert len(enriched_record.enrichment_metadata.derivation_notes) == 22
+    assert len(enriched_record.enrichment_metadata.derivation_notes) == 23
 
 
 def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic() -> None:
@@ -259,6 +280,21 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
     assert first_record.property_features.furnishing_bucket is None
     assert first_record.property_features.has_city_district is False
     assert first_record.property_features.is_prague_listing is False
+    assert first_record.location_features.latitude == 49.19516
+    assert first_record.location_features.longitude == 16.606937
+    assert first_record.location_features.location_precision == "municipality"
+    assert first_record.location_features.geocoding_source == (
+        "municipality_centroid_dataset"
+    )
+    assert first_record.location_features.geocoding_confidence == "medium"
+    assert first_record.location_features.geocoding_match_strategy == (
+        "municipality_centroid"
+    )
+    assert first_record.location_features.geocoding_query_text == "Brno"
+    assert first_record.location_features.geocoding_query_text_source == "title_fallback"
+    assert first_record.location_features.resolved_address_text == "Brno"
+    assert first_record.location_features.geocoding_fallback_level == "municipality"
+    assert first_record.location_features.geocoding_is_fallback is True
     assert first_record.location_features.municipality_name == "Brno"
     assert first_record.location_features.municipality_code == "582786"
     assert first_record.location_features.district_code == "CZ0642"
@@ -328,6 +364,125 @@ def test_enricher_propagates_structured_street_fields_from_normalization() -> No
 
     assert enriched_record.location_features.street == "Dlouhá"
     assert enriched_record.location_features.street_source == "title_fallback"
+
+
+def test_enricher_resolves_exact_address_geocoding_from_structured_inputs() -> None:
+    """Prefer address precision when house number and municipality are available."""
+
+    normalized_record = _build_normalized_record(
+        title="Prodej bytu 3+1 77m²Cihlářská 12, Blansko",
+        amount_text="6 400 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Blansko",
+        city_district=None,
+        usable_area_sqm=77.0,
+        total_area_sqm=None,
+        building_material="Cihla",
+        physical_condition=None,
+        floor_position=2,
+        total_floor_count=5,
+        street="Cihlářská",
+        house_number="12",
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.location_features.location_precision == "address"
+    assert enriched_record.location_features.geocoding_confidence == "high"
+    assert enriched_record.location_features.geocoding_match_strategy == "address_exact"
+    assert enriched_record.location_features.geocoding_source == (
+        "deterministic_query_projection"
+    )
+    assert enriched_record.location_features.geocoding_is_fallback is False
+    assert enriched_record.location_features.geocoding_fallback_level == "none"
+    assert enriched_record.location_features.geocoding_query_text == (
+        "Cihlářská 12, Blansko"
+    )
+    assert enriched_record.location_features.resolved_address_text == (
+        "Cihlářská 12, Blansko"
+    )
+    assert enriched_record.location_features.resolved_street == "Cihlářská"
+    assert enriched_record.location_features.resolved_house_number == "12"
+    assert enriched_record.location_features.latitude is not None
+    assert enriched_record.location_features.longitude is not None
+
+
+def test_enricher_resolves_street_fallback_when_house_number_is_missing() -> None:
+    """Keep street-level precision explicit when only street text is available."""
+
+    normalized_record = _build_normalized_record(
+        title="Prodej bytu 3+1 77m²Cihlářská, Blansko",
+        amount_text="6 400 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Blansko",
+        city_district=None,
+        usable_area_sqm=77.0,
+        total_area_sqm=None,
+        building_material="Cihla",
+        physical_condition=None,
+        floor_position=2,
+        total_floor_count=5,
+        street="Cihlářská",
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.location_features.location_precision == "street"
+    assert enriched_record.location_features.geocoding_confidence == "medium"
+    assert enriched_record.location_features.geocoding_match_strategy == "street_centroid"
+    assert enriched_record.location_features.geocoding_source == (
+        "deterministic_query_projection"
+    )
+    assert enriched_record.location_features.geocoding_is_fallback is True
+    assert enriched_record.location_features.geocoding_fallback_level == "street"
+    assert enriched_record.location_features.geocoding_query_text == "Cihlářská, Blansko"
+    assert enriched_record.location_features.resolved_house_number is None
+    assert enriched_record.location_features.latitude is not None
+    assert enriched_record.location_features.longitude is not None
+
+
+def test_enricher_keeps_unresolved_geocoding_explicit_without_coordinates() -> None:
+    """Represent unresolved geocoding as an explicit no-coordinate outcome."""
+
+    normalized_record = _build_normalized_record(
+        title="Byt 1+kk",
+        amount_text=None,
+        price_note=None,
+        energy_efficiency_class=None,
+        city=None,
+        city_district=None,
+        usable_area_sqm=None,
+        total_area_sqm=None,
+        building_material="Cihla",
+        physical_condition=None,
+        floor_position=None,
+        total_floor_count=None,
+    )
+    normalized_record = replace(
+        normalized_record,
+        location=replace(
+            normalized_record.location,
+            geocoding_query_text="Unknown district",
+            geocoding_query_text_source="manual_fixture",
+        ),
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.location_features.latitude is None
+    assert enriched_record.location_features.longitude is None
+    assert enriched_record.location_features.location_precision == "unresolved"
+    assert enriched_record.location_features.geocoding_confidence == "none"
+    assert enriched_record.location_features.geocoding_source is None
+    assert enriched_record.location_features.geocoding_match_strategy is None
+    assert enriched_record.location_features.geocoding_query_text == "Unknown district"
+    assert enriched_record.location_features.geocoding_query_text_source == (
+        "manual_fixture"
+    )
+    assert enriched_record.location_features.geocoding_fallback_level == "unresolved"
+    assert enriched_record.location_features.geocoding_is_fallback is None
 
 
 def test_enricher_keeps_inconsistent_lifecycle_dates_optional() -> None:
@@ -901,12 +1056,27 @@ def _build_normalized_record(
     physical_condition: str | None,
     floor_position: int | None,
     total_floor_count: int | None,
+    street: str | None = None,
+    house_number: str | None = None,
     accessories: NormalizedAccessories | None = None,
     nearby_places: tuple[NormalizedNearbyPlace, ...] = (),
     listed_on: date | None = date(2026, 3, 11),
     updated_on: date | None = date(2026, 3, 16),
 ) -> NormalizedListingRecord:
     """Build a normalized record fixture for enrichment tests."""
+
+    location_text = (
+        f"{city} - {city_district}"
+        if city is not None and city_district is not None
+        else city
+    )
+    address_text = _build_address_text(
+        street=street,
+        house_number=house_number,
+        city=city,
+        city_district=city_district,
+    )
+    geocoding_query_text = address_text or street or location_text
 
     return NormalizedListingRecord(
         listing_id="2222222222",
@@ -936,13 +1106,22 @@ def _build_normalized_record(
             },
         ),
         location=NormalizedLocation(
-            location_text=(
-                f"{city} - {city_district}"
-                if city is not None and city_district is not None
-                else city
-            ),
+            location_text=location_text,
+            location_text_source="title_fallback" if location_text is not None else None,
+            street=street,
+            street_source="title_fallback" if street is not None else None,
+            house_number=house_number,
+            house_number_source="title_fallback" if house_number is not None else None,
+            address_text=address_text,
+            address_text_source="title_fallback" if address_text is not None else None,
             city=city,
+            city_source="title_fallback" if city is not None else None,
             city_district=city_district,
+            city_district_source="title_fallback" if city_district is not None else None,
+            geocoding_query_text=geocoding_query_text,
+            geocoding_query_text_source=(
+                "title_fallback" if geocoding_query_text is not None else None
+            ),
             nearby_places=nearby_places,
         ),
         normalization_metadata=NormalizationMetadata(
@@ -977,3 +1156,27 @@ def _parse_amount_czk(amount_text: str | None) -> int | None:
     if amount_text is None:
         return None
     return int(amount_text.replace(" Kč", "").replace(" ", ""))
+
+
+def _build_address_text(
+    *,
+    street: str | None,
+    house_number: str | None,
+    city: str | None,
+    city_district: str | None,
+) -> str | None:
+    """Build one fixture address string from normalized location parts."""
+
+    parts: list[str] = []
+    if street is not None:
+        if house_number is not None:
+            parts.append(f"{street} {house_number}")
+        else:
+            parts.append(street)
+    if city is not None:
+        parts.append(city)
+    if city_district is not None:
+        parts.append(city_district)
+    if not parts:
+        return None
+    return ", ".join(parts)

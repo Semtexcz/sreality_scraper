@@ -335,12 +335,20 @@ def _deserialize_location(payload: dict[str, object]) -> NormalizedLocation:
         location_text_source=_optional_str(payload.get("location_text_source")),
         street=_optional_str(payload.get("street")),
         street_source=_optional_str(payload.get("street_source")),
+        house_number=_optional_str(payload.get("house_number")),
+        house_number_source=_optional_str(payload.get("house_number_source")),
+        address_text=_optional_str(payload.get("address_text")),
+        address_text_source=_optional_str(payload.get("address_text_source")),
         city=_optional_str(payload.get("city")),
         city_source=_optional_str(payload.get("city_source")),
         city_district=_optional_str(payload.get("city_district")),
         city_district_source=_optional_str(payload.get("city_district_source")),
         location_descriptor=_optional_str(payload.get("location_descriptor")),
         location_descriptor_source=_optional_str(payload.get("location_descriptor_source")),
+        geocoding_query_text=_optional_str(payload.get("geocoding_query_text")),
+        geocoding_query_text_source=_optional_str(
+            payload.get("geocoding_query_text_source"),
+        ),
         nearby_places=tuple(
             _deserialize_nearby_place(_as_dict(item))
             for item in _as_list(payload.get("nearby_places"))

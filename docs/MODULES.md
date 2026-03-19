@@ -73,10 +73,9 @@ This boundary intentionally stops before any reference-data join. Municipality
 codes, region codes, ORP codes, resolved coordinates, geocoding precision,
 geocoding confidence, district-center membership, and spatial buckets are
 approved as enrichment-owned derived features, not normalization output fields.
-Normalization may still add replayable geocoding input fragments such as a
-canonical query string, parsed house number, or source-backed address text in a
-later implementation task because those remain normalized inputs rather than
-geocoding results.
+Normalization now preserves replayable geocoding input fragments such as a
+canonical query string, parsed house number, and source-backed address text
+while still excluding resolved coordinates and geocoding quality decisions.
 
 ### `scraperweb.enrichment`
 
@@ -99,7 +98,7 @@ explicit match status, administrative identifiers, municipality centroid
 coordinates, macro distances to district cities and district-local ORP centers,
 district-city and ORP-center flags, metropolitan district overrides, Prague
 spatial buckets, nearby-place accessibility aggregates, conservative district
-normalization, and the future multi-level geocoding contract for resolved
+normalization, and the implemented multi-level geocoding contract for resolved
 coordinates, precision, confidence, fallback level, and provider provenance.
 
 ### `scraperweb.modeling`

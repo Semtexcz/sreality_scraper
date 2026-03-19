@@ -104,12 +104,18 @@ class NormalizedLocation:
     location_text_source: str | None = None
     street: str | None = None
     street_source: str | None = None
+    house_number: str | None = None
+    house_number_source: str | None = None
+    address_text: str | None = None
+    address_text_source: str | None = None
     city: str | None = None
     city_source: str | None = None
     city_district: str | None = None
     city_district_source: str | None = None
     location_descriptor: str | None = None
     location_descriptor_source: str | None = None
+    geocoding_query_text: str | None = None
+    geocoding_query_text_source: str | None = None
     nearby_places: tuple["NormalizedNearbyPlace", ...] = field(default_factory=tuple)
 
 

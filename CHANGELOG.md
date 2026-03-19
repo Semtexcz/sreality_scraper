@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.25.0] - 2026-03-19
+
+### Added
+
+- added replayable geocoding inputs to normalized location artifacts, including
+  optional house-number, address-text, and canonical geocoding-query fields
+- added explicit multi-level geocoding outputs to enriched location features,
+  including resolved latitude and longitude, precision, confidence, fallback
+  level, query-text provenance, and resolved address metadata
+- added regression coverage for address, street, district, municipality, and
+  unresolved geocoding outcomes together with normalization and enrichment
+  workflow artifact expectations
+
+### Changed
+
+- changed normalization outputs to version `normalized-listing-v8` and
+  enrichment outputs to version `enriched-listing-v12` so canonical artifacts
+  now expose deterministic geocoding inputs and outputs
+- implemented deterministic offline geocoding using structured normalized
+  location inputs, Prague district reference points, municipality centroids,
+  and stable query projection for address and street-level estimates
+- updated architecture, module, and artifact documentation so the active
+  location-intelligence contract now documents implemented geocoding ownership
+  and deterministic fallback behavior
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-042` so the current
+  backlog now starts with `TASK-043`
+- completed `TASK-042` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.24.1] - 2026-03-19
 
 ### Added
@@ -15,7 +43,7 @@ The format is based on Keep a Changelog and the project uses Semantic Versioning
 
 ### Changed
 
-- updated architecture, module, and artifact documentation so future geocoding
+- updated architecture, module, and artifact documentation so upcoming geocoding
   work keeps source-backed address inputs in normalization, resolved
   coordinates and quality metadata in enrichment, and only stable geocoding
   helpers in modeling
