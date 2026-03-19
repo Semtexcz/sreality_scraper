@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.23.1] - 2026-03-19
+
+### Added
+
+- added backlog task `TASK-047` to track removing the default `50`-estate cap
+  so routine `scraperweb scrape` runs collect all available listings unless an
+  explicit runtime limit is provided
+
+### Changed
+
+- refreshed `docs/TASK_SEQUENCE.md` so the current backlog now starts with
+  `TASK-047` before the pending geocoding and spatial work
+
 ## [1.23.0] - 2026-03-19
 
 ### Added
