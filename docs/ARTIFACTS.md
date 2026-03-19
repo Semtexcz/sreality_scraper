@@ -34,6 +34,9 @@ The persistence backend is configurable. Generated outputs are:
 - enriched filesystem snapshots under
   `data/enriched/<region>/<listing_id>/<captured_at_utc>.json`
 
+Field-level artifact ownership, lineage, and representative payload structure
+for these three JSON families are documented in `docs/ARTIFACT_REFERENCE.md`.
+
 The supported normalization workflow currently targets filesystem-backed raw
 snapshots only. Each normalized artifact preserves stable stage identity via
 `normalization_version`, `normalized_at_utc`, and `normalization_metadata`.

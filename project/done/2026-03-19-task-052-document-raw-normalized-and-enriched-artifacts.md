@@ -1,6 +1,6 @@
 ---
 task: TASK-052
-status: "todo"
+status: "done"
 priority: P2
 type: docs
 ---
@@ -8,7 +8,7 @@ type: docs
 # Document raw, normalized, and enriched artifacts
 
 Task: TASK-052
-Status: todo
+Status: done
 Priority: P2
 Type: docs
 Author:
@@ -26,21 +26,21 @@ field without reverse-engineering runtime models or sample payloads.
 
 ## Definition of Done
 
-- [ ] Add dedicated artifact-stage documentation for raw, normalized, and
+- [x] Add dedicated artifact-stage documentation for raw, normalized, and
       enriched outputs under `docs/`.
-- [ ] Document the storage layout and replay/lineage guarantees for each
+- [x] Document the storage layout and replay/lineage guarantees for each
       artifact family.
-- [ ] Include a field reference for each artifact that describes every
+- [x] Include a field reference for each artifact that describes every
       top-level field and the important nested fields used as part of the
       canonical contract.
-- [ ] For each documented field, state its purpose, expected type or shape,
+- [x] For each documented field, state its purpose, expected type or shape,
       whether it is required or optional, and which stage owns the value.
-- [ ] Make boundary rules explicit so readers can tell which fields are direct
+- [x] Make boundary rules explicit so readers can tell which fields are direct
       source facts, normalized source-backed values, or enrichment-owned
       derived features.
-- [ ] Include trimmed representative JSON examples that match the documented
+- [x] Include trimmed representative JSON examples that match the documented
       structure without turning the docs into raw payload dumps.
-- [ ] Update index-level documentation so readers can discover the new artifact
+- [x] Update index-level documentation so readers can discover the new artifact
       references from the existing docs entrypoints.
 
 ## Notes

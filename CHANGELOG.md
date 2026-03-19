@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.30.2] - 2026-03-19
+
+### Added
+
+- added `docs/ARTIFACT_REFERENCE.md` as the canonical field-level reference for
+  raw, normalized, and enriched JSON artifacts, including storage layout,
+  lineage guarantees, ownership boundaries, representative examples, and data
+  dictionaries for top-level and important nested fields
+
+### Changed
+
+- updated `docs/README.md` and `docs/ARTIFACTS.md` so the new artifact-stage
+  reference is discoverable from the existing documentation entrypoints
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-052` so the active
+  backlog now starts with `TASK-046`
+- completed `TASK-052` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.30.1] - 2026-03-19
 
 ### Added
