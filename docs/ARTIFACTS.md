@@ -62,6 +62,10 @@ Approved geocoding artifact ownership:
   `spatial_grid_system`, `spatial_grid_parent_cell_id`, `spatial_cell_id`, and
   `spatial_grid_fine_cell_id`, all derived from the best available geocoded
   coordinate while preserving the source precision context
+- enriched artifacts also own deterministic urban-structure fields such as
+  `urban_center_profile`, distances to supported city anchors, and backbone
+  public-transport accessibility thresholds derived from normalized nearby
+  places
 - municipality centroid coordinates must remain distinguishable from
   street-level or address-level coordinates through explicit geocoding fields,
   not through undocumented assumptions about which coordinate columns are

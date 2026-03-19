@@ -22,7 +22,7 @@ from scraperweb.normalization.models import NormalizedNearbyPlace
 from scraperweb.normalization.models import NormalizedListingRecord
 
 
-ENRICHMENT_VERSION = "enriched-listing-v13"
+ENRICHMENT_VERSION = "enriched-listing-v14"
 _DERIVATION_NOTES = (
     "asking_price_czk is derived from normalized typed price amounts only",
     "disposition is parsed from normalized title text only",
@@ -73,6 +73,13 @@ _DERIVATION_NOTES = (
         "and a documented historical-center anchor rather than municipality centroids"
     ),
     (
+        "urban_center_profile and multi-center distance fields use deterministic "
+        "municipality-aware anchor sets; Prague uses historic-center, employment, "
+        "rail, and airport anchors, supported major cities use historic-center and "
+        "rail anchors, and smaller municipalities degrade to municipality-centroid "
+        "distance only"
+    ),
+    (
         "spatial grid features use the best available geocoded coordinate and a "
         "deterministic square-grid hierarchy with 0.04-degree parent cells, "
         "0.01-degree canonical cells, and 0.0025-degree fine cells"
@@ -87,6 +94,11 @@ _DERIVATION_NOTES = (
     (
         "nearby-place accessibility features use normalized location.nearby_places "
         "only and ignore entries without parsed distance_m values"
+    ),
+    (
+        "backbone accessibility flags use fixed thresholds over metro, tram, and "
+        "vlak distances while nearest_public_transport_m keeps the broader bus-plus-"
+        "backbone grouping for backward compatibility"
     ),
     (
         "nearest_public_transport_m groups metro, tram, bus_mhd, and vlak; "
@@ -139,6 +151,7 @@ _BUILDING_CONDITION_BUCKETS = {
     "Před rekonstrukcí": "needs_work",
 }
 _PUBLIC_TRANSPORT_CATEGORIES = frozenset({"metro", "tram", "bus_mhd", "vlak"})
+_BACKBONE_PUBLIC_TRANSPORT_CATEGORIES = frozenset({"metro", "tram", "vlak"})
 _SHOP_CATEGORIES = frozenset({"obchod", "vecerka"})
 
 
@@ -192,7 +205,18 @@ class NormalizedListingEnricher:
         spatial_grid_resolution = self._location_reference_index.resolve_spatial_grid(
             geocoding_resolution,
         )
+        urban_anchor_resolution = self._location_reference_index.resolve_urban_anchors(
+            location_resolution=resolved_location,
+            geocoding_resolution=geocoding_resolution,
+        )
         nearby_places = record.location.nearby_places
+        nearest_backbone_public_transport_m = self._derive_nearest_distance(
+            nearby_places,
+            _BACKBONE_PUBLIC_TRANSPORT_CATEGORIES,
+        )
+        nearest_metro_m = self._derive_nearest_distance(nearby_places, {"metro"})
+        nearest_tram_m = self._derive_nearest_distance(nearby_places, {"tram"})
+        nearest_train_m = self._derive_nearest_distance(nearby_places, {"vlak"})
 
         return EnrichedListingRecord(
             listing_id=record.listing_id,
@@ -281,6 +305,20 @@ class NormalizedListingEnricher:
                     resolved_location.distance_to_okresni_mesto_km
                 ),
                 distance_to_orp_center_km=resolved_location.distance_to_orp_center_km,
+                urban_center_profile=urban_anchor_resolution.urban_center_profile,
+                distance_to_municipality_center_km=(
+                    urban_anchor_resolution.distance_to_municipality_center_km
+                ),
+                distance_to_historic_center_km=(
+                    urban_anchor_resolution.distance_to_historic_center_km
+                ),
+                distance_to_employment_center_km=(
+                    urban_anchor_resolution.distance_to_employment_center_km
+                ),
+                distance_to_primary_rail_hub_km=(
+                    urban_anchor_resolution.distance_to_primary_rail_hub_km
+                ),
+                distance_to_airport_km=urban_anchor_resolution.distance_to_airport_km,
                 metropolitan_area=resolved_location.metropolitan_area,
                 metropolitan_district=resolved_location.metropolitan_district,
                 spatial_grid_system=spatial_grid_resolution.spatial_grid_system,
@@ -313,21 +351,37 @@ class NormalizedListingEnricher:
                     nearby_places,
                     _PUBLIC_TRANSPORT_CATEGORIES,
                 ),
-                nearest_metro_m=self._derive_nearest_distance(
-                    nearby_places,
-                    {"metro"},
-                ),
-                nearest_tram_m=self._derive_nearest_distance(
-                    nearby_places,
-                    {"tram"},
-                ),
+                nearest_backbone_public_transport_m=nearest_backbone_public_transport_m,
+                nearest_metro_m=nearest_metro_m,
+                nearest_tram_m=nearest_tram_m,
                 nearest_bus_m=self._derive_nearest_distance(
                     nearby_places,
                     {"bus_mhd"},
                 ),
-                nearest_train_m=self._derive_nearest_distance(
-                    nearby_places,
-                    {"vlak"},
+                nearest_train_m=nearest_train_m,
+                has_backbone_public_transport_within_500m=(
+                    self._bucket_max_distance(
+                        distance_m=nearest_backbone_public_transport_m,
+                        threshold_m=500,
+                    )
+                ),
+                has_backbone_public_transport_within_1000m=(
+                    self._bucket_max_distance(
+                        distance_m=nearest_backbone_public_transport_m,
+                        threshold_m=1000,
+                    )
+                ),
+                has_metro_within_1000m=self._bucket_max_distance(
+                    distance_m=nearest_metro_m,
+                    threshold_m=1000,
+                ),
+                has_tram_within_500m=self._bucket_max_distance(
+                    distance_m=nearest_tram_m,
+                    threshold_m=500,
+                ),
+                has_train_within_1500m=self._bucket_max_distance(
+                    distance_m=nearest_train_m,
+                    threshold_m=1500,
                 ),
                 nearest_shop_m=self._derive_nearest_distance(
                     nearby_places,
@@ -443,6 +497,18 @@ class NormalizedListingEnricher:
         if elapsed_days is None:
             return None
         return elapsed_days <= threshold_days
+
+    @staticmethod
+    def _bucket_max_distance(
+        *,
+        distance_m: int | None,
+        threshold_m: int,
+    ) -> bool | None:
+        """Return an explicit threshold flag for one optional distance metric."""
+
+        if distance_m is None:
+            return None
+        return distance_m <= threshold_m
 
     @staticmethod
     def _parse_disposition(title: str | None) -> str | None:

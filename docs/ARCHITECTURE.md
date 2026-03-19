@@ -167,6 +167,11 @@ Approved location-intelligence ownership:
 - spatial bucket identifiers belong here, including the canonical
   `deterministic_square_grid_v1` hierarchy with parent, canonical, and fine
   cell identifiers derived from the best available geocoded coordinate
+- deterministic urban-center profiles and anchor distances belong here,
+  including municipality-center fallback and supported historic-center,
+  employment, rail-hub, and airport distances
+- nearby-place accessibility thresholds belong here when they are derived from
+  normalized replay-safe place distances rather than live routing APIs
 - ambiguity must stay explicit through match-status and provenance metadata
 - enrichment must preserve the distinction between exact-address, street,
   district, municipality, and unresolved coordinate outcomes without requiring

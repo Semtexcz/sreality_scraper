@@ -1,6 +1,6 @@
 ---
 task: TASK-044
-status: "todo"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add multi-center and accessibility location features
 
 Task: TASK-044
-Status: todo
+Status: done
 Priority: P1
 Type: feature
 Author:

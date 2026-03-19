@@ -14,7 +14,7 @@ from scraperweb.modeling.models import (
 )
 
 
-MODELING_INPUT_VERSION = "modeling-input-v5"
+MODELING_INPUT_VERSION = "modeling-input-v6"
 MODEL_VERSION = "listing-baseline-v2"
 
 
@@ -92,6 +92,20 @@ class EnrichedListingModelingInputBuilder:
                 distance_to_orp_center_km=(
                     record.location_features.distance_to_orp_center_km
                 ),
+                urban_center_profile=record.location_features.urban_center_profile,
+                distance_to_municipality_center_km=(
+                    record.location_features.distance_to_municipality_center_km
+                ),
+                distance_to_historic_center_km=(
+                    record.location_features.distance_to_historic_center_km
+                ),
+                distance_to_employment_center_km=(
+                    record.location_features.distance_to_employment_center_km
+                ),
+                distance_to_primary_rail_hub_km=(
+                    record.location_features.distance_to_primary_rail_hub_km
+                ),
+                distance_to_airport_km=record.location_features.distance_to_airport_km,
                 distance_to_prague_center_km=(
                     record.location_features.distance_to_prague_center_km
                 ),
@@ -100,10 +114,26 @@ class EnrichedListingModelingInputBuilder:
                 nearest_public_transport_m=(
                     record.location_features.nearest_public_transport_m
                 ),
+                nearest_backbone_public_transport_m=(
+                    record.location_features.nearest_backbone_public_transport_m
+                ),
                 nearest_metro_m=record.location_features.nearest_metro_m,
                 nearest_tram_m=record.location_features.nearest_tram_m,
                 nearest_bus_m=record.location_features.nearest_bus_m,
                 nearest_train_m=record.location_features.nearest_train_m,
+                has_backbone_public_transport_within_500m=(
+                    record.location_features.has_backbone_public_transport_within_500m
+                ),
+                has_backbone_public_transport_within_1000m=(
+                    record.location_features.has_backbone_public_transport_within_1000m
+                ),
+                has_metro_within_1000m=(
+                    record.location_features.has_metro_within_1000m
+                ),
+                has_tram_within_500m=record.location_features.has_tram_within_500m,
+                has_train_within_1500m=(
+                    record.location_features.has_train_within_1500m
+                ),
                 nearest_shop_m=record.location_features.nearest_shop_m,
                 nearest_school_m=record.location_features.nearest_school_m,
                 nearest_kindergarten_m=(

@@ -58,6 +58,25 @@ class OrpCenterReference:
 
 
 @dataclass(frozen=True)
+class UrbanAnchorReference:
+    """One deterministic urban anchor used for multi-center distance features."""
+
+    latitude: float
+    longitude: float
+
+
+@dataclass(frozen=True)
+class UrbanCenterProfileReference:
+    """Supported urban-center profile for one municipality."""
+
+    profile_name: str
+    historic_center: UrbanAnchorReference | None = None
+    employment_center: UrbanAnchorReference | None = None
+    primary_rail_hub: UrbanAnchorReference | None = None
+    airport: UrbanAnchorReference | None = None
+
+
+@dataclass(frozen=True)
 class LocationResolution:
     """Resolved administrative identity and traceability for one location."""
 
@@ -118,6 +137,18 @@ class SpatialGridResolution:
     spatial_grid_parent_cell_id: str | None = None
     spatial_cell_id: str | None = None
     spatial_grid_fine_cell_id: str | None = None
+
+
+@dataclass(frozen=True)
+class UrbanAnchorResolution:
+    """Resolved multi-center urban distances derived from the best coordinate."""
+
+    urban_center_profile: str | None = None
+    distance_to_municipality_center_km: float | None = None
+    distance_to_historic_center_km: float | None = None
+    distance_to_employment_center_km: float | None = None
+    distance_to_primary_rail_hub_km: float | None = None
+    distance_to_airport_km: float | None = None
 
 
 class LocationReferenceIndex:
@@ -365,6 +396,59 @@ class LocationReferenceIndex:
                 latitude=latitude,
                 longitude=longitude,
                 resolution_degrees=_SPATIAL_GRID_FINE_CELL_SIZE_DEGREES,
+            ),
+        )
+
+    @staticmethod
+    def resolve_urban_anchors(
+        *,
+        location_resolution: LocationResolution,
+        geocoding_resolution: GeocodingResolution,
+    ) -> UrbanAnchorResolution:
+        """Resolve distance features to supported city-center and mobility anchors."""
+
+        latitude = geocoding_resolution.latitude
+        longitude = geocoding_resolution.longitude
+        if latitude is None or longitude is None:
+            return UrbanAnchorResolution()
+
+        municipality_distance = _compute_distance_km(
+            source_latitude=latitude,
+            source_longitude=longitude,
+            target_latitude=location_resolution.municipality_latitude,
+            target_longitude=location_resolution.municipality_longitude,
+        )
+        profile = _resolve_urban_center_profile(
+            municipality_code=location_resolution.municipality_code,
+        )
+        if profile is None:
+            return UrbanAnchorResolution(
+                urban_center_profile="municipality_centroid_only",
+                distance_to_municipality_center_km=municipality_distance,
+            )
+
+        return UrbanAnchorResolution(
+            urban_center_profile=profile.profile_name,
+            distance_to_municipality_center_km=municipality_distance,
+            distance_to_historic_center_km=_compute_distance_to_anchor(
+                source_latitude=latitude,
+                source_longitude=longitude,
+                anchor=profile.historic_center,
+            ),
+            distance_to_employment_center_km=_compute_distance_to_anchor(
+                source_latitude=latitude,
+                source_longitude=longitude,
+                anchor=profile.employment_center,
+            ),
+            distance_to_primary_rail_hub_km=_compute_distance_to_anchor(
+                source_latitude=latitude,
+                source_longitude=longitude,
+                anchor=profile.primary_rail_hub,
+            ),
+            distance_to_airport_km=_compute_distance_to_anchor(
+                source_latitude=latitude,
+                source_longitude=longitude,
+                anchor=profile.airport,
             ),
         )
 
@@ -670,6 +754,24 @@ def _compute_distance_km(
     )
 
 
+def _compute_distance_to_anchor(
+    *,
+    source_latitude: float,
+    source_longitude: float,
+    anchor: UrbanAnchorReference | None,
+) -> float | None:
+    """Return the distance from one resolved point to an optional urban anchor."""
+
+    if anchor is None:
+        return None
+    return _compute_distance_km(
+        source_latitude=source_latitude,
+        source_longitude=source_longitude,
+        target_latitude=anchor.latitude,
+        target_longitude=anchor.longitude,
+    )
+
+
 def _project_query_point(
     *,
     query_text: str,
@@ -797,6 +899,17 @@ def _resolve_metropolitan_district(
     if district_reference is None:
         return None
     return district_reference.metropolitan_district
+
+
+def _resolve_urban_center_profile(
+    *,
+    municipality_code: str | None,
+) -> UrbanCenterProfileReference | None:
+    """Return the supported urban-center profile for one municipality code."""
+
+    if municipality_code is None:
+        return None
+    return _URBAN_CENTER_PROFILES_BY_MUNICIPALITY_CODE.get(municipality_code)
 
 
 def _build_spatial_grid_cell_id(
@@ -1015,4 +1128,74 @@ _PRAGUE_DISTRICT_ALIASES = {
     "vysočany": "praha 9",
     "hostivar": "praha 10",
     "hostivař": "praha 10",
+}
+
+_URBAN_CENTER_PROFILES_BY_MUNICIPALITY_CODE = {
+    "554782": UrbanCenterProfileReference(
+        profile_name="prague_polycentric_v1",
+        historic_center=UrbanAnchorReference(
+            latitude=_PRAGUE_CENTER_LATITUDE,
+            longitude=_PRAGUE_CENTER_LONGITUDE,
+        ),
+        employment_center=UrbanAnchorReference(
+            latitude=50.051742,
+            longitude=14.439792,
+        ),
+        primary_rail_hub=UrbanAnchorReference(
+            latitude=50.083247,
+            longitude=14.435293,
+        ),
+        airport=UrbanAnchorReference(
+            latitude=50.106189,
+            longitude=14.267222,
+        ),
+    ),
+    "582786": UrbanCenterProfileReference(
+        profile_name="major_city_core_and_rail_v1",
+        historic_center=UrbanAnchorReference(
+            latitude=49.194969,
+            longitude=16.60882,
+        ),
+        primary_rail_hub=UrbanAnchorReference(
+            latitude=49.190321,
+            longitude=16.611235,
+        ),
+        airport=UrbanAnchorReference(
+            latitude=49.151269,
+            longitude=16.694433,
+        ),
+    ),
+    "554821": UrbanCenterProfileReference(
+        profile_name="major_city_core_and_rail_v1",
+        historic_center=UrbanAnchorReference(
+            latitude=49.834719,
+            longitude=18.292451,
+        ),
+        primary_rail_hub=UrbanAnchorReference(
+            latitude=49.849186,
+            longitude=18.291104,
+        ),
+    ),
+    "500496": UrbanCenterProfileReference(
+        profile_name="major_city_core_and_rail_v1",
+        historic_center=UrbanAnchorReference(
+            latitude=49.593779,
+            longitude=17.250878,
+        ),
+        primary_rail_hub=UrbanAnchorReference(
+            latitude=49.592114,
+            longitude=17.277168,
+        ),
+    ),
+    "563889": UrbanCenterProfileReference(
+        profile_name="major_city_core_and_rail_v1",
+        historic_center=UrbanAnchorReference(
+            latitude=50.769783,
+            longitude=15.057877,
+        ),
+        primary_rail_hub=UrbanAnchorReference(
+            latitude=50.76769,
+            longitude=15.058711,
+        ),
+    ),
 }

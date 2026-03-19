@@ -100,9 +100,11 @@ district-city and ORP-center flags, metropolitan district overrides, a
 deterministic square-grid hierarchy (`spatial_grid_system`,
 `spatial_grid_parent_cell_id`, `spatial_cell_id`, and
 `spatial_grid_fine_cell_id`) derived from the best available geocoded
-coordinate, nearby-place accessibility aggregates, conservative district
-normalization, and the implemented multi-level geocoding contract for resolved
-coordinates, precision, confidence, fallback level, and provider provenance.
+coordinate, deterministic urban-center profiles plus supported anchor
+distances, nearby-place accessibility aggregates and backbone threshold flags,
+conservative district normalization, and the implemented multi-level geocoding
+contract for resolved coordinates, precision, confidence, fallback level, and
+provider provenance.
 
 ### `scraperweb.modeling`
 
@@ -114,9 +116,10 @@ stable modeling input contract that depends on enrichment outputs only.
 The current contract now promotes the approved stable location subset from
 enrichment into `ModelingFeatureSet`, including administrative identifiers,
 metropolitan buckets, coordinates, macro-distance metrics, district-center
-flags, hierarchical square-grid identifiers, and nearby-place accessibility
-aggregates. Match candidates and other traceability-only metadata remain
-enrichment-only and are available through the preserved `enriched_record`.
+flags, hierarchical square-grid identifiers, deterministic urban-center
+distance fields, and nearby-place accessibility aggregates. Match candidates
+and other traceability-only metadata remain enrichment-only and are available
+through the preserved `enriched_record`.
 Future geocoding-specific flattening should stay limited to stable fields such
 as coordinates, precision, confidence, and fallback booleans rather than
 replay-oriented input text.

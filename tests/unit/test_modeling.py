@@ -91,14 +91,26 @@ def test_modeling_builder_maps_enriched_record_into_model_ready_contract() -> No
     assert modeling_record.features.municipality_longitude == 14.4379
     assert modeling_record.features.distance_to_okresni_mesto_km == 0.0
     assert modeling_record.features.distance_to_orp_center_km == 0.0
+    assert modeling_record.features.urban_center_profile == "prague_polycentric_v1"
+    assert modeling_record.features.distance_to_municipality_center_km == 4.259
+    assert modeling_record.features.distance_to_historic_center_km == 4.338
+    assert modeling_record.features.distance_to_employment_center_km == 6.522
+    assert modeling_record.features.distance_to_primary_rail_hub_km == 3.757
+    assert modeling_record.features.distance_to_airport_km == 14.752
     assert modeling_record.features.distance_to_prague_center_km == 4.338
     assert modeling_record.features.is_district_city is True
     assert modeling_record.features.is_orp_center is True
     assert modeling_record.features.nearest_public_transport_m == 130
+    assert modeling_record.features.nearest_backbone_public_transport_m == 210
     assert modeling_record.features.nearest_metro_m == 450
     assert modeling_record.features.nearest_tram_m == 210
     assert modeling_record.features.nearest_bus_m == 130
     assert modeling_record.features.nearest_train_m == 1900
+    assert modeling_record.features.has_backbone_public_transport_within_500m is True
+    assert modeling_record.features.has_backbone_public_transport_within_1000m is True
+    assert modeling_record.features.has_metro_within_1000m is True
+    assert modeling_record.features.has_tram_within_500m is True
+    assert modeling_record.features.has_train_within_1500m is False
     assert modeling_record.features.nearest_shop_m == 180
     assert modeling_record.features.nearest_school_m == 650
     assert modeling_record.features.nearest_kindergarten_m == 290
@@ -163,7 +175,7 @@ def test_linear_pipeline_service_composes_full_stage_handoffs() -> None:
         "raw-listing-record-v1",
         NORMALIZATION_VERSION,
         ENRICHMENT_VERSION,
-        "modeling-input-v5",
+        "modeling-input-v6",
     )
     assert modeling_record.enriched_record is not None
     assert modeling_record.enriched_record.normalized_record.listing_id == raw_record.listing_id

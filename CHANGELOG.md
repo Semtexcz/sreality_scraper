@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.27.0] - 2026-03-19
+
+### Added
+
+- added deterministic multi-center location features under enrichment and
+  modeling outputs, including explicit urban-center profile labels plus
+  distances to municipality centers, historic centers, primary rail hubs,
+  Prague employment anchors, and supported airports
+- added backbone public-transport accessibility features derived from
+  normalized nearby places, including nearest backbone distance and explicit
+  threshold flags for backbone, metro, tram, and rail access
+- added regression coverage for Prague polycentric listings, major-city
+  municipality fallback, smaller municipalities, and enrichment replay outputs
+  so the approved accessibility feature set stays deterministic
+
+### Changed
+
+- changed enrichment outputs to version `enriched-listing-v14` and modeling
+  inputs to version `modeling-input-v6` so canonical artifacts now include the
+  approved multi-center and accessibility location fields
+- updated architecture, module, and artifact documentation so deterministic
+  urban-center profiles and backbone accessibility ownership stay documented at
+  the enrichment boundary
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-044` so the current
+  backlog now starts with `TASK-045`
+- completed `TASK-044` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.26.0] - 2026-03-19
 
 ### Added

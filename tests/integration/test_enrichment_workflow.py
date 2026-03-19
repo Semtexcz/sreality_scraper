@@ -48,7 +48,7 @@ def test_enrichment_workflow_enriches_all_snapshots_for_one_listing(
     )
     latest_record = json.loads(output_paths[-1].read_text(encoding="utf-8"))
     assert latest_record["listing_id"] == "2664846156"
-    assert latest_record["enrichment_version"] == "enriched-listing-v13"
+    assert latest_record["enrichment_version"] == "enriched-listing-v14"
     assert latest_record["enrichment_metadata"]["source_normalization_version"] == (
         "normalized-listing-v7"
     )
@@ -74,7 +74,13 @@ def test_enrichment_workflow_enriches_all_snapshots_for_one_listing(
     assert latest_record["location_features"]["spatial_grid_fine_cell_id"] is not None
     assert latest_record["location_features"]["district_name"] == "Blansko"
     assert latest_record["location_features"]["distance_to_orp_center_km"] == 0.0
+    assert latest_record["location_features"]["urban_center_profile"] == (
+        "municipality_centroid_only"
+    )
+    assert latest_record["location_features"]["distance_to_municipality_center_km"] > 0
     assert latest_record["location_features"]["nearest_public_transport_m"] == 43
+    assert latest_record["location_features"]["nearest_backbone_public_transport_m"] == 1786
+    assert latest_record["location_features"]["has_backbone_public_transport_within_500m"] is False
     assert latest_record["location_features"]["nearest_shop_m"] == 231
     assert latest_record["lifecycle_features"] == {
         "is_fresh_listing_7d": True,
@@ -116,7 +122,7 @@ def test_enrichment_workflow_filters_normalized_snapshots_by_scrape_run_id(
             / "all-czechia/3218928460/2026-03-18T08-57-14.026076+00-00.json"
         ).read_text(encoding="utf-8"),
     )
-    assert prague_record["enrichment_version"] == "enriched-listing-v13"
+    assert prague_record["enrichment_version"] == "enriched-listing-v14"
     assert prague_record["price_features"]["price_per_square_meter_czk"] == 286588.63
     assert prague_record["property_features"]["is_top_floor"] is True
     assert prague_record["property_features"]["outdoor_accessory_area_sqm"] == 204.0
@@ -128,11 +134,16 @@ def test_enrichment_workflow_filters_normalized_snapshots_by_scrape_run_id(
         "deterministic_query_projection"
     )
     assert prague_record["location_features"]["metropolitan_area"] == "Praha"
+    assert prague_record["location_features"]["urban_center_profile"] == (
+        "prague_polycentric_v1"
+    )
     assert prague_record["location_features"]["spatial_grid_system"] == (
         "deterministic_square_grid_v1"
     )
     assert prague_record["location_features"]["municipality_match_status"] == "matched"
     assert prague_record["location_features"]["nearest_metro_m"] == 160
+    assert prague_record["location_features"]["nearest_backbone_public_transport_m"] == 105
+    assert prague_record["location_features"]["has_metro_within_1000m"] is True
     assert prague_record["location_features"]["amenities_within_300m_count"] == 7
     assert prague_record["normalized_record"]["normalization_metadata"] == {
         "source_captured_from": "detail_page",

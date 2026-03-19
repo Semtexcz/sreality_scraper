@@ -90,6 +90,12 @@ class EnrichedLocationFeatures:
     municipality_longitude: float | None = None
     distance_to_okresni_mesto_km: float | None = None
     distance_to_orp_center_km: float | None = None
+    urban_center_profile: str | None = None
+    distance_to_municipality_center_km: float | None = None
+    distance_to_historic_center_km: float | None = None
+    distance_to_employment_center_km: float | None = None
+    distance_to_primary_rail_hub_km: float | None = None
+    distance_to_airport_km: float | None = None
     metropolitan_area: str | None = None
     metropolitan_district: str | None = None
     spatial_grid_system: str | None = None
@@ -107,10 +113,16 @@ class EnrichedLocationFeatures:
     municipality_match_input: str | None = None
     municipality_match_candidates: tuple[str, ...] = field(default_factory=tuple)
     nearest_public_transport_m: int | None = None
+    nearest_backbone_public_transport_m: int | None = None
     nearest_metro_m: int | None = None
     nearest_tram_m: int | None = None
     nearest_bus_m: int | None = None
     nearest_train_m: int | None = None
+    has_backbone_public_transport_within_500m: bool | None = None
+    has_backbone_public_transport_within_1000m: bool | None = None
+    has_metro_within_1000m: bool | None = None
+    has_tram_within_500m: bool | None = None
+    has_train_within_1500m: bool | None = None
     nearest_shop_m: int | None = None
     nearest_school_m: int | None = None
     nearest_kindergarten_m: int | None = None

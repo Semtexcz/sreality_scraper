@@ -188,6 +188,14 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.location_features.municipality_longitude == 14.4379
     assert enriched_record.location_features.distance_to_okresni_mesto_km == 0.0
     assert enriched_record.location_features.distance_to_orp_center_km == 0.0
+    assert enriched_record.location_features.urban_center_profile == (
+        "prague_polycentric_v1"
+    )
+    assert enriched_record.location_features.distance_to_municipality_center_km == 4.259
+    assert enriched_record.location_features.distance_to_historic_center_km == 4.338
+    assert enriched_record.location_features.distance_to_employment_center_km == 6.522
+    assert enriched_record.location_features.distance_to_primary_rail_hub_km == 3.757
+    assert enriched_record.location_features.distance_to_airport_km == 14.752
     assert enriched_record.location_features.metropolitan_area == "Praha"
     assert enriched_record.location_features.metropolitan_district == "Praha 8"
     assert enriched_record.location_features.spatial_grid_system == (
@@ -215,10 +223,16 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     )
     assert enriched_record.location_features.municipality_match_input == "Praha 8"
     assert enriched_record.location_features.nearest_public_transport_m == 130
+    assert enriched_record.location_features.nearest_backbone_public_transport_m == 210
     assert enriched_record.location_features.nearest_metro_m == 450
     assert enriched_record.location_features.nearest_tram_m == 210
     assert enriched_record.location_features.nearest_bus_m == 130
     assert enriched_record.location_features.nearest_train_m == 1900
+    assert enriched_record.location_features.has_backbone_public_transport_within_500m is True
+    assert enriched_record.location_features.has_backbone_public_transport_within_1000m is True
+    assert enriched_record.location_features.has_metro_within_1000m is True
+    assert enriched_record.location_features.has_tram_within_500m is True
+    assert enriched_record.location_features.has_train_within_1500m is False
     assert enriched_record.location_features.nearest_shop_m == 180
     assert enriched_record.location_features.nearest_school_m == 650
     assert enriched_record.location_features.nearest_kindergarten_m == 290
@@ -235,7 +249,7 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.enrichment_metadata.source_normalization_version == (
         normalized_record.normalization_version
     )
-    assert len(enriched_record.enrichment_metadata.derivation_notes) == 23
+    assert len(enriched_record.enrichment_metadata.derivation_notes) == 25
 
 
 def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic() -> None:
@@ -316,6 +330,14 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
     assert first_record.location_features.municipality_longitude == 16.606937
     assert first_record.location_features.distance_to_okresni_mesto_km == 0.0
     assert first_record.location_features.distance_to_orp_center_km == 0.0
+    assert first_record.location_features.urban_center_profile == (
+        "major_city_core_and_rail_v1"
+    )
+    assert first_record.location_features.distance_to_municipality_center_km == 0.0
+    assert first_record.location_features.distance_to_historic_center_km == 0.138
+    assert first_record.location_features.distance_to_employment_center_km is None
+    assert first_record.location_features.distance_to_primary_rail_hub_km == 0.622
+    assert first_record.location_features.distance_to_airport_km == 8.017
     assert first_record.location_features.metropolitan_area is None
     assert first_record.location_features.metropolitan_district is None
     assert first_record.location_features.spatial_grid_system == (
@@ -339,10 +361,16 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
     assert first_record.location_features.municipality_match_status == "matched"
     assert first_record.location_features.municipality_match_method == "city"
     assert first_record.location_features.nearest_public_transport_m is None
+    assert first_record.location_features.nearest_backbone_public_transport_m is None
     assert first_record.location_features.nearest_metro_m is None
     assert first_record.location_features.nearest_tram_m is None
     assert first_record.location_features.nearest_bus_m is None
     assert first_record.location_features.nearest_train_m is None
+    assert first_record.location_features.has_backbone_public_transport_within_500m is None
+    assert first_record.location_features.has_backbone_public_transport_within_1000m is None
+    assert first_record.location_features.has_metro_within_1000m is None
+    assert first_record.location_features.has_tram_within_500m is None
+    assert first_record.location_features.has_train_within_1500m is None
     assert first_record.location_features.nearest_shop_m is None
     assert first_record.location_features.nearest_school_m is None
     assert first_record.location_features.nearest_kindergarten_m is None
@@ -684,11 +712,25 @@ def test_enricher_derives_nearby_place_accessibility_for_partial_non_prague_data
     enriched_record = NormalizedListingEnricher().enrich(normalized_record)
 
     assert enriched_record.location_features.municipality_name == "Adamov"
+    assert enriched_record.location_features.urban_center_profile == (
+        "municipality_centroid_only"
+    )
+    assert enriched_record.location_features.distance_to_municipality_center_km == 0.0
+    assert enriched_record.location_features.distance_to_historic_center_km is None
+    assert enriched_record.location_features.distance_to_employment_center_km is None
+    assert enriched_record.location_features.distance_to_primary_rail_hub_km is None
+    assert enriched_record.location_features.distance_to_airport_km is None
     assert enriched_record.location_features.nearest_public_transport_m == 780
+    assert enriched_record.location_features.nearest_backbone_public_transport_m == 780
     assert enriched_record.location_features.nearest_metro_m is None
     assert enriched_record.location_features.nearest_tram_m is None
     assert enriched_record.location_features.nearest_bus_m is None
     assert enriched_record.location_features.nearest_train_m == 780
+    assert enriched_record.location_features.has_backbone_public_transport_within_500m is False
+    assert enriched_record.location_features.has_backbone_public_transport_within_1000m is True
+    assert enriched_record.location_features.has_metro_within_1000m is None
+    assert enriched_record.location_features.has_tram_within_500m is None
+    assert enriched_record.location_features.has_train_within_1500m is True
     assert enriched_record.location_features.nearest_shop_m == 220
     assert enriched_record.location_features.nearest_school_m is None
     assert enriched_record.location_features.nearest_kindergarten_m == 410
