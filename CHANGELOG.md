@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.29.2] - 2026-03-19
+
+### Added
+
+- added the approved `TASK-050` design for a scraper-owned raw-coordinate
+  contract, including the optional `source_payload.source_coordinates` object,
+  explicit raw provenance, and deterministic migration precedence over legacy
+  `raw_page_snapshot` replay
+
+### Changed
+
+- updated architecture, modules, and artifact documentation so raw-coordinate
+  ownership is explicit at the scraper boundary and normalization fallback to
+  `raw_page_snapshot` is documented as backward-compatible migration behavior
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-050` so the active
+  backlog now starts with `TASK-051`
+- completed `TASK-050` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.29.1] - 2026-03-19
 
 ### Added

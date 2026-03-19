@@ -80,6 +80,18 @@ Explicit exclusions:
 - scoring inputs
 - analytical summaries
 
+Approved raw-coordinate ownership:
+
+- `source_payload` may carry one optional `source_coordinates` object for
+  replay-safe source-backed detail coordinates captured directly from the
+  embedded locality payload
+- that raw object is limited to `latitude`, `longitude`, explicit `source`
+  provenance, and an optional raw precision hint; no geocoding confidence,
+  fallback status, or downstream winning-coordinate semantics belong here
+- `raw_page_snapshot` remains optional legacy replay input and a markup-debug
+  aid, but future raw captures should not require full HTML retention just to
+  preserve approved source-backed coordinates
+
 ### 2) Normalization stage
 
 Purpose:
@@ -119,9 +131,13 @@ Rules:
   are still source-backed reshaped inputs rather than resolved coordinates or
   provider outcomes
 - normalization may also preserve source-backed detail-page coordinates only
-  when they are extracted deterministically from persisted detail HTML and
+  when they are extracted deterministically from approved raw source facts and
   carried with explicit provenance as raw source facts rather than enrichment
   decisions
+- when both the new raw `source_payload["source_coordinates"]` object and a
+  legacy `raw_page_snapshot` are present, normalization must prefer the
+  structured raw object and use HTML reparsing only as a backward-compatible
+  fallback for older artifacts
 
 ### 3) Enrichment stage
 

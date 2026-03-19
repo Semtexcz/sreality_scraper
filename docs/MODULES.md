@@ -77,8 +77,10 @@ Normalization now preserves replayable geocoding input fragments such as a
 canonical query string, parsed house number, and source-backed address text
 while still excluding derived geocoding outcomes and fallback quality decisions.
 Normalization also preserves source-backed detail coordinates when they are
-recovered directly from the persisted detail HTML with explicit provenance,
-rather than inferred from reference data or map-link heuristics.
+recovered from the approved raw `source_payload["source_coordinates"]` object,
+or from persisted detail HTML only as a backward-compatible fallback for older
+artifacts, with explicit provenance rather than reference-data or map-link
+heuristics.
 
 ### `scraperweb.enrichment`
 
@@ -136,7 +138,9 @@ replay-oriented input text.
 
 Repository interfaces and storage adapters. Raw-contract ownership belongs to the
 producing scraper stage, so persistence depends on scraper-owned models instead of
-defining them locally.
+defining them locally. Raw persistence must preserve the nested
+`source_payload["source_coordinates"]` object verbatim when present so future
+normalization replay no longer depends on full `raw_page_snapshot` retention.
 
 ### `scraperweb.estate_scraper`
 

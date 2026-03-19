@@ -50,6 +50,17 @@ only. Each enriched artifact preserves deterministic lineage via
 
 Approved geocoding artifact ownership:
 
+- raw artifacts may now expand `source_payload` with an optional
+  `source_coordinates` object that stores replay-safe source-backed latitude,
+  longitude, explicit source provenance, and an optional raw precision hint
+  recovered from the approved embedded locality payload
+- raw artifacts must not store map-link query parameters, inferred address
+  coordinates, or enrichment-owned fallback-quality metadata inside that raw
+  coordinate object
+- when both `source_payload.source_coordinates` and `raw_page_snapshot` are
+  present, replay should treat the structured raw coordinate object as the
+  canonical source and use snapshot parsing only for older artifacts that omit
+  the new field
 - normalized artifacts may preserve replayable geocoding inputs such as a
   canonical query string, parsed address fragments, and their source
   provenance, but they must not persist derived coordinates or fallback quality
