@@ -55,7 +55,7 @@ class RawAcquisitionService:
         self,
         district_link: str,
         max_pages: int | None,
-        max_estates: int,
+        max_estates: int | None,
         tracked_estates: int,
     ) -> int:
         """Collect detail records for one region until limits are reached."""
@@ -75,7 +75,7 @@ class RawAcquisitionService:
                     max_estates=max_estates,
                     listing_url=record.source_url,
                 )
-                if tracked_estates >= max_estates:
+                if max_estates is not None and tracked_estates >= max_estates:
                     self._progress_reporter.region_completed(
                         region_slug=self._region_slug,
                         processed_estates=tracked_estates - initial_tracked_estates,

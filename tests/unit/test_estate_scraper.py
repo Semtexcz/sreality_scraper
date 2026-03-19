@@ -23,7 +23,7 @@ def test_run_scraper_uses_global_all_czechia_listing_url_by_default(monkeypatch)
             self,
             district_link: str,
             max_pages: int | None,
-            max_estates: int,
+            max_estates: int | None,
             tracked_estates: int,
         ) -> int:
             """Capture the URL used for the selected region and stop immediately."""
@@ -60,7 +60,7 @@ def test_run_scraper_passes_fail_fast_http_mode_to_acquisition_service(monkeypat
             self,
             district_link: str,
             max_pages: int | None,
-            max_estates: int,
+            max_estates: int | None,
             tracked_estates: int,
         ) -> int:
             """Stop immediately after the first captured composition call."""
@@ -75,3 +75,38 @@ def test_run_scraper_passes_fail_fast_http_mode_to_acquisition_service(monkeypat
 
     assert processed_estates == 0
     assert captured_fail_modes == [True]
+
+
+def test_run_scraper_does_not_stop_without_explicit_estate_limit(monkeypatch) -> None:
+    """Allow region traversal to continue until pages are exhausted by default."""
+
+    captured_limits: list[int | None] = []
+
+    class FakeAcquisitionService:
+        """Capture estate-limit propagation across multiple regions."""
+
+        def __init__(self, *args, **kwargs) -> None:
+            """Ignore runtime collaborators for this composition-only test."""
+
+        def collect_for_region(
+            self,
+            district_link: str,
+            max_pages: int | None,
+            max_estates: int | None,
+            tracked_estates: int,
+        ) -> int:
+            """Return one additional estate per region without triggering early stop."""
+
+            del district_link, max_pages
+            captured_limits.append(max_estates)
+            return tracked_estates + 1
+
+    monkeypatch.setattr("scraperweb.estate_scraper.RawAcquisitionService", FakeAcquisitionService)
+    monkeypatch.setattr("scraperweb.estate_scraper.build_raw_record_repository", lambda options: object())
+
+    processed_estates = run_scraper(
+        build_runtime_cli_options(regions=["praha", "jihomoravsky-kraj"]),
+    )
+
+    assert processed_estates == 2
+    assert captured_limits == [None, None]

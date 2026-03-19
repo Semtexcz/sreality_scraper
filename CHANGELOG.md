@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.24.0] - 2026-03-19
+
+### Added
+
+- added regression coverage for unbounded-by-default scrape runs across CLI
+  option building, terminal progress reporting, acquisition orchestration, and
+  runtime composition so the scraper no longer silently stops after `50`
+  listings
+
+### Changed
+
+- changed `scraperweb scrape` so omitting `--max-estates` now leaves estate
+  traversal unbounded by default, while explicit `--max-pages` and
+  `--max-estates` caps keep their previous bounded-run behavior
+- updated scraper progress output and operator-facing CLI documentation to label
+  omitted estate caps as `unbounded`
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-047` so the current
+  backlog now starts with `TASK-041`
+- completed `TASK-047` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.23.1] - 2026-03-19
 
 ### Added

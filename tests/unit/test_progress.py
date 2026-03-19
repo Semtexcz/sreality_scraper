@@ -109,3 +109,26 @@ def test_terminal_progress_reporter_suppresses_output_in_quiet_mode() -> None:
     reporter.region_completed(region_slug="all-czechia", processed_estates=1)
 
     assert messages == []
+
+
+def test_terminal_progress_reporter_labels_unbounded_estate_limit_explicitly() -> None:
+    """Render unbounded estate processing clearly in operator-visible output."""
+
+    messages: list[str] = []
+    reporter = TerminalScrapeProgressReporter(output=messages.append, verbose=True)
+
+    reporter.scrape_started(
+        regions=("all-czechia",),
+        max_pages=None,
+        max_estates=None,
+    )
+    reporter.estate_processed(
+        total_processed=3,
+        max_estates=None,
+        listing_url="https://detail/3",
+    )
+
+    assert messages == [
+        "Starting scrape: regions=all-czechia, max_pages=unbounded, max_estates=unbounded",
+        "Processed 3/unbounded estates: https://detail/3",
+    ]

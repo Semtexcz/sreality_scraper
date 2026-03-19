@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Sequence
 
 
-DEFAULT_MAX_ESTATES = 50
 DEFAULT_OUTPUT_DIR = Path("data/raw")
 ALL_CZECHIA_REGION = "all-czechia"
 
@@ -48,7 +47,7 @@ class RuntimeCliOptions:
 
     regions: tuple[str, ...]
     max_pages: int | None
-    max_estates: int
+    max_estates: int | None
     fail_on_http_error: bool
     verbose: bool
     quiet: bool
@@ -62,7 +61,7 @@ def build_runtime_cli_options(
     *,
     regions: Sequence[str] | None = None,
     max_pages: int | None = None,
-    max_estates: int = DEFAULT_MAX_ESTATES,
+    max_estates: int | None = None,
     fail_on_http_error: bool = False,
     verbose: bool = False,
     quiet: bool = False,

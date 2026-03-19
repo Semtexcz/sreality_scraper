@@ -1,6 +1,6 @@
 ---
 task: TASK-047
-status: "todo"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Scrape all available listings instead of the default first 50
 
 Task: TASK-047
-Status: todo
+Status: done
 Priority: P1
 Type: feature
 Author:
@@ -26,17 +26,17 @@ smaller bounded run.
 
 ## Definition of Done
 
-- [ ] Change the default scrape behavior so `scraperweb scrape` continues across
+- [x] Change the default scrape behavior so `scraperweb scrape` continues across
       listing pages until all currently available listing detail URLs have been
       processed, unless an explicit runtime limit stops the run.
-- [ ] Preserve operator-controlled caps such as `--max-pages` and
+- [x] Preserve operator-controlled caps such as `--max-pages` and
       `--max-estates` so bounded test and sampling runs still work when
       requested.
-- [ ] Update progress or operator-facing output if needed so unbounded-by-default
+- [x] Update progress or operator-facing output if needed so unbounded-by-default
       estate collection is explicit during runtime.
-- [ ] Add or update regression coverage for CLI option defaults and acquisition
+- [x] Add or update regression coverage for CLI option defaults and acquisition
       orchestration so the scraper no longer silently stops at `50` estates.
-- [ ] Document any changed default behavior in the relevant operator-facing
+- [x] Document any changed default behavior in the relevant operator-facing
       documentation and changelog entry when the task is implemented.
 
 ## Notes

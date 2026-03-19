@@ -92,7 +92,7 @@ def run_scraper(
         )
         logger.debug("Tracked estates after region {}: {}", region_slug, tracked_estates)
 
-        if tracked_estates >= options.max_estates:
+        if options.max_estates is not None and tracked_estates >= options.max_estates:
             logger.info("Reached max estate limit: {}.", options.max_estates)
             logger.info("Processed {} estates.", tracked_estates)
             return tracked_estates

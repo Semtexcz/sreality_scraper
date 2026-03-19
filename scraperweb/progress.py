@@ -16,7 +16,7 @@ class ScrapeProgressReporter:
         *,
         regions: tuple[str, ...],
         max_pages: int | None,
-        max_estates: int,
+        max_estates: int | None,
     ) -> None:
         """Report the beginning of one top-level scrape run."""
 
@@ -39,7 +39,7 @@ class ScrapeProgressReporter:
         self,
         *,
         total_processed: int,
-        max_estates: int,
+        max_estates: int | None,
         listing_url: str,
     ) -> None:
         """Report cumulative estate-processing progress."""
@@ -91,7 +91,7 @@ class TerminalScrapeProgressReporter(ScrapeProgressReporter):
         *,
         regions: tuple[str, ...],
         max_pages: int | None,
-        max_estates: int,
+        max_estates: int | None,
     ) -> None:
         """Show the selected runtime bounds before network work begins."""
 
@@ -99,9 +99,10 @@ class TerminalScrapeProgressReporter(ScrapeProgressReporter):
             return
         region_list = ", ".join(regions)
         max_pages_label = str(max_pages) if max_pages is not None else "unbounded"
+        max_estates_label = str(max_estates) if max_estates is not None else "unbounded"
         self._output(
             "Starting scrape: "
-            f"regions={region_list}, max_pages={max_pages_label}, max_estates={max_estates}",
+            f"regions={region_list}, max_pages={max_pages_label}, max_estates={max_estates_label}",
         )
 
     def region_started(self, *, region_slug: str) -> None:
@@ -138,20 +139,21 @@ class TerminalScrapeProgressReporter(ScrapeProgressReporter):
         self,
         *,
         total_processed: int,
-        max_estates: int,
+        max_estates: int | None,
         listing_url: str,
     ) -> None:
         """Show estate-level progress using concise or verbose terminal output."""
 
         if self._quiet:
             return
+        max_estates_label = str(max_estates) if max_estates is not None else "unbounded"
         if self._verbose:
             self._output(
-                f"Processed {total_processed}/{max_estates} estates: {listing_url}",
+                f"Processed {total_processed}/{max_estates_label} estates: {listing_url}",
             )
             return
         if total_processed == 1 or total_processed % self._report_interval == 0:
-            self._output(f"Processed {total_processed}/{max_estates} estates")
+            self._output(f"Processed {total_processed}/{max_estates_label} estates")
 
     def detail_http_error_skipped(
         self,

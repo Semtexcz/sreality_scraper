@@ -623,6 +623,50 @@ def test_acquisition_service_respects_max_pages_and_max_estates_limits() -> None
     assert all(record.raw_page_snapshot is None for record in repository.records)
 
 
+def test_acquisition_service_collects_until_pagination_exhaustion_without_estate_limit() -> None:
+    """Keep collecting records until the listing traversal itself stops."""
+
+    repository = RecordingRepository()
+    listing_page_client = FakeListingPageClient(
+        {
+            "https://example.test/praha?strana=1": (
+                "pages:3\nhttps://detail/1\nhttps://detail/2"
+            ),
+            "https://example.test/praha?strana=2": (
+                "pages:3\nhttps://detail/3\nhttps://detail/4"
+            ),
+            "https://example.test/praha?strana=3": "",
+        },
+    )
+    service = RawAcquisitionService(
+        listing_page_client=listing_page_client,
+        detail_page_client=FakeDetailPageClient(
+            {
+                "https://detail/1": "<html>detail 1</html>",
+                "https://detail/2": "<html>detail 2</html>",
+                "https://detail/3": "<html>detail 3</html>",
+                "https://detail/4": "<html>detail 4</html>",
+            },
+        ),
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=FakeDetailPageParser(),
+        raw_record_repository=repository,
+        region_slug="praha",
+        scrape_run_id="run-unbounded-estates",
+        capture_raw_page_snapshots=False,
+    )
+
+    tracked_estates = service.collect_for_region(
+        district_link="https://example.test/praha?strana=",
+        max_pages=None,
+        max_estates=None,
+        tracked_estates=0,
+    )
+
+    assert tracked_estates == 4
+    assert [record.listing_id for record in repository.records] == ["1", "2", "3", "4"]
+
+
 def test_raw_listing_collector_preserves_listing_page_context_on_transport_failure() -> None:
     """Propagate listing-page failures with region and page context attached."""
 

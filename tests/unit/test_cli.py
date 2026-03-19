@@ -95,8 +95,21 @@ def test_scrape_command_defaults_to_global_all_czechia_target(monkeypatch) -> No
     assert "Processed 1 estates." in result.stdout
     assert captured_options["value"].regions == ("all-czechia",)
     assert captured_options["value"].max_pages is None
+    assert captured_options["value"].max_estates is None
     assert captured_options["value"].fail_on_http_error is False
     assert "Starting scrape:" in result.stdout
+
+
+def test_scrape_command_help_describes_unbounded_default_estate_limit() -> None:
+    """Document that omitted estate limits produce an unbounded scrape run."""
+
+    result = runner.invoke(app, ["scrape", "--help"])
+
+    assert result.exit_code == 0
+    assert "Optional maximum" in result.stdout
+    assert "--max-estates" in result.stdout
+    assert "pagination is" in result.stdout
+    assert "exhausted." in result.stdout
 
 
 def test_scrape_command_supports_fail_fast_http_mode(monkeypatch) -> None:

@@ -9,7 +9,6 @@ import typer
 from loguru import logger
 
 from scraperweb.cli_runtime_options import (
-    DEFAULT_MAX_ESTATES,
     DEFAULT_OUTPUT_DIR,
     REGION_CHOICES,
     RuntimeCliOptions,
@@ -41,7 +40,7 @@ def _build_scrape_options(
     *,
     regions: list[str] | None,
     max_pages: int | None,
-    max_estates: int,
+    max_estates: int | None,
     fail_on_http_error: bool,
     verbose: bool,
     quiet: bool,
@@ -91,13 +90,16 @@ def scrape_command(
         ),
     ] = None,
     max_estates: Annotated[
-        int,
+        int | None,
         typer.Option(
             "--max-estates",
             min=1,
-            help="Maximum number of raw estate records processed in one run.",
+            help=(
+                "Optional maximum number of raw estate records processed in one run. "
+                "When omitted, scraping continues until pagination is exhausted."
+            ),
         ),
-    ] = DEFAULT_MAX_ESTATES,
+    ] = None,
     fail_on_http_error: Annotated[
         bool,
         typer.Option(

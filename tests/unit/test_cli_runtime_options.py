@@ -8,7 +8,6 @@ import pytest
 
 from scraperweb.cli_runtime_options import (
     ALL_CZECHIA_REGION,
-    DEFAULT_MAX_ESTATES,
     DEFAULT_OUTPUT_DIR,
     REGION_CHOICES,
     RuntimeCliOptionsError,
@@ -24,7 +23,7 @@ def test_build_runtime_cli_options_uses_safe_defaults() -> None:
 
     assert options.regions == (ALL_CZECHIA_REGION,)
     assert options.max_pages is None
-    assert options.max_estates == DEFAULT_MAX_ESTATES
+    assert options.max_estates is None
     assert options.fail_on_http_error is False
     assert options.verbose is False
     assert options.quiet is False
