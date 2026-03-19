@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.30.6] - 2026-03-19
+
+### Added
+
+- added backlog task `TASK-062` for an opt-in resumable scrape mode that skips
+  already persisted listings after interrupted runs
+
+### Changed
+
+- updated `docs/TASK_SEQUENCE.md` so the active backlog now includes resumable
+  scraper recovery work alongside traversal hardening
+
 ## [1.30.5] - 2026-03-19
 
 ### Added
