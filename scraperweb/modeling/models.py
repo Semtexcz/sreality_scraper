@@ -34,7 +34,12 @@ class ModelingFeatureSet:
     orp_code: str | None = None
     metropolitan_area: str | None = None
     metropolitan_district: str | None = None
+    spatial_grid_system: str | None = None
+    spatial_grid_source_precision: str | None = None
+    spatial_grid_is_approximate: bool | None = None
+    spatial_grid_parent_cell_id: str | None = None
     spatial_cell_id: str | None = None
+    spatial_grid_fine_cell_id: str | None = None
     municipality_latitude: float | None = None
     municipality_longitude: float | None = None
     distance_to_okresni_mesto_km: float | None = None

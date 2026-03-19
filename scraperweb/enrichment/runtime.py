@@ -22,7 +22,7 @@ from scraperweb.normalization.models import NormalizedNearbyPlace
 from scraperweb.normalization.models import NormalizedListingRecord
 
 
-ENRICHMENT_VERSION = "enriched-listing-v12"
+ENRICHMENT_VERSION = "enriched-listing-v13"
 _DERIVATION_NOTES = (
     "asking_price_czk is derived from normalized typed price amounts only",
     "disposition is parsed from normalized title text only",
@@ -73,9 +73,9 @@ _DERIVATION_NOTES = (
         "and a documented historical-center anchor rather than municipality centroids"
     ),
     (
-        "spatial_cell_id uses a deterministic 0.01-degree grid keyed from the "
-        "resolved Prague district reference point and stays optional outside "
-        "supported metropolitan districts"
+        "spatial grid features use the best available geocoded coordinate and a "
+        "deterministic square-grid hierarchy with 0.04-degree parent cells, "
+        "0.01-degree canonical cells, and 0.0025-degree fine cells"
     ),
     (
         "geocoding uses a deterministic fallback ladder: address and street "
@@ -189,6 +189,9 @@ class NormalizedListingEnricher:
             location=record.location,
             location_resolution=resolved_location,
         )
+        spatial_grid_resolution = self._location_reference_index.resolve_spatial_grid(
+            geocoding_resolution,
+        )
         nearby_places = record.location.nearby_places
 
         return EnrichedListingRecord(
@@ -280,7 +283,20 @@ class NormalizedListingEnricher:
                 distance_to_orp_center_km=resolved_location.distance_to_orp_center_km,
                 metropolitan_area=resolved_location.metropolitan_area,
                 metropolitan_district=resolved_location.metropolitan_district,
-                spatial_cell_id=resolved_location.spatial_cell_id,
+                spatial_grid_system=spatial_grid_resolution.spatial_grid_system,
+                spatial_grid_source_precision=(
+                    spatial_grid_resolution.spatial_grid_source_precision
+                ),
+                spatial_grid_is_approximate=(
+                    spatial_grid_resolution.spatial_grid_is_approximate
+                ),
+                spatial_grid_parent_cell_id=(
+                    spatial_grid_resolution.spatial_grid_parent_cell_id
+                ),
+                spatial_cell_id=spatial_grid_resolution.spatial_cell_id,
+                spatial_grid_fine_cell_id=(
+                    spatial_grid_resolution.spatial_grid_fine_cell_id
+                ),
                 distance_to_prague_center_km=(
                     resolved_location.distance_to_prague_center_km
                 ),

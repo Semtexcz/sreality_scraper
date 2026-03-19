@@ -96,8 +96,11 @@ condition buckets. Enrichment also owns a dedicated `location_features`
 sub-contract that joins bundled reference datasets from `data/` and exposes
 explicit match status, administrative identifiers, municipality centroid
 coordinates, macro distances to district cities and district-local ORP centers,
-district-city and ORP-center flags, metropolitan district overrides, Prague
-spatial buckets, nearby-place accessibility aggregates, conservative district
+district-city and ORP-center flags, metropolitan district overrides, a
+deterministic square-grid hierarchy (`spatial_grid_system`,
+`spatial_grid_parent_cell_id`, `spatial_cell_id`, and
+`spatial_grid_fine_cell_id`) derived from the best available geocoded
+coordinate, nearby-place accessibility aggregates, conservative district
 normalization, and the implemented multi-level geocoding contract for resolved
 coordinates, precision, confidence, fallback level, and provider provenance.
 
@@ -111,11 +114,12 @@ stable modeling input contract that depends on enrichment outputs only.
 The current contract now promotes the approved stable location subset from
 enrichment into `ModelingFeatureSet`, including administrative identifiers,
 metropolitan buckets, coordinates, macro-distance metrics, district-center
-flags, and nearby-place accessibility aggregates. Match candidates and other
-traceability-only metadata remain enrichment-only and are available through the
-preserved `enriched_record`. Future geocoding-specific flattening should stay
-limited to stable fields such as coordinates, precision, confidence, and
-fallback booleans rather than replay-oriented input text.
+flags, hierarchical square-grid identifiers, and nearby-place accessibility
+aggregates. Match candidates and other traceability-only metadata remain
+enrichment-only and are available through the preserved `enriched_record`.
+Future geocoding-specific flattening should stay limited to stable fields such
+as coordinates, precision, confidence, and fallback booleans rather than
+replay-oriented input text.
 
 ### `scraperweb.persistence`
 

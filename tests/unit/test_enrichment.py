@@ -190,7 +190,20 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     assert enriched_record.location_features.distance_to_orp_center_km == 0.0
     assert enriched_record.location_features.metropolitan_area == "Praha"
     assert enriched_record.location_features.metropolitan_district == "Praha 8"
-    assert enriched_record.location_features.spatial_cell_id == "praha-cell-5010-1447"
+    assert enriched_record.location_features.spatial_grid_system == (
+        "deterministic_square_grid_v1"
+    )
+    assert enriched_record.location_features.spatial_grid_source_precision == "district"
+    assert enriched_record.location_features.spatial_grid_is_approximate is True
+    assert enriched_record.location_features.spatial_grid_parent_cell_id == (
+        "sqgrid-v1-r00400-y1252-x361"
+    )
+    assert enriched_record.location_features.spatial_cell_id == (
+        "sqgrid-v1-r00100-y5010-x1447"
+    )
+    assert enriched_record.location_features.spatial_grid_fine_cell_id == (
+        "sqgrid-v1-r00025-y20042-x5789"
+    )
     assert enriched_record.location_features.distance_to_prague_center_km == 4.338
     assert enriched_record.location_features.is_district_city is True
     assert enriched_record.location_features.is_orp_center is True
@@ -305,7 +318,20 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
     assert first_record.location_features.distance_to_orp_center_km == 0.0
     assert first_record.location_features.metropolitan_area is None
     assert first_record.location_features.metropolitan_district is None
-    assert first_record.location_features.spatial_cell_id is None
+    assert first_record.location_features.spatial_grid_system == (
+        "deterministic_square_grid_v1"
+    )
+    assert first_record.location_features.spatial_grid_source_precision == "municipality"
+    assert first_record.location_features.spatial_grid_is_approximate is True
+    assert first_record.location_features.spatial_grid_parent_cell_id == (
+        "sqgrid-v1-r00400-y1229-x415"
+    )
+    assert first_record.location_features.spatial_cell_id == (
+        "sqgrid-v1-r00100-y4919-x1660"
+    )
+    assert first_record.location_features.spatial_grid_fine_cell_id == (
+        "sqgrid-v1-r00025-y19678-x6642"
+    )
     assert first_record.location_features.distance_to_prague_center_km is None
     assert first_record.location_features.is_district_city is True
     assert first_record.location_features.is_orp_center is True
@@ -406,6 +432,14 @@ def test_enricher_resolves_exact_address_geocoding_from_structured_inputs() -> N
     assert enriched_record.location_features.resolved_house_number == "12"
     assert enriched_record.location_features.latitude is not None
     assert enriched_record.location_features.longitude is not None
+    assert enriched_record.location_features.spatial_grid_system == (
+        "deterministic_square_grid_v1"
+    )
+    assert enriched_record.location_features.spatial_grid_source_precision == "address"
+    assert enriched_record.location_features.spatial_grid_is_approximate is False
+    assert enriched_record.location_features.spatial_grid_parent_cell_id is not None
+    assert enriched_record.location_features.spatial_cell_id is not None
+    assert enriched_record.location_features.spatial_grid_fine_cell_id is not None
 
 
 def test_enricher_resolves_street_fallback_when_house_number_is_missing() -> None:
@@ -441,6 +475,43 @@ def test_enricher_resolves_street_fallback_when_house_number_is_missing() -> Non
     assert enriched_record.location_features.resolved_house_number is None
     assert enriched_record.location_features.latitude is not None
     assert enriched_record.location_features.longitude is not None
+
+
+def test_enricher_keeps_high_precision_spatial_grid_assignment_deterministic() -> None:
+    """Assign the same hierarchical grid ids for repeated address-precision inputs."""
+
+    normalized_record = _build_normalized_record(
+        title="Prodej bytu 3+1 77m²Cihlářská 12, Blansko",
+        amount_text="6 400 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Blansko",
+        city_district=None,
+        usable_area_sqm=77.0,
+        total_area_sqm=None,
+        building_material="Cihla",
+        physical_condition=None,
+        floor_position=2,
+        total_floor_count=5,
+        street="Cihlářská",
+        house_number="12",
+    )
+    enricher = NormalizedListingEnricher()
+
+    first_record = enricher.enrich(normalized_record)
+    second_record = enricher.enrich(normalized_record)
+
+    assert first_record.location_features.spatial_grid_source_precision == "address"
+    assert first_record.location_features.spatial_grid_is_approximate is False
+    assert first_record.location_features.spatial_grid_parent_cell_id == (
+        second_record.location_features.spatial_grid_parent_cell_id
+    )
+    assert first_record.location_features.spatial_cell_id == (
+        second_record.location_features.spatial_cell_id
+    )
+    assert first_record.location_features.spatial_grid_fine_cell_id == (
+        second_record.location_features.spatial_grid_fine_cell_id
+    )
 
 
 def test_enricher_keeps_unresolved_geocoding_explicit_without_coordinates() -> None:
@@ -918,7 +989,15 @@ def test_enricher_maps_prague_named_districts_into_metropolitan_features() -> No
     assert enriched_record.location_features.city_district_normalized == "Nusle"
     assert enriched_record.location_features.metropolitan_area == "Praha"
     assert enriched_record.location_features.metropolitan_district == "Praha 4"
-    assert enriched_record.location_features.spatial_cell_id == "praha-cell-5005-1443"
+    assert enriched_record.location_features.spatial_grid_parent_cell_id == (
+        "sqgrid-v1-r00400-y1251-x360"
+    )
+    assert enriched_record.location_features.spatial_cell_id == (
+        "sqgrid-v1-r00100-y5005-x1443"
+    )
+    assert enriched_record.location_features.spatial_grid_fine_cell_id == (
+        "sqgrid-v1-r00025-y20022-x5775"
+    )
     assert enriched_record.location_features.distance_to_prague_center_km == 3.753
 
 

@@ -58,6 +58,10 @@ Approved geocoding artifact ownership:
   persist resolved coordinates together with explicit `location_precision`,
   `geocoding_source`, `geocoding_confidence`, fallback metadata, and replayable
   query-text provenance
+- enriched artifacts also own the canonical square-grid hierarchy via
+  `spatial_grid_system`, `spatial_grid_parent_cell_id`, `spatial_cell_id`, and
+  `spatial_grid_fine_cell_id`, all derived from the best available geocoded
+  coordinate while preserving the source precision context
 - municipality centroid coordinates must remain distinguishable from
   street-level or address-level coordinates through explicit geocoding fields,
   not through undocumented assumptions about which coordinate columns are

@@ -1,6 +1,6 @@
 ---
 task: TASK-043
-status: "todo"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add hierarchical spatial grid features
 
 Task: TASK-043
-Status: todo
+Status: done
 Priority: P1
 Type: feature
 Author:

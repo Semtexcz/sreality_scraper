@@ -14,7 +14,7 @@ from scraperweb.modeling.models import (
 )
 
 
-MODELING_INPUT_VERSION = "modeling-input-v4"
+MODELING_INPUT_VERSION = "modeling-input-v5"
 MODEL_VERSION = "listing-baseline-v2"
 
 
@@ -70,7 +70,20 @@ class EnrichedListingModelingInputBuilder:
                 orp_code=record.location_features.orp_code,
                 metropolitan_area=record.location_features.metropolitan_area,
                 metropolitan_district=record.location_features.metropolitan_district,
+                spatial_grid_system=record.location_features.spatial_grid_system,
+                spatial_grid_source_precision=(
+                    record.location_features.spatial_grid_source_precision
+                ),
+                spatial_grid_is_approximate=(
+                    record.location_features.spatial_grid_is_approximate
+                ),
+                spatial_grid_parent_cell_id=(
+                    record.location_features.spatial_grid_parent_cell_id
+                ),
                 spatial_cell_id=record.location_features.spatial_cell_id,
+                spatial_grid_fine_cell_id=(
+                    record.location_features.spatial_grid_fine_cell_id
+                ),
                 municipality_latitude=record.location_features.municipality_latitude,
                 municipality_longitude=record.location_features.municipality_longitude,
                 distance_to_okresni_mesto_km=(

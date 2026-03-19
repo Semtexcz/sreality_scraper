@@ -16,7 +16,10 @@ _WHITESPACE_PATTERN = re.compile(r"\s+")
 _PRAGUE_NUMBERED_PATTERN = re.compile(r"^Praha\s+\d{1,2}$", re.IGNORECASE)
 _PRAGUE_CENTER_LATITUDE = 50.087451
 _PRAGUE_CENTER_LONGITUDE = 14.420671
-_PRAGUE_SPATIAL_CELL_SIZE_DEGREES = 0.01
+_SPATIAL_GRID_SYSTEM = "deterministic_square_grid_v1"
+_SPATIAL_GRID_PARENT_CELL_SIZE_DEGREES = 0.04
+_SPATIAL_GRID_CANONICAL_CELL_SIZE_DEGREES = 0.01
+_SPATIAL_GRID_FINE_CELL_SIZE_DEGREES = 0.0025
 
 
 @dataclass(frozen=True)
@@ -72,7 +75,6 @@ class LocationResolution:
     distance_to_orp_center_km: float | None = None
     metropolitan_area: str | None = None
     metropolitan_district: str | None = None
-    spatial_cell_id: str | None = None
     distance_to_prague_center_km: float | None = None
     is_district_city: bool | None = None
     is_orp_center: bool | None = None
@@ -104,6 +106,18 @@ class GeocodingResolution:
     resolved_region_code: str | None = None
     geocoding_fallback_level: str | None = None
     geocoding_is_fallback: bool | None = None
+
+
+@dataclass(frozen=True)
+class SpatialGridResolution:
+    """Resolved hierarchical spatial-grid identifiers for one coordinate."""
+
+    spatial_grid_system: str | None = None
+    spatial_grid_source_precision: str | None = None
+    spatial_grid_is_approximate: bool | None = None
+    spatial_grid_parent_cell_id: str | None = None
+    spatial_cell_id: str | None = None
+    spatial_grid_fine_cell_id: str | None = None
 
 
 class LocationReferenceIndex:
@@ -323,6 +337,38 @@ class LocationReferenceIndex:
         )
 
     @staticmethod
+    def resolve_spatial_grid(
+        geocoding_resolution: GeocodingResolution,
+    ) -> SpatialGridResolution:
+        """Resolve hierarchical square-grid cells from the best available coordinate."""
+
+        latitude = geocoding_resolution.latitude
+        longitude = geocoding_resolution.longitude
+        if latitude is None or longitude is None:
+            return SpatialGridResolution()
+
+        return SpatialGridResolution(
+            spatial_grid_system=_SPATIAL_GRID_SYSTEM,
+            spatial_grid_source_precision=geocoding_resolution.location_precision,
+            spatial_grid_is_approximate=geocoding_resolution.geocoding_is_fallback,
+            spatial_grid_parent_cell_id=_build_spatial_grid_cell_id(
+                latitude=latitude,
+                longitude=longitude,
+                resolution_degrees=_SPATIAL_GRID_PARENT_CELL_SIZE_DEGREES,
+            ),
+            spatial_cell_id=_build_spatial_grid_cell_id(
+                latitude=latitude,
+                longitude=longitude,
+                resolution_degrees=_SPATIAL_GRID_CANONICAL_CELL_SIZE_DEGREES,
+            ),
+            spatial_grid_fine_cell_id=_build_spatial_grid_cell_id(
+                latitude=latitude,
+                longitude=longitude,
+                resolution_degrees=_SPATIAL_GRID_FINE_CELL_SIZE_DEGREES,
+            ),
+        )
+
+    @staticmethod
     def _load_municipality_rows(path: Path) -> tuple[MunicipalityReference, ...]:
         """Load municipality rows from the bundled reference CSV file."""
 
@@ -478,10 +524,6 @@ class LocationReferenceIndex:
                 normalized_location_city=municipality_match_input,
             ),
             metropolitan_district=_resolve_metropolitan_district(
-                location_city=municipality_match_input,
-                city_district_normalized=city_district_normalized,
-            ),
-            spatial_cell_id=_resolve_spatial_cell_id(
                 location_city=municipality_match_input,
                 city_district_normalized=city_district_normalized,
             ),
@@ -757,27 +799,21 @@ def _resolve_metropolitan_district(
     return district_reference.metropolitan_district
 
 
-def _resolve_spatial_cell_id(
+def _build_spatial_grid_cell_id(
     *,
-    location_city: str | None,
-    city_district_normalized: str | None,
-) -> str | None:
-    """Return a deterministic metropolitan grid cell identifier."""
+    latitude: float,
+    longitude: float,
+    resolution_degrees: float,
+) -> str:
+    """Build one stable square-grid identifier for a coordinate and resolution."""
 
-    district_reference = _resolve_prague_district_reference(
-        location_city=location_city,
-        city_district_normalized=city_district_normalized,
+    latitude_index = math.floor(latitude / resolution_degrees)
+    longitude_index = math.floor(longitude / resolution_degrees)
+    resolution_label = int(round(resolution_degrees * 10_000))
+    return (
+        f"sqgrid-v1-r{resolution_label:05d}-"
+        f"y{latitude_index}-x{longitude_index}"
     )
-    if district_reference is None:
-        return None
-
-    latitude_index = math.floor(
-        district_reference.latitude / _PRAGUE_SPATIAL_CELL_SIZE_DEGREES,
-    )
-    longitude_index = math.floor(
-        district_reference.longitude / _PRAGUE_SPATIAL_CELL_SIZE_DEGREES,
-    )
-    return f"praha-cell-{latitude_index}-{longitude_index}"
 
 
 def _resolve_prague_center_distance_km(

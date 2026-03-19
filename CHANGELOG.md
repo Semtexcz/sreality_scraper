@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.26.0] - 2026-03-19
+
+### Added
+
+- added a canonical `deterministic_square_grid_v1` hierarchy to enriched
+  location outputs, including parent, canonical, and fine cell identifiers plus
+  explicit grid precision context derived from the best available geocoded
+  coordinate
+- added modeling-stage support for the approved spatial-grid hierarchy so
+  downstream analytical workflows can aggregate listings across multiple spatial
+  resolutions without re-deriving cells
+- added regression coverage for high-precision address coordinates and
+  low-precision municipality coordinates so spatial-grid assignment stays
+  deterministic across precision levels
+
+### Changed
+
+- changed enrichment outputs to version `enriched-listing-v13` and modeling
+  inputs to version `modeling-input-v5` so canonical artifacts now include
+  hierarchical spatial-grid fields
+- replaced the Prague-only `spatial_cell_id` derivation with a repository-wide
+  deterministic square-grid assignment based on resolved geocoded coordinates
+- updated architecture, module, and artifact documentation so spatial grids are
+  documented as enrichment-owned location intelligence
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-043` so the current
+  backlog now starts with `TASK-044`
+- completed `TASK-043` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.25.0] - 2026-03-19
 
 ### Added

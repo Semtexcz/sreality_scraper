@@ -75,7 +75,18 @@ def test_modeling_builder_maps_enriched_record_into_model_ready_contract() -> No
     assert modeling_record.features.orp_code == "1000"
     assert modeling_record.features.metropolitan_area == "Praha"
     assert modeling_record.features.metropolitan_district == "Praha 8"
-    assert modeling_record.features.spatial_cell_id == "praha-cell-5010-1447"
+    assert modeling_record.features.spatial_grid_system == "deterministic_square_grid_v1"
+    assert modeling_record.features.spatial_grid_source_precision == "district"
+    assert modeling_record.features.spatial_grid_is_approximate is True
+    assert modeling_record.features.spatial_grid_parent_cell_id == (
+        "sqgrid-v1-r00400-y1252-x361"
+    )
+    assert modeling_record.features.spatial_cell_id == (
+        "sqgrid-v1-r00100-y5010-x1447"
+    )
+    assert modeling_record.features.spatial_grid_fine_cell_id == (
+        "sqgrid-v1-r00025-y20042-x5789"
+    )
     assert modeling_record.features.municipality_latitude == 50.075638
     assert modeling_record.features.municipality_longitude == 14.4379
     assert modeling_record.features.distance_to_okresni_mesto_km == 0.0
@@ -152,7 +163,7 @@ def test_linear_pipeline_service_composes_full_stage_handoffs() -> None:
         "raw-listing-record-v1",
         NORMALIZATION_VERSION,
         ENRICHMENT_VERSION,
-        "modeling-input-v4",
+        "modeling-input-v5",
     )
     assert modeling_record.enriched_record is not None
     assert modeling_record.enriched_record.normalized_record.listing_id == raw_record.listing_id

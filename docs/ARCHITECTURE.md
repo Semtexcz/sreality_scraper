@@ -164,7 +164,9 @@ Approved location-intelligence ownership:
   `location_precision`, `geocoding_source`, `geocoding_confidence`, and
   fallback-level semantics
 - district-center flags and metropolitan district interpretation belong here
-- spatial bucket identifiers belong here
+- spatial bucket identifiers belong here, including the canonical
+  `deterministic_square_grid_v1` hierarchy with parent, canonical, and fine
+  cell identifiers derived from the best available geocoded coordinate
 - ambiguity must stay explicit through match-status and provenance metadata
 - enrichment must preserve the distinction between exact-address, street,
   district, municipality, and unresolved coordinate outcomes without requiring
