@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.22.2] - 2026-03-19
+
+### Added
+
+- added backlog tasks `TASK-041` through `TASK-046` to cover multi-level
+  geocoding, spatial grids, center-distance and accessibility signals,
+  neighborhood context, and a map-ready price-surface workflow
+
+### Changed
+
+- refreshed `docs/TASK_SEQUENCE.md` so the backlog now sequences the location
+  intelligence expansion from structured address fields through price-surface
+  design
+
 ## [1.22.1] - 2026-03-19
 
 ### Added
