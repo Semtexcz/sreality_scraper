@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.30.1] - 2026-03-19
+
+### Added
+
+- added backlog task `TASK-052` to document raw, normalized, and enriched
+  artifacts with field-level references, ownership boundaries, lineage notes,
+  and representative examples
+
+### Changed
+
+- refreshed `docs/TASK_SEQUENCE.md` so the active backlog now prioritizes
+  artifact-reference documentation ahead of the remaining price-surface design
+  task
+
 ## [1.30.0] - 2026-03-19
 
 ### Added
