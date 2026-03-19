@@ -26,6 +26,7 @@ class RawAcquisitionService:
         raw_record_repository: RawRecordRepository,
         region_slug: str,
         scrape_run_id: str | None = None,
+        resume_existing: bool = False,
         capture_raw_page_snapshots: bool = False,
         fail_on_http_error: bool = False,
         progress_reporter: ScrapeProgressReporter | None = None,
@@ -36,6 +37,7 @@ class RawAcquisitionService:
         self._progress_reporter = progress_reporter or ScrapeProgressReporter()
         self._region_slug = region_slug
         self._raw_record_repository = raw_record_repository
+        self._resume_existing = resume_existing
         self._raw_listing_collector = RawListingCollector(
             listing_page_client=listing_page_client,
             detail_page_client=detail_page_client,
@@ -46,6 +48,9 @@ class RawAcquisitionService:
             capture_raw_page_snapshots=capture_raw_page_snapshots,
             fail_on_detail_http_error=fail_on_http_error,
             progress_reporter=self._progress_reporter,
+            existing_listing_checker=(
+                self._listing_already_exists if self._resume_existing else None
+            ),
             markup_failure_artifact_handler=(
                 self._raw_record_repository.save_markup_failure_artifact
             ),
@@ -79,6 +84,9 @@ class RawAcquisitionService:
                     self._progress_reporter.region_completed(
                         region_slug=self._region_slug,
                         processed_estates=tracked_estates - initial_tracked_estates,
+                        skipped_existing_estates=(
+                            self._raw_listing_collector.skipped_existing_listings
+                        ),
                     )
                     return tracked_estates
         except ScraperHttpError as error:
@@ -96,5 +104,15 @@ class RawAcquisitionService:
         self._progress_reporter.region_completed(
             region_slug=self._region_slug,
             processed_estates=tracked_estates - initial_tracked_estates,
+            skipped_existing_estates=self._raw_listing_collector.skipped_existing_listings,
         )
         return tracked_estates
+
+    def _listing_already_exists(self, listing_id: str, source_url: str) -> bool:
+        """Return whether resume mode should skip one already-persisted listing."""
+
+        return self._raw_record_repository.has_listing_record(
+            region=self._region_slug,
+            listing_id=listing_id,
+            source_url=source_url,
+        )

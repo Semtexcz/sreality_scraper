@@ -64,6 +64,7 @@ def test_scrape_command_runs_with_explicit_runtime_options(monkeypatch) -> None:
     assert captured_options["value"].regions == ("praha", "jihomoravsky-kraj")
     assert captured_options["value"].max_pages == 3
     assert captured_options["value"].max_estates == 12
+    assert captured_options["value"].resume_existing is False
     assert captured_options["value"].fail_on_http_error is False
     assert captured_options["value"].verbose is False
     assert captured_options["value"].quiet is False
@@ -84,6 +85,7 @@ def test_scrape_command_defaults_to_global_all_czechia_target(monkeypatch) -> No
             regions=options.regions,
             max_pages=options.max_pages,
             max_estates=options.max_estates,
+            resume_existing=options.resume_existing,
         )
         return 1
 
@@ -96,8 +98,9 @@ def test_scrape_command_defaults_to_global_all_czechia_target(monkeypatch) -> No
     assert captured_options["value"].regions == ("all-czechia",)
     assert captured_options["value"].max_pages is None
     assert captured_options["value"].max_estates is None
+    assert captured_options["value"].resume_existing is False
     assert captured_options["value"].fail_on_http_error is False
-    assert "Starting scrape:" in result.stdout
+    assert "resume_existing=disabled" in result.stdout
 
 
 def test_scrape_command_help_describes_unbounded_default_estate_limit() -> None:
@@ -132,6 +135,26 @@ def test_scrape_command_supports_fail_fast_http_mode(monkeypatch) -> None:
     assert captured_options["value"].fail_on_http_error is True
 
 
+def test_scrape_command_supports_resume_existing_mode(monkeypatch) -> None:
+    """Pass the explicit resume flag through to runtime composition."""
+
+    captured_options = {}
+
+    def fake_run_scraper(options, progress_reporter) -> int:
+        """Capture runtime options passed from the CLI."""
+
+        captured_options["value"] = options
+        del progress_reporter
+        return 0
+
+    monkeypatch.setattr("scraperweb.cli.run_scraper", fake_run_scraper)
+
+    result = runner.invoke(app, ["scrape", "--resume-existing"])
+
+    assert result.exit_code == 0
+    assert captured_options["value"].resume_existing is True
+
+
 def test_scrape_command_supports_verbose_progress_mode(monkeypatch) -> None:
     """Pass the verbose progress option through to runtime composition."""
 
@@ -160,6 +183,16 @@ def test_scrape_command_rejects_conflicting_output_modes() -> None:
 
     assert result.exit_code != 0
     assert "--verbose and --quiet cannot be used together." in result.stdout
+
+
+def test_scrape_command_help_describes_resume_existing_flag() -> None:
+    """Document the opt-in resume workflow on the public CLI surface."""
+
+    result = runner.invoke(app, ["scrape", "--help"])
+
+    assert result.exit_code == 0
+    assert "--resume-existing" in result.stdout
+    assert "persisted raw" in result.stdout
 
 
 def test_scrape_command_rejects_mongodb_options_for_filesystem_backend() -> None:

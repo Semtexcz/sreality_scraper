@@ -1,6 +1,6 @@
 ---
 task: TASK-062
-status: "backlog"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add resumable scrape mode that skips existing listings
 
 Task: TASK-062
-Status: backlog
+Status: done
 Priority: P1
 Type: feature
 Author:

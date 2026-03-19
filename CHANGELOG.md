@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.31.0] - 2026-03-19
+
+### Added
+
+- added an explicit `--resume-existing` scraper mode that checks the selected
+  backend for an existing raw record with the same `(region, listing_id)` and
+  skips detail-page downloads for already persisted listings
+- added repository-level existence checks for filesystem and MongoDB raw
+  storage, with filesystem resume checks ignoring markup-failure artifacts so
+  failed detail captures do not block later recovery runs
+- added progress and regression coverage for resume-mode skip reporting, CLI
+  wiring, and backend-specific existence checks
+
+### Changed
+
+- updated region summaries and scrape-start output so operators can see whether
+  resume mode is enabled and how many listings were skipped as already existing
+- updated README documentation to describe the resume workflow, identity rules,
+  and skip-reporting semantics
+- completed `TASK-062` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.30.7] - 2026-03-19
 
 ### Changed

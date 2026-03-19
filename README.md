@@ -101,6 +101,8 @@ Scrape command options:
   traversal continues until scraper stop conditions are met
 - `--max-estates <int>`: optional max estates in one run; when omitted, scraping
   continues until pagination is exhausted or another explicit stop condition is met
+- `--resume-existing`: skip detail-page downloads for listings that already have at
+  least one persisted raw snapshot in the selected backend and region
 - `--storage-backend <filesystem|mongodb>`: target storage backend (default `filesystem`)
 - `--output-dir <path>`: filesystem output root (default `data/raw`)
 - `--mongodb-uri <uri>`: MongoDB URI for MongoDB backend
@@ -112,6 +114,11 @@ Region traversal semantics:
   markup suggests more pages
 - when `--max-estates` is omitted, the runtime reports the estate bound as
   `unbounded` so operators can distinguish a full crawl from a sampled run
+- when `--resume-existing` is enabled, the scraper treats `(region, listing_id)` as
+  the canonical identity for an existing raw record and skips detail downloads for
+  listings that already exist in the selected backend
+- resume-mode existence checks ignore `*.markup-failure.json` artifacts because they
+  do not represent a successfully persisted raw listing record
 - traversal stops early when a listing page is empty
 - traversal stops early when a listing page repeats an already observed estate URL set
 - traversal stops early when a listing page contains only already-seen estate URLs, which protects runs from duplicate tail pages and pagination drift
@@ -124,6 +131,8 @@ Region traversal semantics:
 - every traversal stop now emits a page-level diagnostic with the stop reason,
   observed estate count, new estate count, stale-page streak, and repeated-page
   origin when applicable
+- resume-mode progress reports skipped-existing listings without counting them as
+  processed estates, and region summaries include both processed and skipped counts
 
 Validation rules:
 

@@ -48,6 +48,7 @@ class RuntimeCliOptions:
     regions: tuple[str, ...]
     max_pages: int | None
     max_estates: int | None
+    resume_existing: bool
     fail_on_http_error: bool
     verbose: bool
     quiet: bool
@@ -62,6 +63,7 @@ def build_runtime_cli_options(
     regions: Sequence[str] | None = None,
     max_pages: int | None = None,
     max_estates: int | None = None,
+    resume_existing: bool = False,
     fail_on_http_error: bool = False,
     verbose: bool = False,
     quiet: bool = False,
@@ -86,6 +88,7 @@ def build_runtime_cli_options(
         regions=validated_regions,
         max_pages=max_pages,
         max_estates=max_estates,
+        resume_existing=resume_existing,
         fail_on_http_error=fail_on_http_error,
         verbose=verbose,
         quiet=quiet,

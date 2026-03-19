@@ -69,6 +69,7 @@ def run_scraper(
         regions=options.regions,
         max_pages=options.max_pages,
         max_estates=options.max_estates,
+        resume_existing=options.resume_existing,
     )
 
     for region_slug in options.regions:
@@ -79,6 +80,7 @@ def run_scraper(
             detail_page_parser=SrealityDetailPageParser(),
             raw_record_repository=raw_record_repository,
             region_slug=region_slug,
+            resume_existing=options.resume_existing,
             capture_raw_page_snapshots=False,
             fail_on_http_error=options.fail_on_http_error,
             progress_reporter=reporter,

@@ -24,6 +24,9 @@ class RawRecordRepository(Protocol):
     ) -> None:
         """Persist one detail-page markup failure artifact."""
 
+    def has_listing_record(self, *, region: str, listing_id: str, source_url: str) -> bool:
+        """Return whether a successful raw record already exists for one listing."""
+
 
 class FilesystemRawRecordRepository:
     """Persist raw listing snapshots and failure artifacts on the local filesystem."""
@@ -84,6 +87,22 @@ class FilesystemRawRecordRepository:
             output_file.write("\n")
 
         snapshot_path.write_text(artifact.raw_page_snapshot, encoding="utf-8")
+
+    def has_listing_record(self, *, region: str, listing_id: str, source_url: str) -> bool:
+        """Return whether the filesystem already stores one raw record for a listing."""
+
+        del source_url
+        listing_directory = (
+            self._output_dir
+            / _sanitize_path_component(region)
+            / _sanitize_path_component(listing_id)
+        )
+        if not listing_directory.exists():
+            return False
+        return any(
+            path.suffix == ".json" and not path.name.endswith(".markup-failure.json")
+            for path in listing_directory.iterdir()
+        )
 
     def _build_listing_directory(self, region: str, listing_id: str) -> Path:
         """Return the stable filesystem directory for one listing."""
@@ -153,6 +172,19 @@ class MongoRawRecordRepository:
         """Insert one detail-page markup failure artifact as an immutable document."""
 
         self._markup_failure_collection.insert_one(artifact.to_serializable_dict())
+
+    def has_listing_record(self, *, region: str, listing_id: str, source_url: str) -> bool:
+        """Return whether MongoDB already stores one raw record for a listing."""
+
+        del source_url
+        existing_record = self._collection.find_one(
+            {
+                "listing_id": listing_id,
+                "source_metadata.region": region,
+            },
+            {"_id": 1},
+        )
+        return existing_record is not None
 
 
 _SANITIZE_PATTERN = re.compile(r"[^A-Za-z0-9._-]+")

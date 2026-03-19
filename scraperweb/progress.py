@@ -21,6 +21,7 @@ class ScrapeProgressReporter:
         regions: tuple[str, ...],
         max_pages: int | None,
         max_estates: int | None,
+        resume_existing: bool,
     ) -> None:
         """Report the beginning of one top-level scrape run."""
 
@@ -56,6 +57,16 @@ class ScrapeProgressReporter:
     ) -> None:
         """Report cumulative estate-processing progress."""
 
+    def existing_listing_skipped(
+        self,
+        *,
+        region_slug: str,
+        page_number: int,
+        total_skipped: int,
+        listing_url: str,
+    ) -> None:
+        """Report that one already-persisted listing was skipped in resume mode."""
+
     def detail_http_error_skipped(
         self,
         *,
@@ -76,7 +87,13 @@ class ScrapeProgressReporter:
     ) -> None:
         """Report that one listing was skipped after a recoverable markup failure."""
 
-    def region_completed(self, *, region_slug: str, processed_estates: int) -> None:
+    def region_completed(
+        self,
+        *,
+        region_slug: str,
+        processed_estates: int,
+        skipped_existing_estates: int,
+    ) -> None:
         """Report the end of one region traversal."""
 
 
@@ -104,6 +121,7 @@ class TerminalScrapeProgressReporter(ScrapeProgressReporter):
         regions: tuple[str, ...],
         max_pages: int | None,
         max_estates: int | None,
+        resume_existing: bool,
     ) -> None:
         """Show the selected runtime bounds before network work begins."""
 
@@ -112,9 +130,12 @@ class TerminalScrapeProgressReporter(ScrapeProgressReporter):
         region_list = ", ".join(regions)
         max_pages_label = str(max_pages) if max_pages is not None else "unbounded"
         max_estates_label = str(max_estates) if max_estates is not None else "unbounded"
+        resume_label = "enabled" if resume_existing else "disabled"
         self._output(
             "Starting scrape: "
-            f"regions={region_list}, max_pages={max_pages_label}, max_estates={max_estates_label}",
+            "regions="
+            f"{region_list}, max_pages={max_pages_label}, "
+            f"max_estates={max_estates_label}, resume_existing={resume_label}",
         )
 
     def region_started(self, *, region_slug: str) -> None:
@@ -189,6 +210,27 @@ class TerminalScrapeProgressReporter(ScrapeProgressReporter):
         if total_processed == 1 or total_processed % self._report_interval == 0:
             self._output(f"Processed {total_processed}/{max_estates_label} estates")
 
+    def existing_listing_skipped(
+        self,
+        *,
+        region_slug: str,
+        page_number: int,
+        total_skipped: int,
+        listing_url: str,
+    ) -> None:
+        """Show resume-mode skips without spamming normal terminal output."""
+
+        if self._quiet:
+            return
+        if self._verbose:
+            self._output(
+                f"Region {region_slug}: skipped existing listing on page {page_number} "
+                f"({listing_url})",
+            )
+            return
+        if total_skipped == 1 or total_skipped % self._report_interval == 0:
+            self._output(f"Skipped {total_skipped} existing listings")
+
     def detail_http_error_skipped(
         self,
         *,
@@ -224,11 +266,18 @@ class TerminalScrapeProgressReporter(ScrapeProgressReporter):
             f"({listing_url}) after markup failure: {message}",
         )
 
-    def region_completed(self, *, region_slug: str, processed_estates: int) -> None:
+    def region_completed(
+        self,
+        *,
+        region_slug: str,
+        processed_estates: int,
+        skipped_existing_estates: int,
+    ) -> None:
         """Show the number of estates persisted from one region traversal."""
 
         if self._quiet:
             return
         self._output(
-            f"Region {region_slug}: completed with {processed_estates} processed estates",
+            f"Region {region_slug}: completed with {processed_estates} processed estates "
+            f"and {skipped_existing_estates} skipped existing listings",
         )

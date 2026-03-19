@@ -83,6 +83,7 @@ class RawListingCollector:
         capture_raw_page_snapshots: bool = False,
         fail_on_detail_http_error: bool = False,
         progress_reporter: ScrapeProgressReporter | None = None,
+        existing_listing_checker: Callable[[str, str], bool] | None = None,
         markup_failure_artifact_handler: (
             Callable[[DetailMarkupFailureArtifact], None] | None
         ) = None,
@@ -98,7 +99,15 @@ class RawListingCollector:
         self._capture_raw_page_snapshots = capture_raw_page_snapshots
         self._fail_on_detail_http_error = fail_on_detail_http_error
         self._progress_reporter = progress_reporter or ScrapeProgressReporter()
+        self._existing_listing_checker = existing_listing_checker
         self._markup_failure_artifact_handler = markup_failure_artifact_handler
+        self._skipped_existing_listings = 0
+
+    @property
+    def skipped_existing_listings(self) -> int:
+        """Return how many already-persisted listings were skipped in the last run."""
+
+        return self._skipped_existing_listings
 
     def collect_region_records(
         self,
@@ -107,6 +116,7 @@ class RawListingCollector:
     ) -> Iterator[RawListingRecord]:
         """Yield raw listing records for one region until traversal exhaustion."""
 
+        self._skipped_existing_listings = 0
         traversal_state = ListingTraversalState()
         page_numbers = range(1, max_pages + 1) if max_pages is not None else count(1)
         use_hardened_all_czechia_traversal = self._should_harden_all_czechia_traversal(
@@ -152,6 +162,19 @@ class RawListingCollector:
             )
 
             for estate_url in evaluation_result.new_estate_urls:
+                listing_id = self._extract_listing_id(estate_url)
+                if self._existing_listing_checker is not None and self._existing_listing_checker(
+                    listing_id,
+                    estate_url,
+                ):
+                    self._skipped_existing_listings += 1
+                    self._progress_reporter.existing_listing_skipped(
+                        region_slug=self._region_slug,
+                        page_number=page_number,
+                        total_skipped=self._skipped_existing_listings,
+                        listing_url=estate_url,
+                    )
+                    continue
                 try:
                     detail_html = self._fetch_detail_page(
                         detail_url=estate_url,
@@ -209,6 +232,7 @@ class RawListingCollector:
                     continue
                 yield self._build_raw_listing_record(
                     estate_url=estate_url,
+                    listing_id=listing_id,
                     page_number=page_number,
                     raw_payload=raw_payload,
                     detail_html=detail_html,
@@ -374,6 +398,7 @@ class RawListingCollector:
     def _build_raw_listing_record(
         self,
         estate_url: str,
+        listing_id: str,
         page_number: int,
         raw_payload: dict[str, JsonValue],
         detail_html: str,
@@ -381,7 +406,7 @@ class RawListingCollector:
         """Create the canonical scraper-owned raw listing contract."""
 
         return RawListingRecord(
-            listing_id=self._extract_listing_id(estate_url),
+            listing_id=listing_id,
             source_url=estate_url,
             captured_at_utc=datetime.now(timezone.utc),
             source_payload=raw_payload,

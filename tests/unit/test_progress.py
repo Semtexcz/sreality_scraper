@@ -16,9 +16,16 @@ def test_terminal_progress_reporter_emits_default_progress_messages() -> None:
         regions=("all-czechia",),
         max_pages=None,
         max_estates=100,
+        resume_existing=True,
     )
     reporter.region_started(region_slug="all-czechia")
     reporter.listing_page_started(region_slug="all-czechia", page_number=1)
+    reporter.existing_listing_skipped(
+        region_slug="all-czechia",
+        page_number=1,
+        total_skipped=1,
+        listing_url="https://detail/existing",
+    )
     reporter.estate_processed(
         total_processed=1,
         max_estates=100,
@@ -36,16 +43,21 @@ def test_terminal_progress_reporter_emits_default_progress_messages() -> None:
         listing_url="https://detail/3",
         message="missing non-empty listing title",
     )
-    reporter.region_completed(region_slug="all-czechia", processed_estates=1)
+    reporter.region_completed(
+        region_slug="all-czechia",
+        processed_estates=1,
+        skipped_existing_estates=1,
+    )
 
     assert messages == [
-        "Starting scrape: regions=all-czechia, max_pages=unbounded, max_estates=100",
+        "Starting scrape: regions=all-czechia, max_pages=unbounded, max_estates=100, resume_existing=enabled",
         "Region all-czechia: starting",
         "Region all-czechia: fetching page 1",
+        "Skipped 1 existing listings",
         "Processed 1/100 estates",
         "Region all-czechia: skipped listing on page 1 (https://detail/2) after HTTP failure: 404",
         "Region all-czechia: skipped listing on page 1 (https://detail/3) after markup failure: missing non-empty listing title",
-        "Region all-czechia: completed with 1 processed estates",
+        "Region all-czechia: completed with 1 processed estates and 1 skipped existing listings",
     ]
 
 
@@ -59,6 +71,12 @@ def test_terminal_progress_reporter_emits_verbose_messages() -> None:
         region_slug="all-czechia",
         page_number=4,
         discovered_estates=24,
+    )
+    reporter.existing_listing_skipped(
+        region_slug="all-czechia",
+        page_number=4,
+        total_skipped=3,
+        listing_url="https://detail/existing",
     )
     reporter.estate_processed(
         total_processed=11,
@@ -79,6 +97,7 @@ def test_terminal_progress_reporter_emits_verbose_messages() -> None:
 
     assert messages == [
         "Region all-czechia: page 4 yielded 24 new listings",
+        "Region all-czechia: skipped existing listing on page 4 (https://detail/existing)",
         "Processed 11/100 estates: https://detail/11",
         "Region all-czechia: stopping on page 307 (reason=stale_listing_window_limit, observed=24, new=0, stale_streak=3, repeated_from_page=none)",
     ]
@@ -94,6 +113,7 @@ def test_terminal_progress_reporter_suppresses_output_in_quiet_mode() -> None:
         regions=("all-czechia",),
         max_pages=5,
         max_estates=100,
+        resume_existing=False,
     )
     reporter.region_started(region_slug="all-czechia")
     reporter.listing_page_started(region_slug="all-czechia", page_number=1)
@@ -106,6 +126,12 @@ def test_terminal_progress_reporter_suppresses_output_in_quiet_mode() -> None:
         total_processed=1,
         max_estates=100,
         listing_url="https://detail/1",
+    )
+    reporter.existing_listing_skipped(
+        region_slug="all-czechia",
+        page_number=1,
+        total_skipped=1,
+        listing_url="https://detail/existing",
     )
     reporter.detail_http_error_skipped(
         region_slug="all-czechia",
@@ -130,7 +156,11 @@ def test_terminal_progress_reporter_suppresses_output_in_quiet_mode() -> None:
             repeated_page_first_seen_at=None,
         ),
     )
-    reporter.region_completed(region_slug="all-czechia", processed_estates=1)
+    reporter.region_completed(
+        region_slug="all-czechia",
+        processed_estates=1,
+        skipped_existing_estates=1,
+    )
 
     assert messages == []
 
@@ -145,6 +175,7 @@ def test_terminal_progress_reporter_labels_unbounded_estate_limit_explicitly() -
         regions=("all-czechia",),
         max_pages=None,
         max_estates=None,
+        resume_existing=False,
     )
     reporter.estate_processed(
         total_processed=3,
@@ -153,6 +184,6 @@ def test_terminal_progress_reporter_labels_unbounded_estate_limit_explicitly() -
     )
 
     assert messages == [
-        "Starting scrape: regions=all-czechia, max_pages=unbounded, max_estates=unbounded",
+        "Starting scrape: regions=all-czechia, max_pages=unbounded, max_estates=unbounded, resume_existing=disabled",
         "Processed 3/unbounded estates: https://detail/3",
     ]

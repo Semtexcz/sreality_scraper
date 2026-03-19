@@ -100,6 +100,15 @@ class RecordingRepository:
 
         self.markup_failure_artifacts.append(artifact)
 
+    def has_listing_record(self, *, region: str, listing_id: str, source_url: str) -> bool:
+        """Return whether a matching stored raw record already exists."""
+
+        del source_url
+        return any(
+            record.listing_id == listing_id and record.source_metadata.region == region
+            for record in self.records
+        )
+
 
 class RecordingLogger:
     """Collect acquisition error logs for assertions."""
@@ -132,6 +141,8 @@ class RecordingProgressReporter(ScrapeProgressReporter):
         """Initialize empty captured stop events."""
 
         self.stop_events: list[tuple[str, ListingPageStopDiagnostics]] = []
+        self.skipped_existing_events: list[tuple[str, int, int, str]] = []
+        self.completed_regions: list[tuple[str, int, int]] = []
 
     def listing_traversal_stopped(
         self,
@@ -142,6 +153,33 @@ class RecordingProgressReporter(ScrapeProgressReporter):
         """Record each traversal stop event."""
 
         self.stop_events.append((region_slug, diagnostics))
+
+    def existing_listing_skipped(
+        self,
+        *,
+        region_slug: str,
+        page_number: int,
+        total_skipped: int,
+        listing_url: str,
+    ) -> None:
+        """Record each resume-mode skip event."""
+
+        self.skipped_existing_events.append(
+            (region_slug, page_number, total_skipped, listing_url),
+        )
+
+    def region_completed(
+        self,
+        *,
+        region_slug: str,
+        processed_estates: int,
+        skipped_existing_estates: int,
+    ) -> None:
+        """Record the final region summary."""
+
+        self.completed_regions.append(
+            (region_slug, processed_estates, skipped_existing_estates),
+        )
 
 
 class FailingListingPageClient:
@@ -225,6 +263,19 @@ class FakeCollection:
 
         self.inserted_documents.append(document)
 
+    def find_one(
+        self,
+        query: dict[str, Any],
+        projection: dict[str, Any] | None = None,
+    ) -> dict[str, Any] | None:
+        """Return the first inserted document that matches a minimal query subset."""
+
+        del projection
+        for document in self.inserted_documents:
+            if all(_read_nested_value(document, key) == value for key, value in query.items()):
+                return document
+        return None
+
 
 class FakeDatabase:
     """Minimal MongoDB database stub for repository tests."""
@@ -252,6 +303,17 @@ class FakeMongoClient:
         """Return the configured fake database."""
 
         return self._database
+
+
+def _read_nested_value(document: dict[str, Any], dotted_key: str) -> Any:
+    """Return a nested dictionary value selected by dotted-key notation."""
+
+    value: Any = document
+    for part in dotted_key.split("."):
+        if not isinstance(value, dict) or part not in value:
+            return None
+        value = value[part]
+    return value
 
 
 @pytest.fixture
@@ -356,6 +418,58 @@ def test_filesystem_repository_sanitizes_paths_and_preserves_raw_payload(
     assert not json_path.with_suffix(".html").exists()
 
 
+def test_filesystem_repository_detects_existing_listing_records(
+    tmp_path: Path,
+    sample_record: RawListingRecord,
+) -> None:
+    """Treat one persisted raw JSON snapshot as an existing listing for resume mode."""
+
+    repository = FilesystemRawRecordRepository(tmp_path)
+    repository.save_record(sample_record)
+
+    assert repository.has_listing_record(
+        region="praha",
+        listing_id="1234567890",
+        source_url=sample_record.source_url,
+    ) is True
+    assert repository.has_listing_record(
+        region="brno",
+        listing_id="1234567890",
+        source_url=sample_record.source_url,
+    ) is False
+
+
+def test_filesystem_repository_ignores_markup_failure_artifacts_for_existence_checks(
+    tmp_path: Path,
+) -> None:
+    """Do not treat markup-failure artifacts as successfully persisted raw records."""
+
+    repository = FilesystemRawRecordRepository(tmp_path)
+    repository.save_markup_failure_artifact(
+        DetailMarkupFailureArtifact(
+            listing_id="123",
+            source_url="https://www.sreality.cz/detail/prodej/byt/praha/123",
+            captured_at_utc=datetime(2026, 3, 19, 10, 0, 0, tzinfo=timezone.utc),
+            raw_page_snapshot="<html>broken</html>",
+            failure_message="missing title",
+            source_metadata=RawSourceMetadata(
+                region="praha",
+                listing_page_number=1,
+                scrape_run_id="run-markup-failure",
+                http_status=200,
+                parser_version="sreality-detail-v1",
+                captured_from="detail_page",
+            ),
+        ),
+    )
+
+    assert repository.has_listing_record(
+        region="praha",
+        listing_id="123",
+        source_url="https://www.sreality.cz/detail/prodej/byt/praha/123",
+    ) is False
+
+
 def test_mongo_repository_creates_expected_indexes_and_inserts_document(
     monkeypatch: pytest.MonkeyPatch,
     sample_record: RawListingRecord,
@@ -381,6 +495,40 @@ def test_mongo_repository_creates_expected_indexes_and_inserts_document(
     assert len(fake_collection.created_indexes) == 6
     assert fake_collection.inserted_documents[0]["listing_id"] == "1234567890"
     assert fake_collection.inserted_documents[0]["captured_at_utc"] == "2026-03-17T11:22:33+00:00"
+
+
+def test_mongo_repository_detects_existing_listing_records(
+    monkeypatch: pytest.MonkeyPatch,
+    sample_record: RawListingRecord,
+) -> None:
+    """Check MongoDB for a same-region listing before resume-mode downloads."""
+
+    fake_collection = FakeCollection()
+
+    def fake_mongo_client(uri: str) -> FakeMongoClient:
+        """Return a deterministic fake client for repository construction."""
+
+        assert uri == "mongodb://example.test:27017"
+        return FakeMongoClient(fake_collection)
+
+    monkeypatch.setattr("scraperweb.persistence.repositories.pymongo.MongoClient", fake_mongo_client)
+
+    repository = MongoRawRecordRepository(
+        mongodb_uri="mongodb://example.test:27017",
+        mongodb_database="RawListings",
+    )
+    repository.save_record(sample_record)
+
+    assert repository.has_listing_record(
+        region="praha",
+        listing_id="1234567890",
+        source_url=sample_record.source_url,
+    ) is True
+    assert repository.has_listing_record(
+        region="brno",
+        listing_id="1234567890",
+        source_url=sample_record.source_url,
+    ) is False
 
 
 def test_raw_listing_collector_emits_source_faithful_raw_records() -> None:
@@ -896,6 +1044,66 @@ def test_acquisition_service_respects_max_pages_and_max_estates_limits() -> None
     assert all(record.raw_page_snapshot is None for record in repository.records)
 
 
+def test_acquisition_service_resume_existing_skips_detail_downloads_for_saved_listings() -> None:
+    """Skip already-persisted listings before detail fetches when resume mode is enabled."""
+
+    repository = RecordingRepository()
+    existing_record = RawListingRecord(
+        listing_id="1",
+        source_url="https://detail/1",
+        captured_at_utc=datetime(2026, 3, 19, 9, 0, 0, tzinfo=timezone.utc),
+        source_payload={"payload": "<html>existing</html>"},
+        source_metadata=RawSourceMetadata(
+            region="praha",
+            listing_page_number=1,
+            scrape_run_id="run-existing",
+            http_status=200,
+            parser_version="sreality-detail-v1",
+            captured_from="detail_page",
+        ),
+        raw_page_snapshot=None,
+    )
+    repository.save_record(existing_record)
+    detail_page_client = FakeDetailPageClient(
+        {
+            "https://detail/2": "<html>detail 2</html>",
+        },
+    )
+    progress_reporter = RecordingProgressReporter()
+    service = RawAcquisitionService(
+        listing_page_client=FakeListingPageClient(
+            {
+                "https://example.test/praha?strana=1": (
+                    "pages:1\nhttps://detail/1\nhttps://detail/2"
+                ),
+            },
+        ),
+        detail_page_client=detail_page_client,
+        listing_page_parser=FakeListingPageParser(),
+        detail_page_parser=FakeDetailPageParser(),
+        raw_record_repository=repository,
+        region_slug="praha",
+        scrape_run_id="run-resume-existing",
+        resume_existing=True,
+        capture_raw_page_snapshots=False,
+        progress_reporter=progress_reporter,
+    )
+
+    tracked_estates = service.collect_for_region(
+        district_link="https://example.test/praha?strana=",
+        max_pages=1,
+        max_estates=10,
+        tracked_estates=0,
+    )
+
+    assert tracked_estates == 1
+    assert [record.listing_id for record in repository.records] == ["1", "2"]
+    assert progress_reporter.skipped_existing_events == [
+        ("praha", 1, 1, "https://detail/1"),
+    ]
+    assert progress_reporter.completed_regions == [("praha", 1, 1)]
+
+
 def test_acquisition_service_collects_until_pagination_exhaustion_without_estate_limit() -> None:
     """Keep collecting records until the listing traversal itself stops."""
 
@@ -1349,6 +1557,7 @@ def test_build_raw_record_repository_uses_filesystem_backend(tmp_path: Path) -> 
             regions=("praha",),
             max_pages=1,
             max_estates=1,
+            resume_existing=False,
             fail_on_http_error=False,
             verbose=False,
             quiet=False,
@@ -1380,6 +1589,7 @@ def test_build_raw_record_repository_uses_mongodb_backend(monkeypatch: pytest.Mo
             regions=("praha",),
             max_pages=1,
             max_estates=1,
+            resume_existing=False,
             fail_on_http_error=False,
             verbose=False,
             quiet=False,

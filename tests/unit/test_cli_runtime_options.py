@@ -24,6 +24,7 @@ def test_build_runtime_cli_options_uses_safe_defaults() -> None:
     assert options.regions == (ALL_CZECHIA_REGION,)
     assert options.max_pages is None
     assert options.max_estates is None
+    assert options.resume_existing is False
     assert options.fail_on_http_error is False
     assert options.verbose is False
     assert options.quiet is False
@@ -53,6 +54,14 @@ def test_build_runtime_cli_options_supports_fail_fast_http_mode() -> None:
     options = build_runtime_cli_options(fail_on_http_error=True)
 
     assert options.fail_on_http_error is True
+
+
+def test_build_runtime_cli_options_supports_resume_existing_mode() -> None:
+    """Allow callers to opt into resume-mode existence checks."""
+
+    options = build_runtime_cli_options(resume_existing=True)
+
+    assert options.resume_existing is True
 
 
 def test_build_runtime_cli_options_supports_verbose_progress_mode() -> None:

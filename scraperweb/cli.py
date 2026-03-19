@@ -41,6 +41,7 @@ def _build_scrape_options(
     regions: list[str] | None,
     max_pages: int | None,
     max_estates: int | None,
+    resume_existing: bool,
     fail_on_http_error: bool,
     verbose: bool,
     quiet: bool,
@@ -56,6 +57,7 @@ def _build_scrape_options(
             regions=regions,
             max_pages=max_pages,
             max_estates=max_estates,
+            resume_existing=resume_existing,
             fail_on_http_error=fail_on_http_error,
             verbose=verbose,
             quiet=quiet,
@@ -100,6 +102,16 @@ def scrape_command(
             ),
         ),
     ] = None,
+    resume_existing: Annotated[
+        bool,
+        typer.Option(
+            "--resume-existing",
+            help=(
+                "Skip detail-page downloads for listings that already have a "
+                "persisted raw record in the selected backend and region."
+            ),
+        ),
+    ] = False,
     fail_on_http_error: Annotated[
         bool,
         typer.Option(
@@ -160,6 +172,7 @@ def scrape_command(
         regions=region,
         max_pages=max_pages,
         max_estates=max_estates,
+        resume_existing=resume_existing,
         fail_on_http_error=fail_on_http_error,
         verbose=verbose,
         quiet=quiet,
@@ -169,10 +182,11 @@ def scrape_command(
         output_dir=output_dir,
     )
     logger.info(
-        "Selected runtime options: regions={}, max_pages={}, max_estates={}, fail_on_http_error={}, verbose={}, quiet={}, storage_backend={}",
+        "Selected runtime options: regions={}, max_pages={}, max_estates={}, resume_existing={}, fail_on_http_error={}, verbose={}, quiet={}, storage_backend={}",
         options.regions,
         options.max_pages,
         options.max_estates,
+        options.resume_existing,
         options.fail_on_http_error,
         options.verbose,
         options.quiet,
