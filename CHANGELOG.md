@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.30.5] - 2026-03-19
+
+### Added
+
+- added backlog task `TASK-061` to capture the observed nationwide
+  `all-czechia` early-stop issue and define the required traversal-hardening,
+  diagnostics, and regression coverage work
+
+### Changed
+
+- updated `docs/TASK_SEQUENCE.md` so the active backlog now prioritizes scraper
+  traversal reliability ahead of the notebook-analysis batch
+
 ## [1.30.4] - 2026-03-19
 
 ### Added
