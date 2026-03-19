@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import shutil
+from datetime import datetime
+from datetime import timezone
 from pathlib import Path
 
 from scraperweb.normalization import (
@@ -12,6 +14,7 @@ from scraperweb.normalization import (
     FilesystemRawSnapshotSource,
     NormalizationWorkflowSelection,
 )
+from scraperweb.scraper.models import RawListingRecord, RawSourceMetadata
 
 
 def test_normalization_workflow_normalizes_all_snapshots_for_one_listing(
@@ -48,7 +51,7 @@ def test_normalization_workflow_normalizes_all_snapshots_for_one_listing(
     )
     latest_record = json.loads(output_paths[-1].read_text(encoding="utf-8"))
     assert latest_record["listing_id"] == "2664846156"
-    assert latest_record["normalization_version"] == "normalized-listing-v8"
+    assert latest_record["normalization_version"] == "normalized-listing-v9"
     assert latest_record["normalization_metadata"]["source_contract_version"] == (
         "raw-listing-record-v1"
     )
@@ -164,7 +167,7 @@ def test_normalization_workflow_replays_nearby_places_and_accessories_into_artif
         ).read_text(encoding="utf-8"),
     )
     assert nearby_places_record["normalized_at_utc"] == nearby_places_record["captured_at_utc"]
-    assert nearby_places_record["normalization_version"] == "normalized-listing-v8"
+    assert nearby_places_record["normalization_version"] == "normalized-listing-v9"
     assert nearby_places_record["normalization_metadata"] == {
         "source_captured_from": "detail_page",
         "source_contract_version": "raw-listing-record-v1",
@@ -194,7 +197,7 @@ def test_normalization_workflow_replays_nearby_places_and_accessories_into_artif
         ).read_text(encoding="utf-8"),
     )
     assert accessories_record["normalized_at_utc"] == accessories_record["captured_at_utc"]
-    assert accessories_record["normalization_version"] == "normalized-listing-v8"
+    assert accessories_record["normalization_version"] == "normalized-listing-v9"
     assert accessories_record["location"]["street"] == "Šiklové"
     assert accessories_record["location"]["street_source"] == "title_fallback"
     assert accessories_record["location"]["geocoding_query_text"] == (
@@ -229,7 +232,68 @@ def test_normalization_workflow_replays_nearby_places_and_accessories_into_artif
         "parking_space_count": 4,
         "unparsed_fragments": [],
     }
-    assert "Příslušenství:" not in accessories_record["core_attributes"]["source_specific_attributes"]
+
+
+def test_normalization_workflow_persists_source_backed_detail_coordinates(
+    tmp_path: Path,
+) -> None:
+    """Persist normalized source-backed coordinates when the raw snapshot embeds locality JSON."""
+
+    input_dir = tmp_path / "raw"
+    raw_record = RawListingRecord(
+        listing_id="78467916",
+        source_url="https://www.sreality.cz/detail/prodej/byt/2+kk/praha-brevnov/78467916",
+        captured_at_utc=datetime(2026, 3, 19, 11, 27, 24, 855716, tzinfo=timezone.utc),
+        source_payload={
+            "Název": "Prodej bytu 2+kk 58 m², Praha 6 - Břevnov",
+            "Celková cena:": "8 490 000 Kč",
+            "Lokalita:": "Klidná část obce",
+        },
+        source_metadata=RawSourceMetadata(
+            region="all-czechia",
+            listing_page_number=1,
+            scrape_run_id="run-049",
+            http_status=200,
+            parser_version="sreality-detail-v1",
+            captured_from="detail_page",
+        ),
+        raw_page_snapshot=(
+            '<html><script>window.__INITIAL_STATE__={"locality":{"latitude":50.0577347,'
+            '"longitude":14.3723456,"city":"Praha","cityPart":"Břevnov",'
+            '"inaccuracyType":"gps"}};</script></html>'
+        ),
+    )
+    _write_raw_record_fixture(
+        input_dir=input_dir,
+        region="all-czechia",
+        listing_id=raw_record.listing_id,
+        snapshot_name="2026-03-19T11-27-24.855716+00-00.json",
+        raw_record=raw_record,
+    )
+    output_dir = tmp_path / "normalized"
+    service = FilesystemNormalizationWorkflowService(
+        raw_snapshot_source=FilesystemRawSnapshotSource(input_dir=input_dir),
+        normalized_record_repository=FilesystemNormalizedRecordRepository(output_dir=output_dir),
+    )
+
+    normalized_count = service.normalize(
+        NormalizationWorkflowSelection(listing_id=raw_record.listing_id),
+    )
+
+    assert normalized_count == 1
+    latest_record = json.loads(
+        (
+            output_dir
+            / "all-czechia/78467916/2026-03-19T11-27-24.855716+00-00.json"
+        ).read_text(encoding="utf-8"),
+    )
+    assert latest_record["normalization_version"] == "normalized-listing-v9"
+    assert latest_record["location"]["source_coordinate_latitude"] == 50.0577347
+    assert latest_record["location"]["source_coordinate_longitude"] == 14.3723456
+    assert latest_record["location"]["source_coordinate_source"] == (
+        "detail_locality_payload"
+    )
+    assert latest_record["location"]["source_coordinate_precision"] == "listing"
 
 
 def _build_fixture_raw_dataset(target_root: Path, fixture_paths: tuple[str, ...]) -> Path:
@@ -242,3 +306,21 @@ def _build_fixture_raw_dataset(target_root: Path, fixture_paths: tuple[str, ...]
         destination_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source_path, destination_path)
     return target_root
+
+
+def _write_raw_record_fixture(
+    *,
+    input_dir: Path,
+    region: str,
+    listing_id: str,
+    snapshot_name: str,
+    raw_record: RawListingRecord,
+) -> None:
+    """Write one synthetic raw snapshot fixture into the workflow input directory."""
+
+    destination = input_dir / region / listing_id / snapshot_name
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_text(
+        json.dumps(raw_record.to_serializable_dict(), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )

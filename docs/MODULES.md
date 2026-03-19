@@ -76,10 +76,9 @@ approved as enrichment-owned derived features, not normalization output fields.
 Normalization now preserves replayable geocoding input fragments such as a
 canonical query string, parsed house number, and source-backed address text
 while still excluding derived geocoding outcomes and fallback quality decisions.
-The next approved location extension also allows normalization to preserve
-source-backed detail coordinates when they are recovered directly from the
-persisted detail HTML with explicit provenance, rather than inferred from
-reference data or map-link heuristics.
+Normalization also preserves source-backed detail coordinates when they are
+recovered directly from the persisted detail HTML with explicit provenance,
+rather than inferred from reference data or map-link heuristics.
 
 ### `scraperweb.enrichment`
 
@@ -111,7 +110,7 @@ and leisure amenities, conservative nature-proximity signals, conservative
 district normalization, and the implemented multi-level geocoding contract for
 resolved coordinates, precision, confidence, fallback level, and provider
 provenance. That winning-coordinate contract is also the approved place where
-future source-backed detail coordinates must be prioritized over deterministic
+source-backed detail coordinates are now prioritized over deterministic
 fallback geocoding before downstream spatial features are derived.
 
 ### `scraperweb.modeling`

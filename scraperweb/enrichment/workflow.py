@@ -345,6 +345,14 @@ def _deserialize_location(payload: dict[str, object]) -> NormalizedLocation:
         city_district_source=_optional_str(payload.get("city_district_source")),
         location_descriptor=_optional_str(payload.get("location_descriptor")),
         location_descriptor_source=_optional_str(payload.get("location_descriptor_source")),
+        source_coordinate_latitude=_optional_float(payload.get("source_coordinate_latitude")),
+        source_coordinate_longitude=_optional_float(
+            payload.get("source_coordinate_longitude"),
+        ),
+        source_coordinate_source=_optional_str(payload.get("source_coordinate_source")),
+        source_coordinate_precision=_optional_str(
+            payload.get("source_coordinate_precision"),
+        ),
         geocoding_query_text=_optional_str(payload.get("geocoding_query_text")),
         geocoding_query_text_source=_optional_str(
             payload.get("geocoding_query_text_source"),

@@ -157,8 +157,9 @@ Rules:
 - enrichment must not fetch new external source systems in this design step
 - enrichment must preserve traceability back to normalized input
 - the current geocoding implementation stays offline and deterministic by using
-  normalized query text, Prague district reference points, municipality
-  centroids, and stable query projection rather than live third-party geocoders
+  approved source-backed detail coordinates when present, then normalized query
+  text, Prague district reference points, municipality centroids, and stable
+  query projection rather than live third-party geocoders
 
 Approved location-intelligence ownership:
 

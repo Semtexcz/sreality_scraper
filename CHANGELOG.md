@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.29.0] - 2026-03-19
+
+### Added
+
+- added deterministic parsing of source-backed detail coordinates from the
+  embedded Sreality `locality` payload stored in `raw_page_snapshot`, including
+  normalized `source_coordinate_*` fields and regression coverage for
+  coordinate-present and coordinate-missing listings
+
+### Changed
+
+- changed normalization outputs to version `normalized-listing-v9` and
+  enrichment outputs to version `enriched-listing-v16` so replayed artifacts now
+  preserve source-backed detail coordinates and promote them ahead of fallback
+  geocoding when present
+- updated architecture, modules, and artifact documentation so the implemented
+  coordinate-source precedence is documented as active runtime behavior rather
+  than future design guidance
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-049` so the active
+  backlog now starts with `TASK-046`
+- completed `TASK-049` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.28.2] - 2026-03-19
 
 ### Added

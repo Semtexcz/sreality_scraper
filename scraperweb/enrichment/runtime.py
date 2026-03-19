@@ -22,7 +22,7 @@ from scraperweb.normalization.models import NormalizedNearbyPlace
 from scraperweb.normalization.models import NormalizedListingRecord
 
 
-ENRICHMENT_VERSION = "enriched-listing-v15"
+ENRICHMENT_VERSION = "enriched-listing-v16"
 _DERIVATION_NOTES = (
     "asking_price_czk is derived from normalized typed price amounts only",
     "disposition is parsed from normalized title text only",
@@ -85,7 +85,8 @@ _DERIVATION_NOTES = (
         "0.01-degree canonical cells, and 0.0025-degree fine cells"
     ),
     (
-        "geocoding uses a deterministic fallback ladder: address and street "
+        "geocoding first promotes approved source-backed detail coordinates and "
+        "otherwise uses a deterministic fallback ladder: address and street "
         "outcomes are query-projected around stable district or municipality anchors, "
         "district outcomes use Prague district reference points, municipality outcomes "
         "use souradnice.csv centroids, and unresolved cases preserve query text "

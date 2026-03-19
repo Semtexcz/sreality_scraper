@@ -480,6 +480,49 @@ def test_enricher_resolves_exact_address_geocoding_from_structured_inputs() -> N
     assert enriched_record.location_features.spatial_grid_fine_cell_id is not None
 
 
+def test_enricher_prefers_source_backed_detail_coordinates_over_fallback_geocoding() -> None:
+    """Promote normalized source-backed detail coordinates ahead of derived fallbacks."""
+
+    normalized_record = _build_normalized_record(
+        title="Prodej bytu 2+kk 58 m², Praha 6 - Břevnov",
+        amount_text="8 490 000 Kč",
+        price_note=None,
+        energy_efficiency_class=None,
+        city="Praha 6",
+        city_district="Břevnov",
+        usable_area_sqm=58.0,
+        total_area_sqm=None,
+        building_material="Cihla",
+        physical_condition=None,
+        floor_position=2,
+        total_floor_count=5,
+        street="Bělohorská",
+        house_number="123",
+        source_coordinate_latitude=50.0577347,
+        source_coordinate_longitude=14.3723456,
+        source_coordinate_source="detail_locality_payload",
+        source_coordinate_precision="listing",
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.location_features.latitude == 50.0577347
+    assert enriched_record.location_features.longitude == 14.3723456
+    assert enriched_record.location_features.location_precision == "listing"
+    assert enriched_record.location_features.geocoding_source == "detail_locality_payload"
+    assert enriched_record.location_features.geocoding_confidence == "high"
+    assert enriched_record.location_features.geocoding_match_strategy == (
+        "source_detail_coordinate"
+    )
+    assert enriched_record.location_features.geocoding_fallback_level == "none"
+    assert enriched_record.location_features.geocoding_is_fallback is False
+    assert enriched_record.location_features.resolved_address_text == (
+        "Bělohorská 123, Praha 6, Břevnov"
+    )
+    assert enriched_record.location_features.spatial_grid_source_precision == "listing"
+    assert enriched_record.location_features.spatial_grid_is_approximate is False
+
+
 def test_enricher_resolves_street_fallback_when_house_number_is_missing() -> None:
     """Keep street-level precision explicit when only street text is available."""
 
@@ -1276,6 +1319,10 @@ def _build_normalized_record(
     nearby_places: tuple[NormalizedNearbyPlace, ...] = (),
     listed_on: date | None = date(2026, 3, 11),
     updated_on: date | None = date(2026, 3, 16),
+    source_coordinate_latitude: float | None = None,
+    source_coordinate_longitude: float | None = None,
+    source_coordinate_source: str | None = None,
+    source_coordinate_precision: str | None = None,
 ) -> NormalizedListingRecord:
     """Build a normalized record fixture for enrichment tests."""
 
@@ -1332,6 +1379,10 @@ def _build_normalized_record(
             city_source="title_fallback" if city is not None else None,
             city_district=city_district,
             city_district_source="title_fallback" if city_district is not None else None,
+            source_coordinate_latitude=source_coordinate_latitude,
+            source_coordinate_longitude=source_coordinate_longitude,
+            source_coordinate_source=source_coordinate_source,
+            source_coordinate_precision=source_coordinate_precision,
             geocoding_query_text=geocoding_query_text,
             geocoding_query_text_source=(
                 "title_fallback" if geocoding_query_text is not None else None

@@ -114,6 +114,10 @@ class NormalizedLocation:
     city_district_source: str | None = None
     location_descriptor: str | None = None
     location_descriptor_source: str | None = None
+    source_coordinate_latitude: float | None = None
+    source_coordinate_longitude: float | None = None
+    source_coordinate_source: str | None = None
+    source_coordinate_precision: str | None = None
     geocoding_query_text: str | None = None
     geocoding_query_text_source: str | None = None
     nearby_places: tuple["NormalizedNearbyPlace", ...] = field(default_factory=tuple)

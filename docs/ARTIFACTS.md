@@ -86,6 +86,8 @@ Representative normalization replay validation should confirm:
 
 - stored artifacts remain path-stable and idempotent for the same raw snapshot
 - `normalized_at_utc` and `normalization_metadata` preserve raw-capture lineage
+- source-backed detail coordinates keep explicit `source_coordinate_*`
+  provenance instead of silently replacing enrichment-owned final coordinates
 - successfully mapped nearby-place keys are removed from
   `core_attributes.source_specific_attributes`
 - successfully mapped `Příslušenství:` values are removed from

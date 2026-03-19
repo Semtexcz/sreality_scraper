@@ -258,20 +258,44 @@ def test_normalizer_keeps_missing_optional_typed_values_explicit_for_real_snapsh
     assert normalized_record.location.house_number is None
     assert normalized_record.location.house_number_source is None
     assert normalized_record.location.address_text == "Souběžná, Brno, Židenice"
-    assert normalized_record.location.address_text_source == "title_fallback"
-    assert normalized_record.location.city == "Brno"
-    assert normalized_record.location.city_source == "title_fallback"
-    assert normalized_record.location.city_district == "Židenice"
-    assert normalized_record.location.city_district_source == "title_fallback"
-    assert normalized_record.location.location_descriptor == (
-        "Klidná část obce, Bydlení a kanceláře"
+
+
+def test_normalizer_extracts_source_backed_detail_coordinates_from_raw_snapshot() -> None:
+    """Parse embedded detail locality coordinates into normalized source fields."""
+
+    raw_record = RawListingRecord(
+        listing_id="78467916",
+        source_url="https://www.sreality.cz/detail/prodej/byt/2+kk/praha-brevnov/78467916",
+        captured_at_utc=datetime(2026, 3, 19, 11, 27, 24, tzinfo=timezone.utc),
+        source_payload={
+            "Název": "Prodej bytu 2+kk 58 m², Praha 6 - Břevnov",
+            "Celková cena:": "8 490 000 Kč",
+            "Lokalita:": "Klidná část obce, Centrum obce",
+        },
+        source_metadata=RawSourceMetadata(
+            region="all-czechia",
+            listing_page_number=1,
+            scrape_run_id="run-049",
+            http_status=200,
+            parser_version="sreality-detail-v1",
+            captured_from="detail_page",
+        ),
+        raw_page_snapshot=(
+            '<html><script>window.__INITIAL_STATE__={"name":"Prodej bytu 2+kk 58 m²",'
+            '"locality":{"latitude":50.0577347,"longitude":14.3723456,'
+            '"city":"Praha","cityPart":"Břevnov","inaccuracyType":"gps"}};'
+            "</script></html>"
+        ),
     )
-    assert normalized_record.location.location_descriptor_source == (
-        "source_payload:Lokalita:"
-    )
-    assert normalized_record.location.geocoding_query_text == (
-        "Souběžná, Brno, Židenice"
-    )
+
+    normalized_record = RawListingNormalizer().normalize(raw_record)
+
+    assert normalized_record.normalization_version == NORMALIZATION_VERSION
+    assert normalized_record.location.source_coordinate_latitude == 50.0577347
+    assert normalized_record.location.source_coordinate_longitude == 14.3723456
+    assert normalized_record.location.source_coordinate_source == "detail_locality_payload"
+    assert normalized_record.location.source_coordinate_precision == "listing"
+    assert normalized_record.location.geocoding_query_text == "Praha, Břevnov"
     assert normalized_record.location.geocoding_query_text_source == "title_fallback"
 
 

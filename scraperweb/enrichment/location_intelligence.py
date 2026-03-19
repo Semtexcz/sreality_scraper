@@ -256,6 +256,22 @@ class LocationReferenceIndex:
         street = _clean_text(location.street)
         house_number = _clean_text(location.house_number)
         has_municipality = location_resolution.municipality_code is not None
+        source_coordinate = self._resolve_source_coordinate(location)
+
+        if source_coordinate is not None:
+            return self._build_geocoding_resolution(
+                location=location,
+                location_resolution=location_resolution,
+                latitude=source_coordinate.latitude,
+                longitude=source_coordinate.longitude,
+                location_precision=source_coordinate.location_precision,
+                geocoding_source=source_coordinate.geocoding_source,
+                geocoding_confidence="high",
+                geocoding_match_strategy="source_detail_coordinate",
+                resolved_address_text=address_text or query_text,
+                geocoding_fallback_level="none",
+                geocoding_is_fallback=False,
+            )
 
         if (
             has_municipality
@@ -365,6 +381,27 @@ class LocationReferenceIndex:
             resolved_address_text=address_text or query_text,
             geocoding_fallback_level="unresolved",
             geocoding_is_fallback=None,
+        )
+
+    @staticmethod
+    def _resolve_source_coordinate(
+        location: NormalizedLocation,
+    ) -> GeocodingResolution | None:
+        """Return the normalized source-backed coordinate when the approved contract is present."""
+
+        if (
+            location.source_coordinate_source != "detail_locality_payload"
+            or location.source_coordinate_precision != "listing"
+            or location.source_coordinate_latitude is None
+            or location.source_coordinate_longitude is None
+        ):
+            return None
+
+        return GeocodingResolution(
+            latitude=location.source_coordinate_latitude,
+            longitude=location.source_coordinate_longitude,
+            location_precision="listing",
+            geocoding_source=location.source_coordinate_source,
         )
 
     @staticmethod

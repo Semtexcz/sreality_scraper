@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import date, datetime, timezone
+import json
 import re
 
 from scraperweb.normalization.models import (
@@ -25,12 +26,15 @@ from scraperweb.normalization.models import (
 from scraperweb.scraper.models import JsonValue, RawListingRecord
 
 
-NORMALIZATION_VERSION = "normalized-listing-v8"
+NORMALIZATION_VERSION = "normalized-listing-v9"
 RAW_CONTRACT_VERSION = "raw-listing-record-v1"
 TITLE_FALLBACK_SOURCE = "title_fallback"
 SOURCE_PAYLOAD_PREFIX = "source_payload:"
+DETAIL_LOCALITY_PAYLOAD_SOURCE = "detail_locality_payload"
+DETAIL_LOCALITY_PAYLOAD_PRECISION = "listing"
 NEARBY_PLACES_PARSER_VERSION = "nearby-places-v1"
 ACCESSORIES_PARSER_VERSION = "accessories-v1"
+_DETAIL_LOCALITY_PATTERN = re.compile(r'"locality"\s*:\s*\{')
 _AREA_FRAGMENT_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (
         re.compile(r"^Užitná plocha (?P<value>\d+(?:[.,]\d+)?) m²$"),
@@ -185,7 +189,11 @@ class RawListingNormalizer:
         building_text = self._get_text_value(record.source_payload, "Stavba:")
         area_text = self._get_text_value(record.source_payload, "Plocha:")
         energy_text = self._get_text_value(record.source_payload, "Energetická náročnost:")
-        location = self._build_location(title, record.source_payload)
+        location = self._build_location(
+            title=title,
+            payload=record.source_payload,
+            raw_page_snapshot=record.raw_page_snapshot,
+        )
 
         return NormalizedListingRecord(
             listing_id=record.listing_id,
@@ -615,8 +623,10 @@ class RawListingNormalizer:
     @classmethod
     def _build_location(
         cls,
+        *,
         title: str | None,
         payload: dict[str, JsonValue],
+        raw_page_snapshot: str | None,
     ) -> NormalizedLocation:
         """Build the normalized location contract with explicit source precedence."""
 
@@ -638,6 +648,12 @@ class RawListingNormalizer:
             city_district=city_district,
             location_text=location_text,
         )
+        (
+            source_coordinate_latitude,
+            source_coordinate_longitude,
+            source_coordinate_source,
+            source_coordinate_precision,
+        ) = cls._extract_source_coordinates(raw_page_snapshot)
 
         return NormalizedLocation(
             location_text=location_text,
@@ -660,6 +676,10 @@ class RawListingNormalizer:
                 if location_descriptor is not None
                 else None
             ),
+            source_coordinate_latitude=source_coordinate_latitude,
+            source_coordinate_longitude=source_coordinate_longitude,
+            source_coordinate_source=source_coordinate_source,
+            source_coordinate_precision=source_coordinate_precision,
             geocoding_query_text=geocoding_query_text,
             geocoding_query_text_source=(
                 street_source
@@ -668,6 +688,105 @@ class RawListingNormalizer:
             ),
             nearby_places=cls._build_nearby_places(payload),
         )
+
+    @classmethod
+    def _extract_source_coordinates(
+        cls,
+        raw_page_snapshot: str | None,
+    ) -> tuple[float | None, float | None, str | None, str | None]:
+        """Extract source-backed coordinates from the embedded detail locality payload."""
+
+        if raw_page_snapshot is None:
+            return None, None, None, None
+
+        locality_payload = cls._extract_detail_locality_payload(raw_page_snapshot)
+        if locality_payload is None:
+            return None, None, None, None
+
+        latitude = cls._parse_json_float(locality_payload.get("latitude"))
+        longitude = cls._parse_json_float(locality_payload.get("longitude"))
+        if latitude is None or longitude is None:
+            return None, None, None, None
+
+        return (
+            latitude,
+            longitude,
+            DETAIL_LOCALITY_PAYLOAD_SOURCE,
+            DETAIL_LOCALITY_PAYLOAD_PRECISION,
+        )
+
+    @classmethod
+    def _extract_detail_locality_payload(
+        cls,
+        raw_page_snapshot: str,
+    ) -> dict[str, JsonValue] | None:
+        """Return the embedded locality object when it can be replayed from detail HTML."""
+
+        match = _DETAIL_LOCALITY_PATTERN.search(raw_page_snapshot)
+        if match is None:
+            return None
+
+        locality_object_text = cls._extract_json_object(
+            raw_page_snapshot,
+            object_start_index=match.end() - 1,
+        )
+        if locality_object_text is None:
+            return None
+
+        try:
+            payload = json.loads(locality_object_text)
+        except json.JSONDecodeError:
+            return None
+
+        if not isinstance(payload, dict):
+            return None
+        return payload
+
+    @staticmethod
+    def _extract_json_object(
+        value: str,
+        *,
+        object_start_index: int,
+    ) -> str | None:
+        """Return one balanced JSON object slice starting at the provided index."""
+
+        depth = 0
+        in_string = False
+        is_escaped = False
+
+        for index in range(object_start_index, len(value)):
+            character = value[index]
+            if in_string:
+                if is_escaped:
+                    is_escaped = False
+                elif character == "\\":
+                    is_escaped = True
+                elif character == '"':
+                    in_string = False
+                continue
+
+            if character == '"':
+                in_string = True
+                continue
+            if character == "{":
+                depth += 1
+                continue
+            if character != "}":
+                continue
+
+            depth -= 1
+            if depth == 0:
+                return value[object_start_index : index + 1]
+
+        return None
+
+    @staticmethod
+    def _parse_json_float(value: JsonValue) -> float | None:
+        """Return one JSON numeric value as float while rejecting booleans and strings."""
+
+        if isinstance(value, bool) or not isinstance(value, int | float):
+            return None
+        return float(value)
 
     @classmethod
     def _extract_location_fields(

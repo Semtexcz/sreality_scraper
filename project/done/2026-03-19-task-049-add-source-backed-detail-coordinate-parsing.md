@@ -1,6 +1,6 @@
 ---
 task: TASK-049
-status: "todo"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add source-backed detail coordinate parsing
 
 Task: TASK-049
-Status: todo
+Status: done
 Priority: P1
 Type: feature
 Author:
@@ -25,17 +25,17 @@ location precision unnecessarily.
 
 ## Definition of Done
 
-- [ ] Parse source-backed latitude and longitude from the embedded detail-page
+- [x] Parse source-backed latitude and longitude from the embedded detail-page
       HTML payload for listings that expose locality coordinates.
-- [ ] Persist the extracted coordinate fields and provenance in the normalized
+- [x] Persist the extracted coordinate fields and provenance in the normalized
       location contract.
-- [ ] Update enrichment so source-backed detail coordinates take precedence over
+- [x] Update enrichment so source-backed detail coordinates take precedence over
       deterministic fallback geocoding when present.
-- [ ] Preserve explicit precision and confidence semantics so downstream outputs
+- [x] Preserve explicit precision and confidence semantics so downstream outputs
       clearly distinguish source-backed GPS from projected fallback coordinates.
-- [ ] Add regression coverage for listings with source-backed coordinates and
+- [x] Add regression coverage for listings with source-backed coordinates and
       listings that still require fallback geocoding.
-- [ ] Refresh affected documentation and canonical artifact versions so replayed
+- [x] Refresh affected documentation and canonical artifact versions so replayed
       outputs reflect the new coordinate source order.
 
 ## Notes

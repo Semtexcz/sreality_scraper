@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import shutil
+from datetime import datetime
+from datetime import timezone
 from pathlib import Path
 
 from scraperweb.enrichment import (
@@ -12,6 +14,8 @@ from scraperweb.enrichment import (
     FilesystemNormalizedSnapshotSource,
     EnrichmentWorkflowSelection,
 )
+from scraperweb.normalization import RawListingNormalizer
+from scraperweb.scraper.models import RawListingRecord, RawSourceMetadata
 
 
 def test_enrichment_workflow_enriches_all_snapshots_for_one_listing(
@@ -48,9 +52,9 @@ def test_enrichment_workflow_enriches_all_snapshots_for_one_listing(
     )
     latest_record = json.loads(output_paths[-1].read_text(encoding="utf-8"))
     assert latest_record["listing_id"] == "2664846156"
-    assert latest_record["enrichment_version"] == "enriched-listing-v15"
+    assert latest_record["enrichment_version"] == "enriched-listing-v16"
     assert latest_record["enrichment_metadata"]["source_normalization_version"] == (
-        "normalized-listing-v7"
+        "normalized-listing-v8"
     )
     assert latest_record["enrichment_metadata"]["enriched_at_utc"] == (
         latest_record["normalized_record"]["normalized_at_utc"]
@@ -127,7 +131,7 @@ def test_enrichment_workflow_filters_normalized_snapshots_by_scrape_run_id(
             / "all-czechia/3218928460/2026-03-18T08-57-14.026076+00-00.json"
         ).read_text(encoding="utf-8"),
     )
-    assert prague_record["enrichment_version"] == "enriched-listing-v15"
+    assert prague_record["enrichment_version"] == "enriched-listing-v16"
     assert prague_record["price_features"]["price_per_square_meter_czk"] == 286588.63
     assert prague_record["property_features"]["is_top_floor"] is True
     assert prague_record["property_features"]["outdoor_accessory_area_sqm"] == 204.0
@@ -166,6 +170,73 @@ def test_enrichment_workflow_filters_normalized_snapshots_by_scrape_run_id(
     }
 
 
+def test_enrichment_workflow_prefers_source_backed_detail_coordinates(
+    tmp_path: Path,
+) -> None:
+    """Enrich normalized snapshots with source-backed listing coordinates ahead of fallback geocoding."""
+
+    normalized_record = RawListingNormalizer().normalize(
+        RawListingRecord(
+            listing_id="78467916",
+            source_url="https://www.sreality.cz/detail/prodej/byt/2+kk/praha-brevnov/78467916",
+            captured_at_utc=datetime(2026, 3, 19, 11, 27, 24, tzinfo=timezone.utc),
+            source_payload={
+                "Název": "Prodej bytu 2+kk 58 m², Bělohorská 123, Praha 6 - Břevnov",
+                "Celková cena:": "8 490 000 Kč",
+                "Lokalita:": "Klidná část obce",
+            },
+            source_metadata=RawSourceMetadata(
+                region="all-czechia",
+                listing_page_number=1,
+                scrape_run_id="run-049",
+                http_status=200,
+                parser_version="sreality-detail-v1",
+                captured_from="detail_page",
+            ),
+            raw_page_snapshot=(
+                '<html><script>window.__INITIAL_STATE__={"locality":{"latitude":50.0577347,'
+                '"longitude":14.3723456,"city":"Praha","cityPart":"Břevnov",'
+                '"inaccuracyType":"gps"}};</script></html>'
+            ),
+        ),
+    )
+    input_dir = _write_normalized_fixture(
+        target_root=tmp_path / "normalized",
+        region="all-czechia",
+        listing_id=normalized_record.listing_id,
+        snapshot_name="2026-03-19T11-27-24.855716+00-00.json",
+        payload=normalized_record.to_serializable_dict(),
+    )
+    output_dir = tmp_path / "enriched"
+    service = FilesystemEnrichmentWorkflowService(
+        normalized_snapshot_source=FilesystemNormalizedSnapshotSource(input_dir=input_dir),
+        enriched_record_repository=FilesystemEnrichedRecordRepository(output_dir=output_dir),
+    )
+
+    enriched_count = service.enrich(
+        EnrichmentWorkflowSelection(listing_id=normalized_record.listing_id),
+    )
+
+    assert enriched_count == 1
+    output_paths = sorted(output_dir.rglob("*.json"))
+    assert len(output_paths) == 1
+    latest_record = json.loads(output_paths[0].read_text(encoding="utf-8"))
+    assert latest_record["enrichment_version"] == "enriched-listing-v16"
+    assert latest_record["location_features"]["latitude"] == 50.0577347
+    assert latest_record["location_features"]["longitude"] == 14.3723456
+    assert latest_record["location_features"]["location_precision"] == "listing"
+    assert latest_record["location_features"]["geocoding_source"] == (
+        "detail_locality_payload"
+    )
+    assert latest_record["location_features"]["geocoding_match_strategy"] == (
+        "source_detail_coordinate"
+    )
+    assert latest_record["location_features"]["geocoding_fallback_level"] == "none"
+    assert latest_record["location_features"]["geocoding_is_fallback"] is False
+    assert latest_record["location_features"]["spatial_grid_source_precision"] == "listing"
+    assert latest_record["location_features"]["spatial_grid_is_approximate"] is False
+
+
 def _build_fixture_normalized_dataset(target_root: Path, fixture_paths: tuple[str, ...]) -> Path:
     """Copy representative normalized fixtures into a temporary workflow input directory."""
 
@@ -175,4 +246,23 @@ def _build_fixture_normalized_dataset(target_root: Path, fixture_paths: tuple[st
         destination_path = target_root / relative_path
         destination_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source_path, destination_path)
+    return target_root
+
+
+def _write_normalized_fixture(
+    *,
+    target_root: Path,
+    region: str,
+    listing_id: str,
+    snapshot_name: str,
+    payload: dict[str, object],
+) -> Path:
+    """Write one serialized normalized snapshot into a temporary workflow directory."""
+
+    destination_path = target_root / region / listing_id / snapshot_name
+    destination_path.parent.mkdir(parents=True, exist_ok=True)
+    destination_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
     return target_root
