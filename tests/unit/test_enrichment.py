@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import date
 from datetime import datetime, timezone
 
@@ -156,6 +157,8 @@ def test_enricher_derives_explicit_features_from_normalized_record() -> None:
     )
     assert enriched_record.property_features.has_city_district is True
     assert enriched_record.property_features.is_prague_listing is True
+    assert enriched_record.location_features.street is None
+    assert enriched_record.location_features.street_source is None
     assert enriched_record.location_features.municipality_name == "Praha"
     assert enriched_record.location_features.municipality_code == "554782"
     assert enriched_record.location_features.district_code == "CZ0100"
@@ -287,6 +290,44 @@ def test_enricher_keeps_missing_derived_values_explicit_and_stays_deterministic(
     assert first_record.lifecycle_features.updated_recency_days is None
     assert first_record.lifecycle_features.is_fresh_listing_7d is None
     assert first_record.lifecycle_features.is_recently_updated_3d is None
+
+
+def test_enricher_propagates_structured_street_fields_from_normalization() -> None:
+    """Expose normalized street facts in enrichment without deriving new address guesses."""
+
+    normalized_record = _build_normalized_record(
+        title="Prodej bytu 3+kk 82m²Dlouhá, Praha - Staré Město",
+        amount_text="12 500 000 Kč",
+        price_note=None,
+        energy_efficiency_class="Úsporná",
+        city="Praha",
+        city_district="Staré Město",
+        usable_area_sqm=82.0,
+        total_area_sqm=None,
+        building_material="Cihlová",
+        physical_condition="Ve velmi dobrém stavu",
+        floor_position=3,
+        total_floor_count=5,
+    )
+    normalized_record = replace(
+        normalized_record,
+        location=replace(
+            normalized_record.location,
+            location_text="Praha - Staré Město",
+            location_text_source="title_fallback",
+            street="Dlouhá",
+            street_source="title_fallback",
+            city="Praha",
+            city_source="title_fallback",
+            city_district="Staré Město",
+            city_district_source="title_fallback",
+        ),
+    )
+
+    enriched_record = NormalizedListingEnricher().enrich(normalized_record)
+
+    assert enriched_record.location_features.street == "Dlouhá"
+    assert enriched_record.location_features.street_source == "title_fallback"
 
 
 def test_enricher_keeps_inconsistent_lifecycle_dates_optional() -> None:

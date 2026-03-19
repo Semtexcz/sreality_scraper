@@ -48,14 +48,16 @@ def test_enrichment_workflow_enriches_all_snapshots_for_one_listing(
     )
     latest_record = json.loads(output_paths[-1].read_text(encoding="utf-8"))
     assert latest_record["listing_id"] == "2664846156"
-    assert latest_record["enrichment_version"] == "enriched-listing-v10"
+    assert latest_record["enrichment_version"] == "enriched-listing-v11"
     assert latest_record["enrichment_metadata"]["source_normalization_version"] == (
-        "normalized-listing-v6"
+        "normalized-listing-v7"
     )
     assert latest_record["enrichment_metadata"]["enriched_at_utc"] == (
         latest_record["normalized_record"]["normalized_at_utc"]
     )
     assert latest_record["location_features"]["municipality_name"] == "Blansko"
+    assert latest_record["location_features"]["street"] == "Cihlářská"
+    assert latest_record["location_features"]["street_source"] == "title_fallback"
     assert latest_record["location_features"]["district_name"] == "Blansko"
     assert latest_record["location_features"]["distance_to_orp_center_km"] == 0.0
     assert latest_record["location_features"]["nearest_public_transport_m"] == 43
@@ -100,11 +102,13 @@ def test_enrichment_workflow_filters_normalized_snapshots_by_scrape_run_id(
             / "all-czechia/3218928460/2026-03-18T08-57-14.026076+00-00.json"
         ).read_text(encoding="utf-8"),
     )
-    assert prague_record["enrichment_version"] == "enriched-listing-v10"
+    assert prague_record["enrichment_version"] == "enriched-listing-v11"
     assert prague_record["price_features"]["price_per_square_meter_czk"] == 286588.63
     assert prague_record["property_features"]["is_top_floor"] is True
     assert prague_record["property_features"]["outdoor_accessory_area_sqm"] == 204.0
     assert prague_record["location_features"]["municipality_name"] == "Praha"
+    assert prague_record["location_features"]["street"] == "Šiklové"
+    assert prague_record["location_features"]["street_source"] == "title_fallback"
     assert prague_record["location_features"]["metropolitan_area"] == "Praha"
     assert prague_record["location_features"]["municipality_match_status"] == "matched"
     assert prague_record["location_features"]["nearest_metro_m"] == 160

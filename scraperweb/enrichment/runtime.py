@@ -22,7 +22,7 @@ from scraperweb.normalization.models import NormalizedNearbyPlace
 from scraperweb.normalization.models import NormalizedListingRecord
 
 
-ENRICHMENT_VERSION = "enriched-listing-v10"
+ENRICHMENT_VERSION = "enriched-listing-v11"
 _DERIVATION_NOTES = (
     "asking_price_czk is derived from normalized typed price amounts only",
     "disposition is parsed from normalized title text only",
@@ -224,6 +224,8 @@ class NormalizedListingEnricher:
                 is_prague_listing=self._is_prague_listing(record),
             ),
             location_features=EnrichedLocationFeatures(
+                street=record.location.street,
+                street_source=record.location.street_source,
                 municipality_name=resolved_location.municipality_name,
                 municipality_code=resolved_location.municipality_code,
                 district_name=resolved_location.district_name,

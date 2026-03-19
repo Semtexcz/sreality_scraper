@@ -25,7 +25,7 @@ from scraperweb.normalization.models import (
 from scraperweb.scraper.models import JsonValue, RawListingRecord
 
 
-NORMALIZATION_VERSION = "normalized-listing-v6"
+NORMALIZATION_VERSION = "normalized-listing-v7"
 RAW_CONTRACT_VERSION = "raw-listing-record-v1"
 TITLE_FALLBACK_SOURCE = "title_fallback"
 SOURCE_PAYLOAD_PREFIX = "source_payload:"
@@ -54,6 +54,9 @@ _TITLE_AREA_SUFFIX_PATTERN = re.compile(
 )
 _TITLE_LOCATION_CANDIDATE_PATTERN = re.compile(
     r"^(?P<city>[A-ZÁ-Ž][A-Za-zÀ-ž0-9./'’-]*(?: [A-ZÁ-Ž0-9][A-Za-zÀ-ž0-9./'’-]*)*)(?: - (?P<district>[A-ZÁ-Ž0-9][A-Za-zÀ-ž0-9./'’-]*(?: [A-ZÁ-Ž0-9][A-Za-zÀ-ž0-9./'’-]*)*))?$",
+)
+_TITLE_STREET_CANDIDATE_PATTERN = re.compile(
+    r"^(?P<street>[A-ZÁ-Ž][A-Za-zÀ-ž0-9./'’-]*(?: [A-ZÁ-Ž0-9][A-Za-zÀ-ž0-9./'’-]*)*)$",
 )
 _PRAGUE_NUMBERED_DISTRICT_PATTERN = re.compile(r"^Praha \d+$")
 _BUILDING_FLOOR_PATTERN = re.compile(
@@ -615,12 +618,15 @@ class RawListingNormalizer:
         """Build the normalized location contract with explicit source precedence."""
 
         location_descriptor = cls._get_text_value(payload, "Lokalita:")
+        street, street_source = cls._extract_street_from_title(title)
         location_text, location_text_source = cls._extract_location_text_from_title(title)
         city, city_district = cls._split_location_text(location_text)
 
         return NormalizedLocation(
             location_text=location_text,
             location_text_source=location_text_source,
+            street=street,
+            street_source=street_source,
             city=city,
             city_source=location_text_source if city is not None else None,
             city_district=city_district,
@@ -639,12 +645,34 @@ class RawListingNormalizer:
     @classmethod
     def _extract_location_fields(
         title: str | None,
-    ) -> tuple[str | None, str | None, str | None]:
+    ) -> tuple[str | None, str | None, str | None, str | None]:
         """Extract legacy location fields from title fallback parsing only."""
 
+        street, _ = RawListingNormalizer._extract_street_from_title(title)
         location_text, _ = RawListingNormalizer._extract_location_text_from_title(title)
         city, city_district = RawListingNormalizer._split_location_text(location_text)
-        return location_text, city, city_district
+        return street, location_text, city, city_district
+
+    @classmethod
+    def _extract_street_from_title(
+        cls,
+        title: str | None,
+    ) -> tuple[str | None, str | None]:
+        """Extract a street fragment only from title patterns with an explicit location comma."""
+
+        title_suffix = cls._extract_title_suffix_after_area(title)
+        if title_suffix is None or "," not in title_suffix:
+            return None, None
+
+        street_candidate, location_candidate = (
+            part.strip() or None
+            for part in title_suffix.rsplit(",", maxsplit=1)
+        )
+        if not cls._is_supported_title_location(location_candidate):
+            return None, None
+        if not cls._is_supported_title_street(street_candidate):
+            return None, None
+        return street_candidate, TITLE_FALLBACK_SOURCE
 
     @classmethod
     def _extract_location_text_from_title(
@@ -661,15 +689,29 @@ class RawListingNormalizer:
             if cls._is_supported_title_location(location_candidate):
                 return location_candidate, TITLE_FALLBACK_SOURCE
 
-        match = _TITLE_AREA_SUFFIX_PATTERN.search(title)
-        if match is None:
+        title_suffix = cls._extract_title_suffix_after_area(title)
+        if title_suffix is None:
             return None, None
 
-        location_candidate = match.group("location").strip() or None
+        location_candidate = title_suffix
+        if "," in title_suffix:
+            location_candidate = title_suffix.rsplit(",", maxsplit=1)[1].strip() or None
         if not cls._is_supported_title_location(location_candidate):
             return None, None
 
         return location_candidate, TITLE_FALLBACK_SOURCE
+
+    @staticmethod
+    def _extract_title_suffix_after_area(title: str | None) -> str | None:
+        """Return the supported title suffix that follows the area fragment, if present."""
+
+        if title is None:
+            return None
+
+        match = _TITLE_AREA_SUFFIX_PATTERN.search(title)
+        if match is None:
+            return None
+        return match.group("location").strip() or None
 
     @staticmethod
     def _is_supported_title_location(value: str | None) -> bool:
@@ -680,6 +722,18 @@ class RawListingNormalizer:
 
         normalized_value = re.sub(r"\s+", " ", value.strip())
         return _TITLE_LOCATION_CANDIDATE_PATTERN.fullmatch(normalized_value) is not None
+
+    @staticmethod
+    def _is_supported_title_street(value: str | None) -> bool:
+        """Return whether one title-derived street fragment is explicit enough to keep."""
+
+        if value is None:
+            return False
+
+        normalized_value = re.sub(r"\s+", " ", value.strip())
+        if "," in normalized_value or " - " in normalized_value:
+            return False
+        return _TITLE_STREET_CANDIDATE_PATTERN.fullmatch(normalized_value) is not None
 
     @classmethod
     def _split_location_text(

@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.23.0] - 2026-03-19
+
+### Added
+
+- added conservative structured street fields to normalized location outputs,
+  including explicit `street` and `street_source` provenance captured only when
+  title parsing finds a reliable street-to-location split
+- added enrichment pass-through fields for normalized street facts so downstream
+  consumers can read canonical street data from `location_features` without
+  re-parsing raw titles
+- added regression coverage for Prague and non-Prague street-prefixed titles,
+  municipality-only street suffixes, and ambiguous titles that must keep street
+  fields empty
+
+### Changed
+
+- changed normalization outputs to version `normalized-listing-v7` and
+  enrichment outputs to version `enriched-listing-v11` so canonical artifacts
+  now include structured street location fields
+- refreshed the affected normalized fixture artifacts used by enrichment
+  workflow coverage so persisted contract expectations match the current street
+  parsing behavior
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-040` so the backlog
+  now starts with `TASK-041`
+- completed `TASK-040` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.22.3] - 2026-03-19
 
 ### Changed

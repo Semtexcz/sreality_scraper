@@ -59,6 +59,8 @@ class EnrichedPropertyFeatures:
 class EnrichedLocationFeatures:
     """Reference-backed location features derived during enrichment."""
 
+    street: str | None = None
+    street_source: str | None = None
     municipality_name: str | None = None
     municipality_code: str | None = None
     district_name: str | None = None

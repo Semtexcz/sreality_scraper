@@ -1,6 +1,6 @@
 ---
 task: TASK-040
-status: "todo"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add structured street location fields
 
 Task: TASK-040
-Status: todo
+Status: done
 Priority: P1
 Type: feature
 Author:

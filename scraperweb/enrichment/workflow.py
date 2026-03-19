@@ -333,6 +333,8 @@ def _deserialize_location(payload: dict[str, object]) -> NormalizedLocation:
     return NormalizedLocation(
         location_text=_optional_str(payload.get("location_text")),
         location_text_source=_optional_str(payload.get("location_text_source")),
+        street=_optional_str(payload.get("street")),
+        street_source=_optional_str(payload.get("street_source")),
         city=_optional_str(payload.get("city")),
         city_source=_optional_str(payload.get("city_source")),
         city_district=_optional_str(payload.get("city_district")),
@@ -495,4 +497,3 @@ def _optional_date(value: object) -> date | None:
     if value is None:
         return None
     return date.fromisoformat(str(value))
-
