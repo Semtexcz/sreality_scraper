@@ -54,10 +54,18 @@ Approved geocoding artifact ownership:
   canonical query string, parsed address fragments, and their source
   provenance, but they must not persist derived coordinates or fallback quality
   decisions
+- normalized artifacts may also preserve source-backed detail coordinates when
+  those coordinates are direct facts reshaped from persisted detail HTML rather
+  than derived geocoding outputs; such fields must keep explicit provenance and
+  must not silently replace enrichment-owned final coordinates
 - enriched artifacts are the canonical location-geocoding boundary and now
   persist resolved coordinates together with explicit `location_precision`,
   `geocoding_source`, `geocoding_confidence`, fallback metadata, and replayable
   query-text provenance
+- enriched artifacts must record whether the winning coordinate came from the
+  source-backed detail locality payload or from deterministic fallback
+  geocoding so downstream spatial consumers do not need undocumented precedence
+  rules
 - enriched artifacts also own the canonical square-grid hierarchy via
   `spatial_grid_system`, `spatial_grid_parent_cell_id`, `spatial_cell_id`, and
   `spatial_grid_fine_cell_id`, all derived from the best available geocoded

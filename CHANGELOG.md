@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.28.2] - 2026-03-19
+
+### Added
+
+- added the approved `TASK-048` design for source-backed detail coordinates,
+  including normalization-owned `source_coordinate_*` fields and enrichment
+  precedence rules for promoting embedded detail-page coordinates ahead of
+  deterministic fallback geocoding
+
+### Changed
+
+- updated architecture, module, and artifact documentation so source-backed
+  detail coordinates are documented as normalization-owned source facts while
+  enrichment remains the canonical owner of the final winning coordinate
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-048` so the backlog
+  now starts with `TASK-049`
+- completed `TASK-048` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.28.1] - 2026-03-19
 
 ### Added

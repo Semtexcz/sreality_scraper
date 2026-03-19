@@ -118,6 +118,10 @@ Rules:
   canonical address query string or parsed house-number fragments only when they
   are still source-backed reshaped inputs rather than resolved coordinates or
   provider outcomes
+- normalization may also preserve source-backed detail-page coordinates only
+  when they are extracted deterministically from persisted detail HTML and
+  carried with explicit provenance as raw source facts rather than enrichment
+  decisions
 
 ### 3) Enrichment stage
 
@@ -163,6 +167,9 @@ Approved location-intelligence ownership:
 - explicit multi-level geocoding quality belongs here, including
   `location_precision`, `geocoding_source`, `geocoding_confidence`, and
   fallback-level semantics
+- enrichment must prioritize approved source-backed detail coordinates ahead of
+  deterministic geocoding and municipality-centroid fallback while still
+  exposing the winning coordinate through one explicit provenance contract
 - district-center flags and metropolitan district interpretation belong here
 - spatial bucket identifiers belong here, including the canonical
   `deterministic_square_grid_v1` hierarchy with parent, canonical, and fine
