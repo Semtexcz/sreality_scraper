@@ -66,6 +66,8 @@ After **every code change**, the agent must:
 ## 5. Task Workflow (project/backlog)
 
 - Tasks are stored in `project/backlog/`.
+- When implementing a task, the conversation title should match the task being
+  implemented, preferably using the task identifier and short task name.
 - When the number of backlog tasks changes, the agent must update
   `docs/TASK_SEQUENCE.md` so the documented ordering stays aligned with the
   current backlog.
