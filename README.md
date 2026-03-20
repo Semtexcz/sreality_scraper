@@ -98,6 +98,7 @@ The project now exposes a Typer-based CLI with explicit subcommands:
 
 - `poetry run scraperweb scrape`: scrape raw listing records from `sreality.cz`
 - `poetry run scraperweb normalize`: normalize persisted raw filesystem snapshots
+- `poetry run scraperweb enrich`: enrich persisted normalized filesystem snapshots
 
 The `scrape` command stays scoped to raw-data acquisition and persistence. It does
 not expose enrichment, geocoding, reference-data loaders, or derived-output options.
@@ -162,6 +163,8 @@ Normalize command options:
 - `--input-dir <path>`: filesystem raw snapshot root (default `data/raw`)
 - `--output-dir <path>`: filesystem normalized output root (default
   `data/normalized`)
+- `--verbose`: show per-record normalization progress output
+- `--quiet`: suppress normalization progress output and show only the final summary and errors
 
 Normalization workflow semantics:
 
@@ -171,6 +174,9 @@ Normalization workflow semantics:
 - scrape-run scope scans filesystem raw snapshots and selects records whose
   `source_metadata.scrape_run_id` matches the requested run id
 - markup-failure artifacts are ignored and are never normalized
+- normalization startup output reports the selected scope and matched record count
+- default normalization progress output stays concise and reports cumulative processed
+  records on the first record and then every tenth record
 - normalized outputs mirror raw snapshot identity at
   `data/normalized/<region>/<listing_id>/<captured_at_utc>.json`
 - each normalized JSON artifact preserves `normalization_version`,
@@ -197,3 +203,26 @@ Replay and validation notes:
 - upcoming location-intelligence work is intentionally scoped to enrichment
   rather than normalization, so municipality codes, ORP mappings, coordinates,
   and spatial buckets remain derived features with explicit match provenance
+
+Enrich command options:
+
+- exactly one selector is required:
+  `--region <slug>`, `--listing-id <id>`, or `--scrape-run-id <uuid>`
+- `--input-dir <path>`: filesystem normalized snapshot root (default `data/normalized`)
+- `--output-dir <path>`: filesystem enriched output root (default `data/enriched`)
+- `--verbose`: show per-record enrichment progress output
+- `--quiet`: suppress enrichment progress output and show only the final summary and errors
+
+Enrichment workflow semantics:
+
+- input currently supports persisted filesystem normalized snapshots only
+- region scope reads every `*.json` normalized record under `data/normalized/<region>/`
+- listing scope reads every `*.json` normalized record under
+  `data/normalized/<region>/<listing_id>/`
+- scrape-run scope scans filesystem normalized snapshots and selects records whose
+  `normalization_metadata.source_scrape_run_id` matches the requested run id
+- enrichment startup output reports the selected scope and matched record count
+- default enrichment progress output stays concise and reports cumulative processed
+  records on the first record and then every tenth record
+- enriched outputs mirror normalized snapshot identity at
+  `data/enriched/<region>/<listing_id>/<captured_at_utc>.json`

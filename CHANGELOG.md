@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.32.0] - 2026-03-20
+
+### Added
+
+- added shared terminal batch-workflow progress reporting for the `normalize`
+  and `enrich` CLI workflows, including startup scope summaries and cumulative
+  processed-record progress updates
+- added CLI regression coverage for normalization and enrichment progress-mode
+  wiring and shared batch reporter behavior
+
+### Changed
+
+- updated the `normalize` and `enrich` commands to support `--verbose` and
+  `--quiet` progress modes while keeping default replay output concise
+- updated README operator documentation for normalization and enrichment replay
+  progress reporting
+- completed `TASK-063` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.31.2] - 2026-03-19
 
 ### Changed

@@ -1,6 +1,6 @@
 ---
 task: TASK-063
-status: "backlog"
+status: "done"
 priority: P1
 type: feature
 ---
@@ -8,7 +8,7 @@ type: feature
 # Add progress logging to normalization and enrichment CLI workflows
 
 Task: TASK-063
-Status: backlog
+Status: done
 Priority: P1
 Type: feature
 Author:

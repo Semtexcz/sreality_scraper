@@ -11,6 +11,7 @@ from pathlib import Path
 from scraperweb.normalization.models import NormalizedListingRecord
 from scraperweb.normalization.runtime import RawListingNormalizer
 from scraperweb.persistence.repositories import _sanitize_path_component, _timestamp_for_filename
+from scraperweb.progress import BatchWorkflowProgressReporter
 from scraperweb.scraper.models import RawListingRecord, RawSourceMetadata
 
 
@@ -177,21 +178,35 @@ class FilesystemNormalizationWorkflowService:
         raw_snapshot_source: FilesystemRawSnapshotSource,
         normalized_record_repository: FilesystemNormalizedRecordRepository,
         raw_listing_normalizer: RawListingNormalizer | None = None,
+        progress_reporter: BatchWorkflowProgressReporter | None = None,
     ) -> None:
         """Store collaborators used by the filesystem normalization workflow."""
 
         self._raw_snapshot_source = raw_snapshot_source
         self._normalized_record_repository = normalized_record_repository
         self._raw_listing_normalizer = raw_listing_normalizer or RawListingNormalizer()
+        self._progress_reporter = progress_reporter or BatchWorkflowProgressReporter()
 
     def normalize(self, selection: NormalizationWorkflowSelection) -> int:
         """Normalize every raw snapshot in the selected workflow scope."""
 
+        raw_records = self._raw_snapshot_source.iter_records(selection)
+        self._progress_reporter.workflow_started(
+            workflow_name="normalization",
+            selection=selection.describe(),
+            total_records=len(raw_records),
+        )
         normalized_records = 0
-        for raw_record in self._raw_snapshot_source.iter_records(selection):
+        for raw_record in raw_records:
             normalized_record = self._raw_listing_normalizer.normalize(raw_record)
             self._normalized_record_repository.save_record(normalized_record)
             normalized_records += 1
+            self._progress_reporter.record_processed(
+                workflow_name="normalization",
+                total_processed=normalized_records,
+                total_records=len(raw_records),
+                listing_id=raw_record.listing_id,
+            )
         return normalized_records
 
 
@@ -202,6 +217,7 @@ def run_filesystem_normalization_workflow(
     region: str | None = None,
     listing_id: str | None = None,
     scrape_run_id: str | None = None,
+    progress_reporter: BatchWorkflowProgressReporter | None = None,
 ) -> int:
     """Run the public filesystem normalization workflow for one selected scope."""
 
@@ -213,5 +229,6 @@ def run_filesystem_normalization_workflow(
     service = FilesystemNormalizationWorkflowService(
         raw_snapshot_source=FilesystemRawSnapshotSource(input_dir=input_dir),
         normalized_record_repository=FilesystemNormalizedRecordRepository(output_dir=output_dir),
+        progress_reporter=progress_reporter,
     )
     return service.normalize(selection)

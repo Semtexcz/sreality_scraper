@@ -1,4 +1,4 @@
-"""Terminal progress reporting utilities for scraper CLI runs."""
+"""Terminal progress reporting utilities for scraper and batch CLI runs."""
 
 from __future__ import annotations
 
@@ -95,6 +95,29 @@ class ScrapeProgressReporter:
         skipped_existing_estates: int,
     ) -> None:
         """Report the end of one region traversal."""
+
+
+class BatchWorkflowProgressReporter:
+    """Provide hook methods for operator-visible batch workflow progress events."""
+
+    def workflow_started(
+        self,
+        *,
+        workflow_name: str,
+        selection: str,
+        total_records: int,
+    ) -> None:
+        """Report the beginning of one filesystem-backed batch workflow."""
+
+    def record_processed(
+        self,
+        *,
+        workflow_name: str,
+        total_processed: int,
+        total_records: int,
+        listing_id: str,
+    ) -> None:
+        """Report cumulative batch-workflow record progress."""
 
 
 class TerminalScrapeProgressReporter(ScrapeProgressReporter):
@@ -281,3 +304,61 @@ class TerminalScrapeProgressReporter(ScrapeProgressReporter):
             f"Region {region_slug}: completed with {processed_estates} processed estates "
             f"and {skipped_existing_estates} skipped existing listings",
         )
+
+
+class TerminalBatchWorkflowProgressReporter(BatchWorkflowProgressReporter):
+    """Emit concise batch-workflow progress messages to a terminal-friendly sink."""
+
+    def __init__(
+        self,
+        *,
+        output: Callable[[str], None],
+        verbose: bool = False,
+        quiet: bool = False,
+        report_interval: int = DEFAULT_PROGRESS_REPORT_INTERVAL,
+    ) -> None:
+        """Store terminal output preferences for one batch workflow run."""
+
+        self._output = output
+        self._verbose = verbose
+        self._quiet = quiet
+        self._report_interval = report_interval
+
+    def workflow_started(
+        self,
+        *,
+        workflow_name: str,
+        selection: str,
+        total_records: int,
+    ) -> None:
+        """Show the selected batch scope before record processing begins."""
+
+        if self._quiet:
+            return
+        self._output(
+            f"Starting {workflow_name}: scope={selection}, records={total_records}",
+        )
+
+    def record_processed(
+        self,
+        *,
+        workflow_name: str,
+        total_processed: int,
+        total_records: int,
+        listing_id: str,
+    ) -> None:
+        """Show cumulative batch-workflow progress with optional listing detail."""
+
+        if self._quiet:
+            return
+        if self._verbose:
+            self._output(
+                f"{workflow_name.capitalize()} progress: "
+                f"{total_processed}/{total_records} records ({listing_id})",
+            )
+            return
+        if total_processed == 1 or total_processed % self._report_interval == 0:
+            self._output(
+                f"{workflow_name.capitalize()} progress: "
+                f"{total_processed}/{total_records} records",
+            )

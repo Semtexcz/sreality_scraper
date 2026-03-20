@@ -34,6 +34,7 @@ from scraperweb.normalization.models import (
     NormalizationMetadata,
 )
 from scraperweb.persistence.repositories import _sanitize_path_component, _timestamp_for_filename
+from scraperweb.progress import BatchWorkflowProgressReporter
 
 
 @dataclass(frozen=True)
@@ -192,6 +193,7 @@ class FilesystemEnrichmentWorkflowService:
         normalized_snapshot_source: FilesystemNormalizedSnapshotSource,
         enriched_record_repository: FilesystemEnrichedRecordRepository,
         normalized_listing_enricher: NormalizedListingEnricher | None = None,
+        progress_reporter: BatchWorkflowProgressReporter | None = None,
     ) -> None:
         """Store collaborators used by the filesystem enrichment workflow."""
 
@@ -200,15 +202,28 @@ class FilesystemEnrichmentWorkflowService:
         self._normalized_listing_enricher = normalized_listing_enricher or (
             NormalizedListingEnricher()
         )
+        self._progress_reporter = progress_reporter or BatchWorkflowProgressReporter()
 
     def enrich(self, selection: EnrichmentWorkflowSelection) -> int:
         """Enrich every normalized snapshot in the selected workflow scope."""
 
+        normalized_records = self._normalized_snapshot_source.iter_records(selection)
+        self._progress_reporter.workflow_started(
+            workflow_name="enrichment",
+            selection=selection.describe(),
+            total_records=len(normalized_records),
+        )
         enriched_records = 0
-        for normalized_record in self._normalized_snapshot_source.iter_records(selection):
+        for normalized_record in normalized_records:
             enriched_record = self._normalized_listing_enricher.enrich(normalized_record)
             self._enriched_record_repository.save_record(enriched_record)
             enriched_records += 1
+            self._progress_reporter.record_processed(
+                workflow_name="enrichment",
+                total_processed=enriched_records,
+                total_records=len(normalized_records),
+                listing_id=normalized_record.listing_id,
+            )
         return enriched_records
 
 
@@ -219,6 +234,7 @@ def run_filesystem_enrichment_workflow(
     region: str | None = None,
     listing_id: str | None = None,
     scrape_run_id: str | None = None,
+    progress_reporter: BatchWorkflowProgressReporter | None = None,
 ) -> int:
     """Run the public filesystem enrichment workflow for one selected scope."""
 
@@ -230,6 +246,7 @@ def run_filesystem_enrichment_workflow(
     service = FilesystemEnrichmentWorkflowService(
         normalized_snapshot_source=FilesystemNormalizedSnapshotSource(input_dir=input_dir),
         enriched_record_repository=FilesystemEnrichedRecordRepository(output_dir=output_dir),
+        progress_reporter=progress_reporter,
     )
     return service.enrich(selection)
 

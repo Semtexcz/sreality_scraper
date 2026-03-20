@@ -1,8 +1,11 @@
-"""Tests for terminal scraper progress reporting."""
+"""Tests for terminal scraper and batch-workflow progress reporting."""
 
 from __future__ import annotations
 
-from scraperweb.progress import TerminalScrapeProgressReporter
+from scraperweb.progress import (
+    TerminalBatchWorkflowProgressReporter,
+    TerminalScrapeProgressReporter,
+)
 from scraperweb.scraper.runtime import ListingPageStopDiagnostics
 
 
@@ -187,3 +190,85 @@ def test_terminal_progress_reporter_labels_unbounded_estate_limit_explicitly() -
         "Starting scrape: regions=all-czechia, max_pages=unbounded, max_estates=unbounded, resume_existing=disabled",
         "Processed 3/unbounded estates: https://detail/3",
     ]
+
+
+def test_terminal_batch_workflow_reporter_emits_default_progress_messages() -> None:
+    """Emit concise batch progress output that keeps replay runs observable."""
+
+    messages: list[str] = []
+    reporter = TerminalBatchWorkflowProgressReporter(output=messages.append)
+
+    reporter.workflow_started(
+        workflow_name="normalization",
+        selection="region=all-czechia",
+        total_records=12,
+    )
+    reporter.record_processed(
+        workflow_name="normalization",
+        total_processed=1,
+        total_records=12,
+        listing_id="2664846156",
+    )
+    reporter.record_processed(
+        workflow_name="normalization",
+        total_processed=10,
+        total_records=12,
+        listing_id="2664846165",
+    )
+    reporter.record_processed(
+        workflow_name="normalization",
+        total_processed=11,
+        total_records=12,
+        listing_id="2664846166",
+    )
+
+    assert messages == [
+        "Starting normalization: scope=region=all-czechia, records=12",
+        "Normalization progress: 1/12 records",
+        "Normalization progress: 10/12 records",
+    ]
+
+
+def test_terminal_batch_workflow_reporter_emits_verbose_messages() -> None:
+    """Emit per-record batch progress details when verbose mode is enabled."""
+
+    messages: list[str] = []
+    reporter = TerminalBatchWorkflowProgressReporter(output=messages.append, verbose=True)
+
+    reporter.workflow_started(
+        workflow_name="enrichment",
+        selection="listing_id=2664846156",
+        total_records=2,
+    )
+    reporter.record_processed(
+        workflow_name="enrichment",
+        total_processed=1,
+        total_records=2,
+        listing_id="2664846156",
+    )
+
+    assert messages == [
+        "Starting enrichment: scope=listing_id=2664846156, records=2",
+        "Enrichment progress: 1/2 records (2664846156)",
+    ]
+
+
+def test_terminal_batch_workflow_reporter_suppresses_output_in_quiet_mode() -> None:
+    """Suppress batch progress messages entirely when quiet mode is requested."""
+
+    messages: list[str] = []
+    reporter = TerminalBatchWorkflowProgressReporter(output=messages.append, quiet=True)
+
+    reporter.workflow_started(
+        workflow_name="normalization",
+        selection="scrape_run_id=example-run",
+        total_records=4,
+    )
+    reporter.record_processed(
+        workflow_name="normalization",
+        total_processed=1,
+        total_records=4,
+        listing_id="2664846156",
+    )
+
+    assert messages == []

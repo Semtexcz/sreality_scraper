@@ -19,7 +19,10 @@ from scraperweb.cli_runtime_options import (
 from scraperweb.enrichment import EnrichmentWorkflowError, run_filesystem_enrichment_workflow
 from scraperweb.estate_scraper import run_scraper
 from scraperweb.normalization import NormalizationWorkflowError, run_filesystem_normalization_workflow
-from scraperweb.progress import TerminalScrapeProgressReporter
+from scraperweb.progress import (
+    TerminalBatchWorkflowProgressReporter,
+    TerminalScrapeProgressReporter,
+)
 
 
 app = typer.Typer(
@@ -243,8 +246,25 @@ def normalize_command(
             help="Filesystem output directory for normalized JSON artifacts.",
         ),
     ] = Path("data/normalized"),
+    verbose: Annotated[
+        bool,
+        typer.Option(
+            "--verbose",
+            help="Show per-record normalization progress output.",
+        ),
+    ] = False,
+    quiet: Annotated[
+        bool,
+        typer.Option(
+            "--quiet",
+            help="Suppress normalization progress output and show only the final summary and errors.",
+        ),
+    ] = False,
 ) -> None:
     """Normalize persisted raw filesystem snapshots into stable JSON artifacts."""
+
+    if verbose and quiet:
+        raise typer.BadParameter("--verbose and --quiet cannot be used together.")
 
     try:
         normalized_records = run_filesystem_normalization_workflow(
@@ -253,6 +273,11 @@ def normalize_command(
             region=region,
             listing_id=listing_id,
             scrape_run_id=scrape_run_id,
+            progress_reporter=TerminalBatchWorkflowProgressReporter(
+                output=typer.echo,
+                verbose=verbose,
+                quiet=quiet,
+            ),
         )
     except NormalizationWorkflowError as error:
         raise typer.BadParameter(str(error)) from error
@@ -300,8 +325,25 @@ def enrich_command(
             help="Filesystem output directory for enriched JSON artifacts.",
         ),
     ] = Path("data/enriched"),
+    verbose: Annotated[
+        bool,
+        typer.Option(
+            "--verbose",
+            help="Show per-record enrichment progress output.",
+        ),
+    ] = False,
+    quiet: Annotated[
+        bool,
+        typer.Option(
+            "--quiet",
+            help="Suppress enrichment progress output and show only the final summary and errors.",
+        ),
+    ] = False,
 ) -> None:
     """Enrich persisted normalized filesystem snapshots into stable JSON artifacts."""
+
+    if verbose and quiet:
+        raise typer.BadParameter("--verbose and --quiet cannot be used together.")
 
     try:
         enriched_records = run_filesystem_enrichment_workflow(
@@ -310,6 +352,11 @@ def enrich_command(
             region=region,
             listing_id=listing_id,
             scrape_run_id=scrape_run_id,
+            progress_reporter=TerminalBatchWorkflowProgressReporter(
+                output=typer.echo,
+                verbose=verbose,
+                quiet=quiet,
+            ),
         )
     except EnrichmentWorkflowError as error:
         raise typer.BadParameter(str(error)) from error

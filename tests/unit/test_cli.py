@@ -319,7 +319,11 @@ def test_normalize_command_runs_with_region_scope(monkeypatch) -> None:
         "region": "all-czechia",
         "listing_id": None,
         "scrape_run_id": None,
+        "progress_reporter": captured_arguments["progress_reporter"],
     }
+    assert captured_arguments["progress_reporter"].__class__.__name__ == (
+        "TerminalBatchWorkflowProgressReporter"
+    )
 
 
 def test_normalize_command_supports_listing_scope(monkeypatch) -> None:
@@ -354,6 +358,41 @@ def test_normalize_command_supports_listing_scope(monkeypatch) -> None:
     assert captured_arguments["scrape_run_id"] is None
     assert captured_arguments["input_dir"] == Path("data/raw")
     assert captured_arguments["output_dir"] == Path("data/normalized")
+    assert captured_arguments["progress_reporter"].__class__.__name__ == (
+        "TerminalBatchWorkflowProgressReporter"
+    )
+
+
+def test_normalize_command_supports_verbose_progress_mode(monkeypatch) -> None:
+    """Pass normalize progress output options through to the shared reporter."""
+
+    captured_arguments = {}
+
+    def fake_run_filesystem_normalization_workflow(**kwargs) -> int:
+        """Capture normalization workflow arguments passed from the CLI."""
+
+        captured_arguments.update(kwargs)
+        return 1
+
+    monkeypatch.setattr(
+        "scraperweb.cli.run_filesystem_normalization_workflow",
+        fake_run_filesystem_normalization_workflow,
+    )
+
+    result = runner.invoke(app, ["normalize", "--listing-id", "2664846156", "--verbose"])
+
+    assert result.exit_code == 0
+    assert captured_arguments["progress_reporter"]._verbose is True
+    assert captured_arguments["progress_reporter"]._quiet is False
+
+
+def test_normalize_command_rejects_conflicting_output_modes() -> None:
+    """Reject verbose and quiet mode when both are requested for normalization."""
+
+    result = runner.invoke(app, ["normalize", "--region", "all-czechia", "--verbose", "--quiet"])
+
+    assert result.exit_code != 0
+    assert "--verbose and --quiet cannot be used together." in result.stdout
 
 
 def test_normalize_command_reports_workflow_validation_errors(monkeypatch) -> None:
@@ -415,7 +454,11 @@ def test_enrich_command_runs_with_scrape_run_scope(monkeypatch) -> None:
         "region": None,
         "listing_id": None,
         "scrape_run_id": "dc733c67-1091-4a08-831f-f8243eb1b8f6",
+        "progress_reporter": captured_arguments["progress_reporter"],
     }
+    assert captured_arguments["progress_reporter"].__class__.__name__ == (
+        "TerminalBatchWorkflowProgressReporter"
+    )
 
 
 def test_enrich_command_supports_listing_scope(monkeypatch) -> None:
@@ -450,6 +493,41 @@ def test_enrich_command_supports_listing_scope(monkeypatch) -> None:
     assert captured_arguments["scrape_run_id"] is None
     assert captured_arguments["input_dir"] == Path("data/normalized")
     assert captured_arguments["output_dir"] == Path("data/enriched")
+    assert captured_arguments["progress_reporter"].__class__.__name__ == (
+        "TerminalBatchWorkflowProgressReporter"
+    )
+
+
+def test_enrich_command_supports_verbose_progress_mode(monkeypatch) -> None:
+    """Pass enrich progress output options through to the shared reporter."""
+
+    captured_arguments = {}
+
+    def fake_run_filesystem_enrichment_workflow(**kwargs) -> int:
+        """Capture enrichment workflow arguments passed from the CLI."""
+
+        captured_arguments.update(kwargs)
+        return 1
+
+    monkeypatch.setattr(
+        "scraperweb.cli.run_filesystem_enrichment_workflow",
+        fake_run_filesystem_enrichment_workflow,
+    )
+
+    result = runner.invoke(app, ["enrich", "--listing-id", "2664846156", "--verbose"])
+
+    assert result.exit_code == 0
+    assert captured_arguments["progress_reporter"]._verbose is True
+    assert captured_arguments["progress_reporter"]._quiet is False
+
+
+def test_enrich_command_rejects_conflicting_output_modes() -> None:
+    """Reject verbose and quiet mode when both are requested for enrichment."""
+
+    result = runner.invoke(app, ["enrich", "--listing-id", "2664846156", "--verbose", "--quiet"])
+
+    assert result.exit_code != 0
+    assert "--verbose and --quiet cannot be used together." in result.stdout
 
 
 def test_enrich_command_reports_workflow_validation_errors(monkeypatch) -> None:
