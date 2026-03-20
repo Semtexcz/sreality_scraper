@@ -135,6 +135,10 @@ preserved `enriched_record`.
 Future geocoding-specific flattening should stay limited to stable fields such
 as coordinates, precision, confidence, and fallback booleans rather than
 replay-oriented input text.
+The approved `TASK-053` analysis-dataset contract keeps the first notebook table
+as a thin downstream projection that starts from `ModelingInputRecord` and only
+pulls selected enrichment-owned resolved-coordinate and geocoding fields that
+modeling does not yet expose directly.
 Notebook and article-facing spatial outputs should not be introduced here as
 additional per-listing modeling fields. The approved `TASK-046` design keeps
 the first scalar price surface as a downstream workflow artifact that consumes

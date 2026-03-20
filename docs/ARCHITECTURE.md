@@ -241,6 +241,10 @@ Rules:
 - notebook-facing analytical workflows should consume a deterministic
   analysis-dataset export derived from modeling or enrichment contracts rather
   than reading stage artifacts ad hoc
+- the approved first analysis dataset is a thin projection whose stable feature
+  columns come from `ModelingInputRecord` while resolved coordinates and
+  geocoding provenance may still be copied from `EnrichedListingRecord` until a
+  later contract promotes them into modeling
 - the first supported scalar price surface is a workflow-level derived artifact,
   not a new enrichment field; it must aggregate `price_per_square_meter_czk`
   into approved spatial grid cells and publish explicit uncertainty outputs

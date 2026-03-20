@@ -77,6 +77,9 @@ The first deliverable should be a canonical notebook analysis table. A later
 production workflow may persist the same table or an equivalent versioned export
 artifact.
 
+The approved repository-level contract for that first table is now documented in
+`docs/ANALYSIS_DATASET_CONTRACT.md`.
+
 Minimum required columns:
 
 - `listing_id`

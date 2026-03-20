@@ -127,6 +127,19 @@ Representative enrichment replay validation should confirm:
   resolved precision/confidence metadata so geocoder swaps can be
   audited without re-scraping
 
+Approved notebook-analysis artifact direction:
+
+- `TASK-053` defines the first canonical analysis-dataset contract as a new
+  derived artifact family owned by a deterministic export workflow rather than
+  by notebook-local flattening
+- that dataset should be built from approved downstream contracts only, with
+  stable feature columns coming from modeling inputs and resolved
+  latitude/longitude plus geocoding provenance copied from enrichment while
+  those fields remain enrichment-owned
+- the recommended first canonical export layout for the later `TASK-054`
+  implementation is `data/analysis/<analysis_dataset_version>/<export_run_id>/`
+  with one primary tabular dataset file plus an explicit metadata sidecar
+
 ## Backend Tradeoffs
 
 ### Filesystem

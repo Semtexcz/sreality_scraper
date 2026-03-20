@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.32.3] - 2026-03-20
+
+### Added
+
+- added `docs/ANALYSIS_DATASET_CONTRACT.md` to define the first supported
+  notebook and training analysis-dataset contract, including row grain,
+  deduplication policy, required columns, field ownership, target semantics,
+  and the approved artifact-layout direction for the later export workflow
+
+### Changed
+
+- updated architecture, modules, artifacts, roadmap, notebook-plan, and
+  documentation-index references so the approved analysis-dataset contract is
+  now the canonical dependency for the upcoming dataset-export and notebook
+  tasks
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-053` so the active
+  backlog now starts with `TASK-054`
+- completed `TASK-053` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.32.2] - 2026-03-20
 
 ### Added

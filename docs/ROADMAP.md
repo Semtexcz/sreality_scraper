@@ -53,7 +53,7 @@ repository. Unchecked items represent the next supported milestones.
 - [x] Build model-ready feature and target sets from enriched records only.
 - [x] Attach explicit lineage and version metadata to modeling inputs.
 - [x] Keep modeling isolated from direct raw and normalized record access.
-- [ ] Define a canonical notebook-ready analysis dataset projection from
+- [x] Define a canonical notebook-ready analysis dataset projection from
   enriched or modeling artifacts so exploratory work does not depend on
   source-shaped raw payloads.
 - [ ] Deliver an exploratory Jupyter notebook that documents price
