@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING
+
+import click
 
 
 DEFAULT_PROGRESS_REPORT_INTERVAL = 10
@@ -362,3 +365,68 @@ class TerminalBatchWorkflowProgressReporter(BatchWorkflowProgressReporter):
                 f"{workflow_name.capitalize()} progress: "
                 f"{total_processed}/{total_records} records",
             )
+
+
+class TerminalBatchWorkflowProgressBarReporter(BatchWorkflowProgressReporter):
+    """Render batch-workflow progress as an in-place terminal progress bar."""
+
+    def __init__(
+        self,
+        *,
+        progressbar_factory: Callable[..., AbstractContextManager[click.ProgressBar[None]]] = (
+            click.progressbar
+        ),
+    ) -> None:
+        """Store the progress-bar factory used for one batch workflow run."""
+
+        self._progressbar_factory = progressbar_factory
+        self._progressbar_context: AbstractContextManager[click.ProgressBar[None]] | None = None
+        self._progressbar: click.ProgressBar[None] | None = None
+
+    def workflow_started(
+        self,
+        *,
+        workflow_name: str,
+        selection: str,
+        total_records: int,
+    ) -> None:
+        """Open a terminal progress bar for the selected workflow scope."""
+
+        del selection
+        self._progressbar_context = self._progressbar_factory(
+            length=total_records,
+            label=f"{workflow_name.capitalize()} progress",
+            show_pos=True,
+        )
+        self._progressbar = self._progressbar_context.__enter__()
+
+    def record_processed(
+        self,
+        *,
+        workflow_name: str,
+        total_processed: int,
+        total_records: int,
+        listing_id: str,
+    ) -> None:
+        """Advance and close the terminal progress bar as records complete."""
+
+        del workflow_name, listing_id
+        if self._progressbar is None:
+            return
+        self._progressbar.update(1)
+        if total_processed >= total_records:
+            self._close_progressbar()
+
+    def _close_progressbar(self) -> None:
+        """Close an active progress bar and release the held context."""
+
+        if self._progressbar_context is None:
+            return
+        self._progressbar_context.__exit__(None, None, None)
+        self._progressbar_context = None
+        self._progressbar = None
+
+    def __del__(self) -> None:
+        """Ensure partially used progress bars do not leak terminal state."""
+
+        self._close_progressbar()

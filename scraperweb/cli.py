@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 from typing import Annotated
 
@@ -21,6 +22,7 @@ from scraperweb.estate_scraper import run_scraper
 from scraperweb.normalization import NormalizationWorkflowError, run_filesystem_normalization_workflow
 from scraperweb.progress import (
     TerminalBatchWorkflowProgressReporter,
+    TerminalBatchWorkflowProgressBarReporter,
     TerminalScrapeProgressReporter,
 )
 
@@ -71,6 +73,22 @@ def _build_scrape_options(
         )
     except RuntimeCliOptionsError as error:
         raise typer.BadParameter(str(error)) from error
+
+
+def _build_batch_progress_reporter(
+    *,
+    verbose: bool,
+    quiet: bool,
+) -> TerminalBatchWorkflowProgressReporter | TerminalBatchWorkflowProgressBarReporter:
+    """Select batch progress output that fits the current terminal mode."""
+
+    if not verbose and not quiet and sys.stdout.isatty():
+        return TerminalBatchWorkflowProgressBarReporter()
+    return TerminalBatchWorkflowProgressReporter(
+        output=typer.echo,
+        verbose=verbose,
+        quiet=quiet,
+    )
 
 
 @app.command("scrape")
@@ -273,8 +291,7 @@ def normalize_command(
             region=region,
             listing_id=listing_id,
             scrape_run_id=scrape_run_id,
-            progress_reporter=TerminalBatchWorkflowProgressReporter(
-                output=typer.echo,
+            progress_reporter=_build_batch_progress_reporter(
                 verbose=verbose,
                 quiet=quiet,
             ),
@@ -352,8 +369,7 @@ def enrich_command(
             region=region,
             listing_id=listing_id,
             scrape_run_id=scrape_run_id,
-            progress_reporter=TerminalBatchWorkflowProgressReporter(
-                output=typer.echo,
+            progress_reporter=_build_batch_progress_reporter(
                 verbose=verbose,
                 quiet=quiet,
             ),

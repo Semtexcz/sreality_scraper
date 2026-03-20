@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.32.1] - 2026-03-20
+
+### Changed
+
+- changed the `normalize` and `enrich` CLI commands to use an interactive
+  in-place terminal progress bar on TTY output while preserving the existing
+  text progress reporter for non-interactive, verbose, and quiet runs
+- added regression coverage for batch progress-bar lifecycle handling and CLI
+  reporter selection so replay output remains deterministic in tests and
+  redirected environments
+
 ## [1.32.0] - 2026-03-20
 
 ### Added

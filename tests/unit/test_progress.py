@@ -4,9 +4,38 @@ from __future__ import annotations
 
 from scraperweb.progress import (
     TerminalBatchWorkflowProgressReporter,
+    TerminalBatchWorkflowProgressBarReporter,
     TerminalScrapeProgressReporter,
 )
 from scraperweb.scraper.runtime import ListingPageStopDiagnostics
+
+
+class RecordingProgressBar:
+    """Record progress-bar lifecycle events for reporter tests."""
+
+    def __init__(self) -> None:
+        """Initialize an empty in-memory progress-bar recording."""
+
+        self.entered = False
+        self.exited = False
+        self.updates: list[int] = []
+
+    def __enter__(self) -> RecordingProgressBar:
+        """Mark the progress bar as active and return itself."""
+
+        self.entered = True
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback) -> None:
+        """Mark the progress bar as closed after one reporter run."""
+
+        del exc_type, exc_value, traceback
+        self.exited = True
+
+    def update(self, amount: int) -> None:
+        """Record one incremental progress-bar advance."""
+
+        self.updates.append(amount)
 
 
 def test_terminal_progress_reporter_emits_default_progress_messages() -> None:
@@ -251,6 +280,47 @@ def test_terminal_batch_workflow_reporter_emits_verbose_messages() -> None:
         "Starting enrichment: scope=listing_id=2664846156, records=2",
         "Enrichment progress: 1/2 records (2664846156)",
     ]
+
+
+def test_terminal_batch_workflow_progress_bar_reporter_tracks_completion() -> None:
+    """Advance and close the progress bar when a batch workflow finishes."""
+
+    created_bars: list[RecordingProgressBar] = []
+
+    def progressbar_factory(**kwargs) -> RecordingProgressBar:
+        """Create one recording progress bar for the reporter under test."""
+
+        del kwargs
+        progress_bar = RecordingProgressBar()
+        created_bars.append(progress_bar)
+        return progress_bar
+
+    reporter = TerminalBatchWorkflowProgressBarReporter(
+        progressbar_factory=progressbar_factory,
+    )
+
+    reporter.workflow_started(
+        workflow_name="enrichment",
+        selection="region=all-czechia",
+        total_records=2,
+    )
+    reporter.record_processed(
+        workflow_name="enrichment",
+        total_processed=1,
+        total_records=2,
+        listing_id="2664846156",
+    )
+    reporter.record_processed(
+        workflow_name="enrichment",
+        total_processed=2,
+        total_records=2,
+        listing_id="2664846157",
+    )
+
+    assert len(created_bars) == 1
+    assert created_bars[0].entered is True
+    assert created_bars[0].updates == [1, 1]
+    assert created_bars[0].exited is True
 
 
 def test_terminal_batch_workflow_reporter_suppresses_output_in_quiet_mode() -> None:

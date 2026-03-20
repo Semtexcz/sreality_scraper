@@ -6,13 +6,33 @@ from pathlib import Path
 
 from typer.testing import CliRunner
 
-from scraperweb.cli import app
+from scraperweb.cli import _build_batch_progress_reporter, app
 from scraperweb.cli_runtime_options import StorageBackend
 from scraperweb.enrichment import EnrichmentWorkflowError
 from scraperweb.normalization import NormalizationWorkflowError
 
 
 runner = CliRunner()
+
+
+def test_build_batch_progress_reporter_uses_progress_bar_on_tty(monkeypatch) -> None:
+    """Prefer the in-place batch progress bar on interactive terminals."""
+
+    monkeypatch.setattr("scraperweb.cli.sys.stdout.isatty", lambda: True)
+
+    reporter = _build_batch_progress_reporter(verbose=False, quiet=False)
+
+    assert reporter.__class__.__name__ == "TerminalBatchWorkflowProgressBarReporter"
+
+
+def test_build_batch_progress_reporter_falls_back_for_verbose_mode(monkeypatch) -> None:
+    """Keep verbose batch output on the text reporter even on a TTY."""
+
+    monkeypatch.setattr("scraperweb.cli.sys.stdout.isatty", lambda: True)
+
+    reporter = _build_batch_progress_reporter(verbose=True, quiet=False)
+
+    assert reporter.__class__.__name__ == "TerminalBatchWorkflowProgressReporter"
 
 
 def test_root_help_lists_scrape_normalize_and_enrich_commands() -> None:
