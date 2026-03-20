@@ -238,6 +238,13 @@ Rules:
 - modeling may derive helper booleans or buckets from approved geocoding outputs,
   but replay-oriented text inputs and provider traceability fields should remain
   enrichment-owned unless a later contract task promotes them explicitly
+- notebook-facing analytical workflows should consume a deterministic
+  analysis-dataset export derived from modeling or enrichment contracts rather
+  than reading stage artifacts ad hoc
+- the first supported scalar price surface is a workflow-level derived artifact,
+  not a new enrichment field; it must aggregate `price_per_square_meter_czk`
+  into approved spatial grid cells and publish explicit uncertainty outputs
+  alongside the scalar value
 
 ## Target Application Layers
 

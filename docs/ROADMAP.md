@@ -60,7 +60,7 @@ repository. Unchecked items represent the next supported milestones.
   distributions, spatial price behavior, feature influence, correlation
   structure, multicollinearity risk, and predictive interval outputs for blog
   publication.
-- [ ] Finalize the first supported scalar price-surface workflow, including
+- [x] Finalize the first supported scalar price-surface workflow, including
   grid-based aggregation, minimum local support thresholds, and uncertainty
   reporting for coarse or sparse locations.
 - [ ] Decide and document the first supported interval-prediction approach for

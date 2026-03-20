@@ -10,6 +10,9 @@ This directory contains technical documentation for `scraperweb`.
 - `ANALYSIS_NOTEBOOK_PLAN.md`: staged plan for the exploratory Jupyter
   notebook, price-surface analysis, uncertainty reporting, and the later
   predictive-model training stage
+- `PRICE_SURFACE_WORKFLOW.md`: approved first design for the grid-based
+  price-surface workflow, precision-aware inclusion rules, and uncertainty
+  outputs
 - `ROADMAP.md`: short-term improvement plan
 - `TASK_SEQUENCE.md`: recommended implementation order for the current backlog
   task sequence

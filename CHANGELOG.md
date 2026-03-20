@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and the project uses Semantic Versioning.
 
+## [1.32.2] - 2026-03-20
+
+### Added
+
+- added `docs/PRICE_SURFACE_WORKFLOW.md` to define the first supported
+  grid-based apartment price-surface workflow, including method comparison,
+  precision-aware inclusion rules, required uncertainty outputs, and the
+  approved cell-level artifact contract
+
+### Changed
+
+- updated architecture, module, notebook-plan, roadmap, and documentation-index
+  references so the approved price-surface design is now the canonical anchor
+  for the upcoming notebook dataset and spatial-analysis tasks
+- refreshed `docs/TASK_SEQUENCE.md` after completing `TASK-046` so the active
+  backlog now starts with `TASK-053`
+- completed `TASK-046` and moved it from `project/backlog/` to `project/done/`
+
 ## [1.32.1] - 2026-03-20
 
 ### Changed

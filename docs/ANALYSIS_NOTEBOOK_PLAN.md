@@ -156,6 +156,8 @@ defensible and aligned with the existing spatial-grid contracts.
 
 This area overlaps directly with `TASK-046`, which should remain the design
 anchor for the repository-level workflow and artifact contract.
+That approved repository-level decision is now documented in
+`docs/PRICE_SURFACE_WORKFLOW.md`.
 
 ## Main Price Drivers
 

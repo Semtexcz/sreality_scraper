@@ -135,6 +135,12 @@ preserved `enriched_record`.
 Future geocoding-specific flattening should stay limited to stable fields such
 as coordinates, precision, confidence, and fallback booleans rather than
 replay-oriented input text.
+Notebook and article-facing spatial outputs should not be introduced here as
+additional per-listing modeling fields. The approved `TASK-046` design keeps
+the first scalar price surface as a downstream workflow artifact that consumes
+the canonical analysis dataset, aggregates listings into deterministic grid
+cells, and emits cell-level uncertainty sidecars such as listing count,
+interquartile spread, and coverage status.
 
 ### `scraperweb.persistence`
 
